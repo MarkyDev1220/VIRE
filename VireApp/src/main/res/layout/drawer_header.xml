@@ -1,7 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:orientation="vertical"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent">
+    android:layout_width="match_parent"
+    android:layout_height="200dp"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#2196F3"
+    android:gravity="center">
 
+    <ImageView
+        android:id="@+id/profileImage"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:src="@drawable/ic_profile_placeholder"
+        android:background="@drawable/circle_background"
+        android:scaleType="centerCrop" />
+
+    <TextView
+        android:id="@+id/rankText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Rank 5"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:layout_marginTop="8dp" />
+
+    <ProgressBar
+        android:id="@+id/rankGauge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:progress="50"
+        android:max="100"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:progressTint="#FFC107" />
 </LinearLayout>

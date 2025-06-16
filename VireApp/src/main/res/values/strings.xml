@@ -1,3 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <string name="clan_leader_prompt">Are you a Clan/Nation Leader?</string>
+
+    <string-array name="clan_leader_options">
+        <item>Optional: Yes</item>
+        <item>Optional: No</item>
+    </string-array>
+
+    <string name="open">Open Navigation</string>
+    <string name="close">Close Navigation</string>
+
 </resources>
+
