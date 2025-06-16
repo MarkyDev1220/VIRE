@@ -15,6 +15,7 @@ android {
         versionName = "1.0"
     }
     buildFeatures {
+        viewBinding = true
         compose = true
     }
     packaging {
@@ -42,5 +43,8 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.foundation.layout.android)
+    implementation("com.google.android.material:material:1.9.0")
+
     debugImplementation(libs.compose.ui.tooling)
 }
