@@ -5,6 +5,16 @@
         android:allowBackup="false"
         android:supportsRtl="true"
         android:theme="@style/Theme.VIRE">
+
+        <!-- Signup/Login/Profile/Home Activities -->
+        <activity android:name=".ProfileActivity" />
+        <activity android:name=".SignupActivity" />
+        <activity android:name=".LoginActivity" />
+        <activity android:name=".HomeActivity" />
+        <activity android:name=".DrawerActivity" />
+        <activity android:name=".ForgotPasswordActivity" />
+
+        <!-- Launcher Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -13,5 +23,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
-</manifest> 
+</manifest>
