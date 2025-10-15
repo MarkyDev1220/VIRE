@@ -30,33 +30,31 @@ class SignupActivity : AppCompatActivity() {
         val options = arrayOf("No", "Yes")
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, options)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        binding.clanLeaderSpinner.adapter = adapter
+
 
         binding.profileImageView.setOnClickListener {
             openImagePicker()
         }
 
         binding.signupButton.setOnClickListener {
-            val name = binding.nameEditText.text.toString().trim()
-            val dob = binding.dobEditText.text.toString().trim()
+
             val email = binding.emailEditText.text.toString().trim()
             val username = binding.usernameEditText.text.toString().trim()
-            val password = binding.passwordEditText.text.toString()
+            val createpassword = binding.createpasswordEditText.text.toString()
             val confirmPassword = binding.confirmPasswordEditText.text.toString()
             val discordUsername = binding.discordUsernameEditText.text.toString().trim()
-            val clanLeader = binding.clanLeaderSpinner.selectedItem.toString()
+
             val socialsLink = binding.socialsLinkEditText.text.toString().trim()
 
             // Validate mandatory fields
-            if (name.isEmpty() || dob.isEmpty() || email.isEmpty() ||
-                username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty() ||
+            if (email.isEmpty() || username.isEmpty() || createpassword.isEmpty() || confirmPassword.isEmpty() ||
                 discordUsername.isEmpty()
             ) {
                 Toast.makeText(this, "Please fill in all mandatory fields", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            if (password != confirmPassword) {
+            if (createpassword != confirmPassword) {
                 Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -95,5 +93,7 @@ class SignupActivity : AppCompatActivity() {
         val takenUsernames = listOf("user1", "admin", "testuser")
         return takenUsernames.contains(username.lowercase())
     }
+
+
 }
 
