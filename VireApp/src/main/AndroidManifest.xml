@@ -7,10 +7,10 @@
         android:theme="@style/Theme.VIRE">
 
         <!-- Signup/Login/Profile/Home Activities -->
-        <activity android:name=".ProfileActivity" />
         <activity android:name=".SignupActivity" />
-        <activity android:name=".LoginActivity" />
+        <activity android:name=".MainActivity" />
 
+        <activity android:name=".HomeActivity" />
         <activity android:name=".DrawerActivity" />
         <activity android:name=".ForgotPasswordActivity" />
         <activity android:name=".CreatePostActivity" />
@@ -18,7 +18,7 @@
 
         <!-- Launcher Activity -->
         <activity
-            android:name=".HomeActivity"
+            android:name=".ProfileActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

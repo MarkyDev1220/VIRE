@@ -29,52 +29,12 @@
             android:contentDescription="Profile Image"
             android:layout_marginBottom="24dp" />
 
-        <!-- Name -->
-        <EditText
-            android:id="@+id/nameEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Full Name" />
-
-        <!-- Date of Birth -->
-        <EditText
-            android:id="@+id/dobEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Date of Birth"
-            android:inputType="date"
-            android:layout_marginTop="12dp" />
-
-        <!-- Discord Username -->
-        <EditText
-            android:id="@+id/discordUsernameEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Discord Username"
-            android:layout_marginTop="12dp" />
-
-        <!-- Confirm Password -->
-        <EditText
-            android:id="@+id/confirmPasswordEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Confirm Password"
-            android:inputType="textPassword"
-            android:layout_marginTop="12dp" />
-
-        <!-- Clan Leader Spinner -->
-        <Spinner
-            android:id="@+id/clanLeaderSpinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp" />
-
         <!-- Email -->
         <EditText
             android:id="@+id/emailEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Email"
+            android:hint="*Email"
             android:layout_marginTop="16dp" />
 
         <!-- Username -->
@@ -82,17 +42,37 @@
             android:id="@+id/usernameEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Username"
+            android:hint="*Username"
             android:layout_marginTop="12dp" />
 
-        <!-- Password -->
+
+
+        <!-- Create Password -->
         <EditText
-            android:id="@+id/passwordEditText"
+            android:id="@+id/createpasswordEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Password"
+            android:hint="*Create Password"
             android:inputType="textPassword"
             android:layout_marginTop="12dp" />
+
+        <!-- Confirm Password -->
+        <EditText
+            android:id="@+id/confirmPasswordEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="*Confirm Password"
+            android:inputType="textPassword"
+            android:layout_marginTop="12dp" />
+
+        <!-- Discord Username -->
+        <EditText
+            android:id="@+id/discordUsernameEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="*Discord Username"
+            android:layout_marginTop="12dp" />
+
 
         <!-- Socials Link -->
         <EditText
@@ -101,6 +81,8 @@
             android:layout_height="wrap_content"
             android:hint="Socials Link"
             android:layout_marginTop="16dp" />
+
+
 
         <!-- Signup Button -->
         <Button
@@ -111,6 +93,17 @@
             android:layout_marginTop="24dp"
             android:backgroundTint="#2196F3"
             android:textColor="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/returnText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Return"
+            android:textColor="#1E88E5"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_marginBottom="40dp" />
 
     </LinearLayout>
 </ScrollView>
