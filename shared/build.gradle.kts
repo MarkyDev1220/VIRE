@@ -41,7 +41,7 @@ android {
     namespace = "com.example.vire"
     compileSdk = 35
     defaultConfig {
-        minSdk = 35
+        minSdk = 30
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8

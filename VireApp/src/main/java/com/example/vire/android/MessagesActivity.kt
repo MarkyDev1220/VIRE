@@ -4,12 +4,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.ImageButton
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 
-class ProfileActivity : AppCompatActivity() {
+
+class MessagesActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_profile)
+        setContentView(R.layout.activity_messages)
 
         // Hamburger menu
         val hamburgerButton = findViewById<ImageButton>(R.id.hamburgerButton)
@@ -40,13 +40,7 @@ class ProfileActivity : AppCompatActivity() {
             popup.show()
         }
 
-        // Profile info
-        val email = intent.getStringExtra("email") ?: "N/A"
-        val username = intent.getStringExtra("username") ?: "User"
-        val socials = intent.getStringExtra("socials") ?: "None"
-
-        findViewById<TextView>(R.id.profileTextView).text =
-            "Welcome $username!\nEmail: $email\nSocials: $socials"
+        findViewById<TextView>(R.id.messagesText).text = "Messages Page"
     }
 }
 

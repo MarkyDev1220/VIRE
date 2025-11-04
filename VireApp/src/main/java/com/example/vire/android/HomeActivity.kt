@@ -6,10 +6,10 @@ import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.ImageButton
 import android.widget.ListView
-import androidx.appcompat.app.AppCompatActivity
+
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
-class HomeActivity : AppCompatActivity() {
+class HomeActivity : BaseActivity() {
 
     private lateinit var feedListView: ListView
     private val feedPosts = mutableListOf<String>()
@@ -65,6 +65,54 @@ class HomeActivity : AppCompatActivity() {
         popup.menu.add("Quest")
         popup.menu.add("Settings")
         popup.menu.add("Tournaments")
+
+        // Handle menu item clicks
+        popup.setOnMenuItemClickListener { item ->
+            when (item.title.toString()) {
+                "Home" -> {
+                    // Already in Home, maybe just close the menu
+                    true
+                }
+
+                "Profile" -> {
+                    startActivity(Intent(this, ProfileActivity::class.java))
+                    true
+                }
+
+                "Messages" -> {
+                    startActivity(Intent(this, MessagesActivity::class.java))
+                    true
+                }
+
+                "Buy/Sell" -> {
+                    startActivity(Intent(this, BuySellActivity::class.java))
+                    true
+                }
+
+                "Challenges" -> {
+                    startActivity(Intent(this, ChallengesActivity::class.java))
+                    true
+                }
+
+                "Quest" -> {
+                    startActivity(Intent(this, QuestActivity::class.java))
+                    true
+                }
+
+                "Settings" -> {
+                    startActivity(Intent(this, SettingsActivity::class.java))
+                    true
+                }
+
+                "Tournaments" -> {
+                    startActivity(Intent(this, TournamentsActivity::class.java))
+                    true
+                }
+
+                else -> false
+            }
+        }
+
         popup.show()
     }
 }
