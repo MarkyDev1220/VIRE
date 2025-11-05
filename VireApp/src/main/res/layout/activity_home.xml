@@ -7,14 +7,17 @@
     android:padding="16dp">
 
     <!-- News Feed List -->
+
+    <!-- Floating Add Post Button (+) on bottom-left -->
     <ListView
         android:id="@+id/feedListView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/fabAddPost"
-        android:layout_alignParentTop="true"/>
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="17dp"
+        android:layout_marginBottom="15dp" />
 
-    <!-- Floating Add Post Button (+) on bottom-left -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddPost"
         android:layout_width="wrap_content"

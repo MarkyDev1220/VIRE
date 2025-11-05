@@ -133,7 +133,11 @@
                 android:text="Games: "
                 android:textSize="16sp"
                 android:textColor="#333333"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
+                android:padding="8dp" />
 
             <!-- Social Links Section -->
             <LinearLayout

@@ -30,6 +30,7 @@ open class BaseActivity : AppCompatActivity() {
         popup.menu.add("Quest")
         popup.menu.add("Settings")
         popup.menu.add("Tournaments")
+        popup.menu.add("Rankings")
 
         popup.setOnMenuItemClickListener { item ->
             when (item.title.toString()) {
@@ -41,6 +42,7 @@ open class BaseActivity : AppCompatActivity() {
                 "Quest" -> startActivity(Intent(this, QuestActivity::class.java))
                 "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
                 "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
+                "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
             }
             true
         }

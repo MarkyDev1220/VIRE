@@ -8,6 +8,7 @@ import android.text.InputType
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.example.vire.android.databinding.ActivitySignupBinding
 import java.util.*
@@ -34,6 +35,18 @@ class SignupActivity : AppCompatActivity() {
         "Transgender Female",
         "Other / Prefer not to say"
     )
+
+    // TCG games and selection
+    private val tcgGames = arrayOf(
+        "Magic: The Gathering",
+        "Pokemon TCG",
+        "Yu-Gi-Oh!",
+        "Battle Spirits Saga (BSS)",
+        "Cardfight Vanguard (CFV)",
+        "Lorcana",
+        "Force of Will (FOW)"
+    )
+    private val selectedGames = mutableListOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,6 +77,27 @@ class SignupActivity : AppCompatActivity() {
                 calendar.get(Calendar.DAY_OF_MONTH)
             )
             datePicker.show()
+        }
+
+        // TCG games selection
+        binding.gamesSelect.setOnClickListener {
+            val checkedItems = BooleanArray(tcgGames.size) { selectedGames.contains(tcgGames[it]) }
+            AlertDialog.Builder(this)
+                .setTitle("Select TCG Games")
+                .setMultiChoiceItems(tcgGames, checkedItems) { _, which, isChecked ->
+                    if (isChecked) {
+                        if (!selectedGames.contains(tcgGames[which])) selectedGames.add(tcgGames[which])
+                    } else {
+                        selectedGames.remove(tcgGames[which])
+                    }
+                }
+                .setPositiveButton("OK") { _, _ ->
+                    binding.gamesSelect.setText(
+                        if (selectedGames.isNotEmpty()) selectedGames.joinToString(", ") else "Select Games"
+                    )
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
         }
 
         // Return button to go back to MainActivity
@@ -117,13 +151,19 @@ class SignupActivity : AppCompatActivity() {
                 }
             }
 
-            // TODO: Save user data including profileImageUri, gender, DOB
+            if (selectedGames.isEmpty()) {
+                Toast.makeText(this, "Please select at least one TCG game", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // TODO: Save user data including profileImageUri, gender, DOB, and selectedGames
 
             Toast.makeText(this, "Signup successful!", Toast.LENGTH_SHORT).show()
             val intent = Intent(this, ProfileActivity::class.java)
             intent.putExtra("username", username)
             intent.putExtra("email", email)
             intent.putExtra("gender", gender)
+            intent.putStringArrayListExtra("selectedGames", ArrayList(selectedGames))
             startActivity(intent)
             finish()
         }
@@ -134,4 +174,3 @@ class SignupActivity : AppCompatActivity() {
         return takenUsernames.contains(username.lowercase())
     }
 }
-

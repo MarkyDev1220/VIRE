@@ -86,7 +86,6 @@ class ProfileActivity : BaseActivity() {
         usernameText.text = username
         emailText.text = email
 
-        // Default About Me / Games / Gender
         aboutMeText.text = "About Me: Add a description..."
         gamesText.text = "Games: Add your favorite TCG games..."
         genderText.text = "Gender: Not set"
@@ -133,9 +132,10 @@ class ProfileActivity : BaseActivity() {
             popup.menu.add("Quest")
             popup.menu.add("Settings")
             popup.menu.add("Tournaments")
+            popup.menu.add("Rankings")
 
             popup.setOnMenuItemClickListener { item ->
-                when(item.title.toString()) {
+                when (item.title.toString()) {
                     "Home" -> startActivity(Intent(this, HomeActivity::class.java))
                     "Profile" -> { /* Already here */ }
                     "Messages" -> startActivity(Intent(this, MessagesActivity::class.java))
@@ -144,6 +144,7 @@ class ProfileActivity : BaseActivity() {
                     "Quest" -> startActivity(Intent(this, QuestActivity::class.java))
                     "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
                     "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
+                    "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
                 }
                 true
             }
@@ -199,8 +200,37 @@ class ProfileActivity : BaseActivity() {
             datePicker.show()
         }
 
-        val socialsText = socialsInput.text.toString()
-        // TODO: handle updating social links here
+        // TCG games selection
+        val tcgGames = arrayOf(
+            "Magic: The Gathering",
+            "Pokemon TCG",
+            "Yu-Gi-Oh!",
+            "Battle Spirits Saga (BSS)",
+            "Cardfight Vanguard (CFV)",
+            "Lorcana",
+            "Force of Will (FOW)"
+        )
+        val selectedGames = mutableListOf<String>()
+        val existingGames = gamesInput.text.toString().split(", ").filter { it.isNotBlank() }
+        selectedGames.addAll(existingGames)
+
+        gamesInput.setOnClickListener {
+            val checkedItems = BooleanArray(tcgGames.size) { selectedGames.contains(tcgGames[it]) }
+            AlertDialog.Builder(this)
+                .setTitle("Select TCG Games")
+                .setMultiChoiceItems(tcgGames, checkedItems) { _, which, isChecked ->
+                    if (isChecked) {
+                        if (!selectedGames.contains(tcgGames[which])) selectedGames.add(tcgGames[which])
+                    } else {
+                        selectedGames.remove(tcgGames[which])
+                    }
+                }
+                .setPositiveButton("OK") { _, _ ->
+                    gamesInput.setText(if (selectedGames.isNotEmpty()) selectedGames.joinToString(", ") else "")
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
 
         AlertDialog.Builder(this)
             .setTitle("Edit Profile")
@@ -210,7 +240,6 @@ class ProfileActivity : BaseActivity() {
                 emailText.text = emailInput.text.toString()
                 aboutMeText.text = "About Me: ${aboutMeInput.text}"
                 gamesText.text = "Games: ${gamesInput.text}"
-                // Optional: parse socials input and update UI/social links here
                 Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Cancel", null)
@@ -227,3 +256,4 @@ class ProfileActivity : BaseActivity() {
         }
     }
 }
+

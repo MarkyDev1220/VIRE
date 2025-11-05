@@ -37,6 +37,7 @@ class DrawerActivity : AppCompatActivity() {
                 R.id.nav_quests -> showToast("Quest clicked")
                 R.id.nav_settings -> showToast("Settings clicked")
                 R.id.nav_tournaments -> showToast("Tournaments clicked")
+                R.id.nav_Rankings -> showToast("Rankings clicked")
             }
             drawerLayout.closeDrawers()
             true
