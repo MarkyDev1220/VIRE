@@ -6,8 +6,8 @@ import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.ImageButton
 import android.widget.ListView
-
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import androidx.activity.result.contract.ActivityResultContracts
 
 class HomeActivity : BaseActivity() {
 
@@ -15,46 +15,39 @@ class HomeActivity : BaseActivity() {
     private val feedPosts = mutableListOf<String>()
     private lateinit var feedAdapter: ArrayAdapter<String>
 
-    companion object {
-        const val REQUEST_CODE_NEW_POST = 100
+    // Launcher for CreatePostActivity
+    private val createPostLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val newPost = result.data?.getStringExtra("new_post")
+            newPost?.let {
+                feedPosts.add(0, it)
+                feedAdapter.notifyDataSetChanged()
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
-        // Initialize feed ListView
         feedListView = findViewById(R.id.feedListView)
         feedAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, feedPosts)
         feedListView.adapter = feedAdapter
 
-        // Floating Add Post Button (+)
         val fabAddPost = findViewById<FloatingActionButton>(R.id.fabAddPost)
         fabAddPost.setOnClickListener {
             val intent = Intent(this, CreatePostActivity::class.java)
-            startActivityForResult(intent, REQUEST_CODE_NEW_POST)
+            createPostLauncher.launch(intent)
         }
 
-        // Hamburger menu button
         val hamburgerButton = findViewById<ImageButton>(R.id.hamburgerButton)
         hamburgerButton.setOnClickListener {
             showHamburgerMenu(it)
         }
     }
 
-    // Receive new post from CreatePostActivity
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_CODE_NEW_POST && resultCode == Activity.RESULT_OK) {
-            val newPost = data?.getStringExtra("new_post")
-            newPost?.let {
-                feedPosts.add(0, it) // Add to top of feed
-                feedAdapter.notifyDataSetChanged()
-            }
-        }
-    }
-
-    // Show popup hamburger menu
     private fun showHamburgerMenu(anchor: android.view.View) {
         val popup = android.widget.PopupMenu(this, anchor)
         popup.menu.add("Home")
@@ -66,53 +59,19 @@ class HomeActivity : BaseActivity() {
         popup.menu.add("Settings")
         popup.menu.add("Tournaments")
 
-        // Handle menu item clicks
         popup.setOnMenuItemClickListener { item ->
             when (item.title.toString()) {
-                "Home" -> {
-                    // Already in Home, maybe just close the menu
-                    true
-                }
-
-                "Profile" -> {
-                    startActivity(Intent(this, ProfileActivity::class.java))
-                    true
-                }
-
-                "Messages" -> {
-                    startActivity(Intent(this, MessagesActivity::class.java))
-                    true
-                }
-
-                "Buy/Sell" -> {
-                    startActivity(Intent(this, BuySellActivity::class.java))
-                    true
-                }
-
-                "Challenges" -> {
-                    startActivity(Intent(this, ChallengesActivity::class.java))
-                    true
-                }
-
-                "Quest" -> {
-                    startActivity(Intent(this, QuestActivity::class.java))
-                    true
-                }
-
-                "Settings" -> {
-                    startActivity(Intent(this, SettingsActivity::class.java))
-                    true
-                }
-
-                "Tournaments" -> {
-                    startActivity(Intent(this, TournamentsActivity::class.java))
-                    true
-                }
-
+                "Home" -> true
+                "Profile" -> { startActivity(Intent(this, ProfileActivity::class.java)); true }
+                "Messages" -> { startActivity(Intent(this, MessagesActivity::class.java)); true }
+                "Buy/Sell" -> { startActivity(Intent(this, BuySellActivity::class.java)); true }
+                "Challenges" -> { startActivity(Intent(this, ChallengesActivity::class.java)); true }
+                "Quest" -> { startActivity(Intent(this, QuestActivity::class.java)); true }
+                "Settings" -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
+                "Tournaments" -> { startActivity(Intent(this, TournamentsActivity::class.java)); true }
                 else -> false
             }
         }
-
         popup.show()
     }
 }

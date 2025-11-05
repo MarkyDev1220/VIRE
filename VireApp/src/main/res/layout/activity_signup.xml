@@ -45,8 +45,6 @@
             android:hint="*Username"
             android:layout_marginTop="12dp" />
 
-
-
         <!-- Create Password -->
         <EditText
             android:id="@+id/createpasswordEditText"
@@ -65,24 +63,51 @@
             android:inputType="textPassword"
             android:layout_marginTop="12dp" />
 
-        <!-- Discord Username -->
-        <EditText
-            android:id="@+id/discordUsernameEditText"
+        <!-- Gender / Sex Selection -->
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="*Discord Username"
-            android:layout_marginTop="12dp" />
+            android:text="*Sex / Gender"
+            android:textStyle="bold"
+            android:layout_marginTop="12dp"/>
 
-
-        <!-- Socials Link -->
-        <EditText
-            android:id="@+id/socialsLinkEditText"
+        <Spinner
+            android:id="@+id/genderSpinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Socials Link"
-            android:layout_marginTop="16dp" />
+            android:layout_marginTop="4dp" />
 
+        <!-- Date of Birth -->
+        <EditText
+            android:id="@+id/editDOB"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Date of Birth"
+            android:focusable="false"
+            android:layout_marginTop="8dp"/>
 
+        <!-- 13+ Verification -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical">
+
+            <CheckBox
+                android:id="@+id/check13Plus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <TextView
+                android:id="@+id/tv13PlusText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="I confirm that I am 13 years or older"
+                android:textSize="14sp"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
 
         <!-- Signup Button -->
         <Button
@@ -94,6 +119,7 @@
             android:backgroundTint="#2196F3"
             android:textColor="#FFFFFF" />
 
+        <!-- Return Text -->
         <TextView
             android:id="@+id/returnText"
             android:layout_width="wrap_content"

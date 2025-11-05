@@ -1,30 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scrollViewRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FAFAFA">
+    android:background="#FAFAFA"
+    android:fillViewport="true">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="24dp">
+        android:padding="0dp">
 
-        <!-- Profile content -->
+        <!-- Cover Photo -->
+        <ImageView
+            android:id="@+id/coverPhoto"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/default_cover"
+            android:contentDescription="Cover Photo" />
+
+        <!-- Change Cover Photo Button -->
+        <ImageButton
+            android:id="@+id/changeCoverButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_alignBottom="@id/coverPhoto"
+            android:layout_alignEnd="@id/coverPhoto"
+            android:layout_margin="12dp"
+            android:background="@drawable/circle_bg"
+            android:src="@drawable/ic_camera"
+            android:tint="@android:color/white"
+            android:contentDescription="Change Cover Photo" />
+
+        <!-- Profile Image -->
+        <ImageView
+            android:id="@+id/profileImage"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_below="@id/coverPhoto"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="-60dp"
+            android:background="@drawable/profile_image_bg"
+            android:padding="4dp"
+            android:src="@drawable/ic_profile_placeholder"
+            android:contentDescription="Profile Picture" />
+
+        <!-- Change Profile Picture Button -->
+        <ImageButton
+            android:id="@+id/changeProfilePicButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_alignEnd="@id/profileImage"
+            android:layout_alignBottom="@id/profileImage"
+            android:background="@drawable/circle_bg"
+            android:src="@drawable/ic_camera"
+            android:tint="@android:color/white"
+            android:contentDescription="Change Profile Picture" />
+
+        <!-- Profile Info Layout -->
         <LinearLayout
+            android:id="@+id/profileInfoLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_below="@id/profileImage"
             android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal"
+            android:padding="24dp">
 
             <TextView
                 android:id="@+id/profileTitleText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="User Profile"
-                android:textSize="26sp"
+                android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="#212121"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="8dp" />
 
             <TextView
                 android:id="@+id/profileTextView"
@@ -33,15 +85,7 @@
                 android:text="Welcome to your profile page!"
                 android:textSize="16sp"
                 android:textColor="#555555"
-                android:layout_marginBottom="24dp" />
-
-            <ImageView
-                android:id="@+id/profileImage"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:src="@drawable/ic_profile_placeholder"
-                android:contentDescription="Profile Picture"
-                android:layout_marginBottom="24dp" />
+                android:layout_marginBottom="16dp" />
 
             <TextView
                 android:id="@+id/profileUsername"
@@ -50,7 +94,7 @@
                 android:text="Username: "
                 android:textSize="18sp"
                 android:textColor="#333333"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="8dp" />
 
             <TextView
                 android:id="@+id/profileEmail"
@@ -59,17 +103,113 @@
                 android:text="Email: "
                 android:textSize="18sp"
                 android:textColor="#333333"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="8dp" />
 
+            <!-- Sex / Gender Section -->
             <TextView
-                android:id="@+id/profileSocials"
+                android:id="@+id/profileGender"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Socials: "
-                android:textSize="18sp"
+                android:text="Gender: Not set"
+                android:textSize="16sp"
                 android:textColor="#333333"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="8dp" />
 
+            <!-- About Me Section -->
+            <TextView
+                android:id="@+id/profileAboutMe"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="About Me: "
+                android:textSize="16sp"
+                android:textColor="#333333"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Favorite Games Section -->
+            <TextView
+                android:id="@+id/profileGames"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Games: "
+                android:textSize="16sp"
+                android:textColor="#333333"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Social Links Section -->
+            <LinearLayout
+                android:id="@+id/socialLinksLayout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp"
+                android:gravity="center">
+
+                <ImageButton
+                    android:id="@+id/socialkick"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    android:src="@drawable/ic_kick"
+                    android:background="@null"
+                    android:contentDescription="Kick" />
+
+                <ImageButton
+                    android:id="@+id/socialtwitch"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    android:src="@drawable/ic_twitch"
+                    android:background="@null"
+                    android:contentDescription="Twitch" />
+
+                <ImageButton
+                    android:id="@+id/socialFacebook"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    android:src="@drawable/ic_facebook"
+                    android:background="@null"
+                    android:contentDescription="Facebook" />
+
+                <ImageButton
+                    android:id="@+id/socialDiscord"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    android:src="@drawable/ic_discord"
+                    android:background="@null"
+                    android:contentDescription="Discord" />
+
+                <ImageButton
+                    android:id="@+id/socialTiktok"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    android:src="@drawable/ic_tiktok"
+                    android:background="@null"
+                    android:contentDescription="Tiktok" />
+
+                <ImageButton
+                    android:id="@+id/socialInstagram"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    android:src="@drawable/ic_instagram"
+                    android:background="@null"
+                    android:contentDescription="Instagram" />
+            </LinearLayout>
+
+            <!-- Edit Profile Button -->
+            <Button
+                android:id="@+id/editProfileButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Edit Profile"
+                android:backgroundTint="#009688"
+                android:textColor="@android:color/white"
+                android:layout_marginTop="12dp" />
+
+            <!-- Log Out Button -->
             <Button
                 android:id="@+id/logoutButton"
                 android:layout_width="match_parent"
@@ -77,10 +217,21 @@
                 android:text="Log Out"
                 android:backgroundTint="#F44336"
                 android:textColor="#FFFFFF"
-                android:layout_marginTop="32dp" />
+                android:layout_marginTop="12dp" />
+
+            <!-- Edit Theme Button -->
+            <Button
+                android:id="@+id/editThemeButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Change Theme"
+                android:backgroundTint="#3F51B5"
+                android:textColor="@android:color/white"
+                android:layout_marginTop="12dp" />
+
         </LinearLayout>
 
-        <!-- Floating Hamburger Menu Button on bottom-right -->
+        <!-- Floating Hamburger Menu Button -->
         <ImageButton
             android:id="@+id/hamburgerButton"
             android:layout_width="56dp"
@@ -90,8 +241,9 @@
             android:layout_margin="16dp"
             android:background="@drawable/circle_bg"
             android:src="@drawable/ic_menu_hamburger"
-            android:contentDescription="Menu"
-            android:tint="@android:color/white" />
+            android:tint="@android:color/white"
+            android:contentDescription="Menu" />
 
     </RelativeLayout>
+
 </ScrollView>

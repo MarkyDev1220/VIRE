@@ -1,15 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <resources>
+    <string name="open">Open navigation drawer</string>
+    <string name="close">Close navigation drawer</string>
 
-    <string name="clan_leader_prompt">Are you a Clan/Nation Leader?</string>
+    <!-- App / Activity Titles -->
+    <string name="app_name">Vire</string>
+    <string name="profile_title">User Profile</string>
+    <string name="edit_profile_title">Edit Profile</string>
+    <string name="welcome_message">Welcome to your profile page!</string>
 
-    <string-array name="clan_leader_options">
-        <item>Optional: Yes</item>
-        <item>Optional: No</item>
+    <!-- Buttons -->
+    <string name="edit_profile_button">Edit Profile</string>
+    <string name="logout_button">Log Out</string>
+    <string name="change_theme_button">Change Theme</string>
+
+    <!-- Profile fields -->
+    <string name="username_label">Username: </string>
+    <string name="email_label">Email: </string>
+    <string name="about_me_label">About Me: </string>
+    <string name="games_label">Games: </string>
+    <string name="dob_label">Date of Birth</string>
+    <string name="socials_label">Socials (paste profile links)</string>
+    <string name="gender_label">Gender</string>
+
+    <!-- Theme options -->
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_blue">Blue</string>
+    <string name="theme_green">Green</string>
+    <string name="theme_purple">Purple</string>
+    <string name="theme_custom_image">Custom Image</string>
+
+    <!-- Socials -->
+    <string name="discord_url">https://discord.com/users/123456</string>
+    <string name="tiktok_url">https://www.tiktok.com/@example</string>
+    <string name="instagram_url">https://instagram.com/example</string>
+
+    <!-- Toasts / Alerts -->
+    <string name="profile_updated">Profile updated!</string>
+    <string name="logged_out">Logged out</string>
+    <string name="custom_theme_applied">Custom theme applied!</string>
+    <string name="cannot_open_link">Cannot open link</string>
+
+    <!-- Edit Profile Hints -->
+    <string name="hint_username">Username</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_about_me">About Me</string>
+    <string name="hint_games">Favorite Games</string>
+    <string name="hint_socials">Socials (paste profile links)</string>
+
+    <!-- Gender options -->
+    <string-array name="gender_options">
+        <item>Not set</item>
+        <item>Male</item>
+        <item>Female</item>
+        <item>Other</item>
     </string-array>
 
-    <string name="open">Open Navigation</string>
-    <string name="close">Close Navigation</string>
-
+    <!-- Hamburger menu items -->
+    <string name="menu_home">Home</string>
+    <string name="menu_profile">Profile</string>
+    <string name="menu_messages">Messages</string>
+    <string name="menu_buy_sell">Buy/Sell</string>
+    <string name="menu_challenges">Challenges</string>
+    <string name="menu_quest">Quest</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_tournaments">Tournaments</string>
 </resources>
-
