@@ -33,6 +33,11 @@ class ProfileActivity : BaseActivity() {
     private lateinit var socialTiktok: ImageButton
     private lateinit var socialInstagram: ImageButton
 
+    // Profile feed
+    private lateinit var profileFeedListView: ListView
+    private lateinit var profileFeedAdapter: ArrayAdapter<String>
+    private val profileFeedPosts = mutableListOf<String>()
+
     private var changingCoverPhoto = false
 
     // Pick image for profile or cover
@@ -79,6 +84,11 @@ class ProfileActivity : BaseActivity() {
         socialDiscord = findViewById(R.id.socialDiscord)
         socialTiktok = findViewById(R.id.socialTiktok)
         socialInstagram = findViewById(R.id.socialInstagram)
+
+        // Profile feed ListView
+        profileFeedListView = findViewById(R.id.profileFeedListView)
+        profileFeedAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, profileFeedPosts)
+        profileFeedListView.adapter = profileFeedAdapter
 
         // Set profile info
         val email = intent.getStringExtra("email") ?: "email"
@@ -152,6 +162,16 @@ class ProfileActivity : BaseActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Refresh profile feed from FeedManager
+        profileFeedPosts.clear()
+        profileFeedPosts.addAll(
+            FeedManager.getProfileFeed(usernameText.text.toString()).map { "${it.username}: ${it.content}" }
+        )
+        profileFeedAdapter.notifyDataSetChanged()
+    }
+
     private fun showThemePickerDialog() {
         val themes = arrayOf("Light", "Dark", "Blue", "Green", "Purple", "Custom Image")
         AlertDialog.Builder(this)
@@ -177,30 +197,24 @@ class ProfileActivity : BaseActivity() {
         val aboutMeInput = dialogView.findViewById<EditText>(R.id.editAboutMe)
         val gamesInput = dialogView.findViewById<EditText>(R.id.editGames)
         val dobInput = dialogView.findViewById<EditText>(R.id.editDOB)
-        val socialsInput = dialogView.findViewById<EditText>(R.id.editSocials)
 
         usernameInput.setText(usernameText.text.toString())
         emailInput.setText(emailText.text.toString())
         aboutMeInput.setText(aboutMeText.text.toString().replace("About Me: ", ""))
         gamesInput.setText(gamesText.text.toString().replace("Games: ", ""))
 
-        // DOB picker
         dobInput.inputType = InputType.TYPE_NULL
         dobInput.setOnClickListener {
             val calendar = Calendar.getInstance()
-            val datePicker = DatePickerDialog(
+            DatePickerDialog(
                 this,
-                { _, year, month, dayOfMonth ->
-                    dobInput.setText("${month + 1}/$dayOfMonth/$year")
-                },
+                { _, year, month, dayOfMonth -> dobInput.setText("${month + 1}/$dayOfMonth/$year") },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
                 calendar.get(Calendar.DAY_OF_MONTH)
-            )
-            datePicker.show()
+            ).show()
         }
 
-        // TCG games selection
         val tcgGames = arrayOf(
             "Magic: The Gathering",
             "Pokemon TCG",
@@ -219,15 +233,10 @@ class ProfileActivity : BaseActivity() {
             AlertDialog.Builder(this)
                 .setTitle("Select TCG Games")
                 .setMultiChoiceItems(tcgGames, checkedItems) { _, which, isChecked ->
-                    if (isChecked) {
-                        if (!selectedGames.contains(tcgGames[which])) selectedGames.add(tcgGames[which])
-                    } else {
-                        selectedGames.remove(tcgGames[which])
-                    }
+                    if (isChecked) selectedGames.add(tcgGames[which])
+                    else selectedGames.remove(tcgGames[which])
                 }
-                .setPositiveButton("OK") { _, _ ->
-                    gamesInput.setText(if (selectedGames.isNotEmpty()) selectedGames.joinToString(", ") else "")
-                }
+                .setPositiveButton("OK") { _, _ -> gamesInput.setText(selectedGames.joinToString(", ")) }
                 .setNegativeButton("Cancel", null)
                 .show()
         }
@@ -256,4 +265,3 @@ class ProfileActivity : BaseActivity() {
         }
     }
 }
-

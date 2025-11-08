@@ -105,7 +105,6 @@
                 android:textColor="#333333"
                 android:layout_marginBottom="8dp" />
 
-            <!-- Sex / Gender Section -->
             <TextView
                 android:id="@+id/profileGender"
                 android:layout_width="wrap_content"
@@ -115,7 +114,6 @@
                 android:textColor="#333333"
                 android:layout_marginBottom="8dp" />
 
-            <!-- About Me Section -->
             <TextView
                 android:id="@+id/profileAboutMe"
                 android:layout_width="match_parent"
@@ -125,7 +123,6 @@
                 android:textColor="#333333"
                 android:layout_marginBottom="8dp" />
 
-            <!-- Favorite Games Section -->
             <TextView
                 android:id="@+id/profileGames"
                 android:layout_width="match_parent"
@@ -139,7 +136,7 @@
                 android:background="?attr/selectableItemBackground"
                 android:padding="8dp" />
 
-            <!-- Social Links Section -->
+            <!-- Social Links -->
             <LinearLayout
                 android:id="@+id/socialLinksLayout"
                 android:layout_width="wrap_content"
@@ -203,7 +200,6 @@
                     android:contentDescription="Instagram" />
             </LinearLayout>
 
-            <!-- Edit Profile Button -->
             <Button
                 android:id="@+id/editProfileButton"
                 android:layout_width="match_parent"
@@ -213,7 +209,6 @@
                 android:textColor="@android:color/white"
                 android:layout_marginTop="12dp" />
 
-            <!-- Log Out Button -->
             <Button
                 android:id="@+id/logoutButton"
                 android:layout_width="match_parent"
@@ -223,7 +218,6 @@
                 android:textColor="#FFFFFF"
                 android:layout_marginTop="12dp" />
 
-            <!-- Edit Theme Button -->
             <Button
                 android:id="@+id/editThemeButton"
                 android:layout_width="match_parent"
@@ -234,6 +228,17 @@
                 android:layout_marginTop="12dp" />
 
         </LinearLayout>
+
+        <!-- Profile Feed ListView -->
+        <ListView
+            android:id="@+id/profileFeedListView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/profileInfoLayout"
+            android:divider="@android:color/darker_gray"
+            android:dividerHeight="1dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="16dp" />
 
         <!-- Floating Hamburger Menu Button -->
         <ImageButton
@@ -251,3 +256,5 @@
     </RelativeLayout>
 
 </ScrollView>
+
+

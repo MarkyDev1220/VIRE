@@ -1,30 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="#FAFAFA">
 
     <!-- Title -->
     <TextView
         android:id="@+id/rankingsTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Rankings"
+        android:text="Global TCG Rankings"
         android:textSize="24sp"
         android:textStyle="bold"
+        android:textColor="#212121"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="16dp"/>
 
-    <!-- Spinner for TCG games -->
+    <!-- Record Result FAB (+) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabRecord"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="0dp"
+        android:contentDescription="Record Result"
+        android:src="@drawable/ic_add"
+        app:backgroundTint="@color/purple_500"
+        app:tint="@android:color/white"/>
+
+    <!-- Spinner for TCG Games -->
     <Spinner
         android:id="@+id/gameSpinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/rankingsTitle"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginTop="12dp"
+        android:background="@android:drawable/btn_dropdown"
+        android:layout_marginBottom="12dp"/>
 
-    <!-- Leaderboard List -->
+    <!-- Leaderboard RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerLeaderboard"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_below="@id/gameSpinner"
+        android:layout_above="@id/hamburgerButton"
+        android:scrollbars="vertical"
+        android:clipToPadding="false"
+        android:paddingBottom="12dp"/>
+
+    <!-- Fallback ListView (hidden by default) -->
     <ListView
         android:id="@+id/leaderboardList"
         android:layout_width="match_parent"
@@ -32,7 +61,8 @@
         android:layout_below="@id/gameSpinner"
         android:layout_above="@id/hamburgerButton"
         android:dividerHeight="1dp"
-        android:paddingBottom="8dp"/>
+        android:paddingBottom="8dp"
+        android:visibility="gone"/>
 
     <!-- Floating Hamburger Menu -->
     <ImageButton
@@ -44,9 +74,9 @@
         android:layout_margin="16dp"
         android:background="@drawable/circle_bg"
         android:src="@drawable/ic_menu_hamburger"
-        android:contentDescription="Menu"
         android:tint="@android:color/white"
+        android:contentDescription="Menu"
         android:clickable="true"
-        android:focusable="true" />
-
+        android:focusable="true"/>
 </RelativeLayout>
+

@@ -48,6 +48,16 @@ class HomeActivity : BaseActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        feedPosts.clear()
+        feedPosts.addAll(
+            FeedManager.getGlobalFeed().map { "${it.username}: ${it.content}" }
+        )
+        feedAdapter.notifyDataSetChanged()
+    }
+
+
     private fun showHamburgerMenu(anchor: android.view.View) {
         val popup = android.widget.PopupMenu(this, anchor)
         popup.menu.add("Home")
@@ -70,7 +80,7 @@ class HomeActivity : BaseActivity() {
                 "Quest" -> { startActivity(Intent(this, QuestActivity::class.java)); true }
                 "Settings" -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
                 "Tournaments" -> { startActivity(Intent(this, TournamentsActivity::class.java)); true }
-                "Rankings" -> { startActivity(Intent(this, RankingsActivity::class.java)); true}
+                "Rankings" -> { startActivity(Intent(this, RankingsActivity::class.java)); true }
                 else -> false
             }
         }
