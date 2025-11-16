@@ -8,14 +8,14 @@
 
         <!-- Signup/Login/Profile/Home Activities -->
         <activity android:name=".ProfileActivity" />
-        <activity android:name=".SignupActivity" />
+        <activity android:name=".HomeActivity" />
         <activity android:name=".MessagesActivity" />
         <activity android:name=".BuySellActivity" />
         <activity android:name=".ChallengesActivity" />
         <activity android:name=".QuestActivity" />
         <activity android:name=".SettingsActivity" />
         <activity android:name=".TournamentsActivity" />
-        <activity android:name=".MainActivity" />
+        <activity android:name=".SignupActivity" />
         <activity android:name=".DrawerActivity" />
         <activity android:name=".ForgotPasswordActivity" />
         <activity android:name=".CreatePostActivity" />
@@ -24,7 +24,7 @@
 
         <!-- Launcher Activity -->
         <activity
-            android:name=".HomeActivity"
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -108,9 +108,9 @@ class RankingsActivity : BaseActivity() {
 
                             // Update player stats
                             when (type.lowercase()) {
-                                "win" -> { player.wins++; player.points += 3 }
-                                "loss" -> { player.losses++; player.points += 0 }
-                                "tie" -> { player.ties++; player.points += 1 }
+                                "win" -> { player.wins++; player.points += 6 }
+                                "loss" -> { player.losses++; player.points += 3 }
+                                "tie" -> { player.ties++; player.points += 2 }
                             }
 
                             // Update leaderboard UI
