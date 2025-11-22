@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_margin="6dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:foreground="?android:attr/selectableItemBackground">
+
+    <RelativeLayout
+        android:padding="12dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/challengeTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Title"
+            android:textStyle="bold"
+            android:textSize="16sp"/>
+
+        <TextView
+            android:id="@+id/challengeGame"
+            android:layout_below="@id/challengeTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Game"/>
+
+        <TextView
+            android:id="@+id/challengeChallenger"
+            android:layout_below="@id/challengeGame"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Challenger"/>
+
+        <TextView
+            android:id="@+id/challengeOpponent"
+            android:layout_below="@id/challengeChallenger"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Opponent"/>
+
+        <TextView
+            android:id="@+id/challengeDesc"
+            android:layout_below="@id/challengeOpponent"
+            android:layout_marginTop="6dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Short description"/>
+
+        <Button
+            android:id="@+id/btnAccept"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@id/challengeTitle"
+            android:layout_marginTop="4dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Accept" />
+
+        <ImageButton
+            android:id="@+id/btnDelete"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@id/btnAccept"
+            android:layout_marginTop="6dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_more_vert"
+            android:contentDescription="More" />
+    </RelativeLayout>
+
+</androidx.cardview.widget.CardView>

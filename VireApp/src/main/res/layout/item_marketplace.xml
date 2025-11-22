@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_margin="6dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:foreground="?android:attr/selectableItemBackground">
+
+    <RelativeLayout
+        android:padding="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/itemImage"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_placeholder" />
+
+        <TextView
+            android:id="@+id/itemTitle"
+            android:layout_toEndOf="@id/itemImage"
+            android:layout_marginStart="8dp"
+            android:layout_alignTop="@id/itemImage"
+            android:textStyle="bold"
+            android:text="Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/itemCategory"
+            android:layout_toEndOf="@id/itemImage"
+            android:layout_below="@id/itemTitle"
+            android:layout_marginStart="8dp"
+            android:text="Category"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/itemPrice"
+            android:layout_alignParentEnd="true"
+            android:layout_alignTop="@id/itemTitle"
+            android:text="$0.00"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/itemBuyButton"
+            android:layout_toEndOf="@id/itemImage"
+            android:layout_below="@id/itemCategory"
+            android:layout_marginStart="8dp"
+            android:text="Buy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <ImageButton
+            android:id="@+id/itemMoreButton"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@id/itemPrice"
+            android:src="@drawable/ic_more_vert"
+            android:contentDescription="More"
+            android:layout_width="36dp"
+            android:layout_height="36dp" />
+    </RelativeLayout>
+
+</androidx.cardview.widget.CardView>
