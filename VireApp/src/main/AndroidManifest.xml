@@ -8,7 +8,7 @@
 
         <!-- Signup/Login/Profile/Home Activities -->
         <activity android:name=".ProfileActivity" />
-        <activity android:name=".HomeActivity" />
+        <activity android:name=".MainActivity" />
         <activity android:name=".MessagesActivity" />
         <activity android:name=".BuySellActivity" />
         <activity android:name=".ChallengesActivity" />
@@ -20,11 +20,14 @@
         <activity android:name=".ForgotPasswordActivity" />
         <activity android:name=".CreatePostActivity" />
         <activity android:name=".RankingsActivity" />
+        <activity android:name=".NewMessagesActivity" />
+        <activity android:name=".BlockedUsersActivity" />
+        <activity android:name=".TwoFactorActivity" />
 
 
         <!-- Launcher Activity -->
         <activity
-            android:name=".MainActivity"
+            android:name=".HomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
