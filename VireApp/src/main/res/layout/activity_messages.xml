@@ -1,37 +1,113 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="16dp">
+    android:layout_height="match_parent">
 
-    <!-- Main content -->
+    <!-- LEFT PANEL -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:id="@+id/leftPanel"
         android:orientation="vertical"
-        android:gravity="center">
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.35"
+        android:padding="8dp">
 
-        <TextView
-            android:id="@+id/messagesText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Messages Page"
-            android:textSize="24sp"/>
+        <!-- Search users -->
+        <EditText
+            android:id="@+id/searchUsers"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:hint="Search users" />
+
+        <!-- List of users -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerUsers"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- NEW MESSAGE BUTTON (Moved to bottom left) -->
+        <ImageButton
+            android:id="@+id/newMessageButton"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/circle_bg"
+            android:src="@drawable/ic_add"
+            android:tint="@android:color/white"
+            android:contentDescription="New Message" />
+
     </LinearLayout>
 
-    <!-- Floating Hamburger Menu Button on bottom-right -->
-    <ImageButton
-        android:id="@+id/hamburgerButton"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_margin="16dp"
-        android:background="@drawable/circle_bg"
-        android:src="@drawable/ic_menu_hamburger"
-        android:contentDescription="Menu"
-        android:tint="@android:color/white" />
-</RelativeLayout>
+    <!-- RIGHT PANEL -->
+    <RelativeLayout
+        android:id="@+id/rightPanel"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.65"
+        android:padding="8dp">
 
+        <!-- Chat header -->
+        <TextView
+            android:id="@+id/chatHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Chat"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:padding="4dp" />
 
+        <!-- Chat messages -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerChatMessages"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/chatHeader"
+            android:layout_above="@id/chatInputBar"
+            android:paddingBottom="8dp" />
 
+        <!-- Input bar -->
+        <LinearLayout
+            android:id="@+id/chatInputBar"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_alignParentBottom="true"
+            android:padding="8dp">
+
+            <EditText
+                android:id="@+id/messageInput"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:hint="Type a message" />
+
+            <ImageButton
+                android:id="@+id/sendMessage"
+                android:layout_width="50dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_send"
+                android:tint="@android:color/holo_purple"
+                android:contentDescription="Send" />
+        </LinearLayout>
+
+        <!-- HAMBURGER BUTTON (unchanged) -->
+        <ImageButton
+            android:id="@+id/hamburgerButton"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="12dp"
+            android:background="@drawable/circle_bg"
+            android:src="@drawable/ic_menu_hamburger"
+            android:tint="@android:color/white"
+            android:contentDescription="Menu" />
+
+    </RelativeLayout>
+
+</LinearLayout>
