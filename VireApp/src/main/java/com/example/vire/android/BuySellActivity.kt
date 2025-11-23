@@ -9,7 +9,7 @@ import android.view.View
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.appcompat.app.AppCompatActivity
+
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
