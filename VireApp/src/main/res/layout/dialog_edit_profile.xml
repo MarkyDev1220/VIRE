@@ -39,7 +39,6 @@
             android:inputType="textMultiLine"
             android:layout_marginTop="8dp"/>
 
-        <!-- Favorite games field updated for multi-choice -->
         <EditText
             android:id="@+id/editGames"
             android:layout_width="match_parent"
@@ -57,13 +56,13 @@
             android:focusable="false"
             android:layout_marginTop="8dp"/>
 
-        <!-- Gender selection -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Gender"
             android:textSize="16sp"
             android:layout_marginTop="12dp"/>
+
         <Spinner
             android:id="@+id/editGender"
             android:layout_width="match_parent"
@@ -71,7 +70,6 @@
             android:layout_marginTop="4dp"
             android:entries="@array/gender_options"/>
 
-        <!-- Social links input -->
         <EditText
             android:id="@+id/editSocials"
             android:layout_width="match_parent"
@@ -79,5 +77,15 @@
             android:hint="Socials (paste profile links)"
             android:inputType="textUri"
             android:layout_marginTop="8dp"/>
+
+        <!-- Theme Button -->
+        <Button
+            android:id="@+id/editThemeButtonDialog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Change Theme"
+            android:backgroundTint="#3F51B5"
+            android:textColor="@android:color/white"
+            android:layout_marginTop="12dp"/>
     </LinearLayout>
 </ScrollView>

@@ -28,7 +28,7 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <!-- NEW MESSAGE BUTTON (Moved to bottom left) -->
+        <!-- NEW MESSAGE BUTTON -->
         <ImageButton
             android:id="@+id/newMessageButton"
             android:layout_width="50dp"
@@ -70,13 +70,13 @@
             android:layout_above="@id/chatInputBar"
             android:paddingBottom="8dp" />
 
-        <!-- Input bar -->
+        <!-- Input bar: moved above hamburger -->
         <LinearLayout
             android:id="@+id/chatInputBar"
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:layout_alignParentBottom="true"
+            android:layout_above="@id/hamburgerButton"
             android:padding="8dp">
 
             <EditText
@@ -95,7 +95,7 @@
                 android:contentDescription="Send" />
         </LinearLayout>
 
-        <!-- HAMBURGER BUTTON (unchanged) -->
+        <!-- Hamburger Button stays at bottom -->
         <ImageButton
             android:id="@+id/hamburgerButton"
             android:layout_width="56dp"

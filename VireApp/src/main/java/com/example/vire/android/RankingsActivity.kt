@@ -133,7 +133,7 @@ class RankingsActivity : BaseActivity() {
 
     private fun showHamburgerMenu(anchor: View) {
         val popup = PopupMenu(this, anchor)
-        listOf("Home", "Profile", "Messages", "Buy/Sell", "Challenges", "Quest", "Settings", "Tournaments", "Rankings")
+        listOf("Home", "Profile", "Messages", "Buy/Sell", "Challenges", "Quest", "Settings", "Tournaments", "Rankings", "Friends", "Search")
             .forEach { popup.menu.add(it) }
 
         popup.setOnMenuItemClickListener { item ->
@@ -147,6 +147,8 @@ class RankingsActivity : BaseActivity() {
                 "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
                 "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
                 "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
+                "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
+                "Search" -> startActivity(Intent(this, SearchActivity::class.java))
             }
             true
         }

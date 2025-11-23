@@ -3,7 +3,6 @@ package com.example.vire.android
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.widget.ArrayAdapter
 import android.widget.ImageButton
 import android.widget.ListView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -12,19 +11,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 class HomeActivity : BaseActivity() {
 
     private lateinit var feedListView: ListView
-    private val feedPosts = mutableListOf<String>()
-    private lateinit var feedAdapter: ArrayAdapter<String>
+    private lateinit var feedAdapter: PostAdapter
 
-    // Launcher for CreatePostActivity
     private val createPostLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val newPost = result.data?.getStringExtra("new_post")
-            newPost?.let {
-                feedPosts.add(0, it)
-                feedAdapter.notifyDataSetChanged()
-            }
+            refreshFeed()
         }
     }
 
@@ -33,57 +26,67 @@ class HomeActivity : BaseActivity() {
         setContentView(R.layout.activity_home)
 
         feedListView = findViewById(R.id.feedListView)
-        feedAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, feedPosts)
+
+        // Feed now uses custom adapter to support like + comment
+        feedAdapter = PostAdapter(this, FeedManager.getGlobalFeed().toMutableList())
+
         feedListView.adapter = feedAdapter
 
-        val fabAddPost = findViewById<FloatingActionButton>(R.id.fabAddPost)
-        fabAddPost.setOnClickListener {
-            val intent = Intent(this, CreatePostActivity::class.java)
-            createPostLauncher.launch(intent)
+        findViewById<FloatingActionButton>(R.id.fabAddPost).setOnClickListener {
+            startActivity(Intent(this, NewPostActivity::class.java))
         }
 
         val hamburgerButton = findViewById<ImageButton>(R.id.hamburgerButton)
         hamburgerButton.setOnClickListener {
             showHamburgerMenu(it)
         }
+
+        refreshFeed()
     }
 
     override fun onResume() {
         super.onResume()
-        feedPosts.clear()
-        feedPosts.addAll(
-            FeedManager.getGlobalFeed().map { "${it.username}: ${it.content}" }
-        )
+        refreshFeed()
+    }
+
+    private fun refreshFeed() {
+        // Since the list is shared in memory, the adapter just needs to refresh
         feedAdapter.notifyDataSetChanged()
     }
 
-
     private fun showHamburgerMenu(anchor: android.view.View) {
         val popup = android.widget.PopupMenu(this, anchor)
-        popup.menu.add("Home")
-        popup.menu.add("Profile")
-        popup.menu.add("Messages")
-        popup.menu.add("Buy/Sell")
-        popup.menu.add("Challenges")
-        popup.menu.add("Quest")
-        popup.menu.add("Settings")
-        popup.menu.add("Tournaments")
-        popup.menu.add("Rankings")
+        popup.menu.apply {
+            popup.menu.add("Home")
+            popup.menu.add("Profile")
+            popup.menu.add("Messages")
+            popup.menu.add("Buy/Sell")
+            popup.menu.add("Challenges")
+            popup.menu.add("Quest")
+            popup.menu.add("Settings")
+            popup.menu.add("Tournaments")
+            popup.menu.add("Rankings")
+            popup.menu.add("Friends")
+            popup.menu.add("Search")
+        }
 
         popup.setOnMenuItemClickListener { item ->
             when (item.title.toString()) {
-                "Home" -> true
-                "Profile" -> { startActivity(Intent(this, ProfileActivity::class.java)); true }
-                "Messages" -> { startActivity(Intent(this, MessagesActivity::class.java)); true }
-                "Buy/Sell" -> { startActivity(Intent(this, BuySellActivity::class.java)); true }
-                "Challenges" -> { startActivity(Intent(this, ChallengesActivity::class.java)); true }
-                "Quest" -> { startActivity(Intent(this, QuestActivity::class.java)); true }
-                "Settings" -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
-                "Tournaments" -> { startActivity(Intent(this, TournamentsActivity::class.java)); true }
-                "Rankings" -> { startActivity(Intent(this, RankingsActivity::class.java)); true }
-                else -> false
+                "Home" -> startActivity(Intent(this, HomeActivity::class.java))
+                "Profile" -> startActivity(Intent(this, ProfileActivity::class.java))
+                "Messages" -> startActivity(Intent(this, MessagesActivity::class.java))
+                "Buy/Sell" -> startActivity(Intent(this, BuySellActivity::class.java))
+                "Challenges" -> startActivity(Intent(this, ChallengesActivity::class.java))
+                "Quest" -> startActivity(Intent(this, QuestActivity::class.java))
+                "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
+                "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
+                "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
+                "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
+                "Search" -> startActivity(Intent(this, SearchActivity::class.java))
             }
+            true
         }
         popup.show()
     }
 }
+

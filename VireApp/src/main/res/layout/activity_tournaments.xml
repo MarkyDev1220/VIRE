@@ -1,25 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/tournaments_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:padding="12dp"
+    tools:context=".TournamentsActivity">
 
-    <!-- Main content -->
-    <LinearLayout
+    <TextView
+        android:id="@+id/tournamentsHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tournaments"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <SearchView
+        android:id="@+id/searchViewTournaments"
+        android:layout_below="@id/tournamentsHeader"
+        android:layout_marginTop="8dp"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center">
+        android:layout_height="wrap_content"
+        android:queryHint="Search tournaments" />
 
-        <TextView
-            android:id="@+id/tournamentsText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Tournaments Page"
-            android:textSize="24sp"/>
-    </LinearLayout>
+    <TextView
+        android:id="@+id/emptyTextTournaments"
+        android:layout_below="@id/searchViewTournaments"
+        android:layout_centerHorizontal="true"
+        android:text="No tournaments yet."
+        android:visibility="gone"
+        android:padding="16dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
 
-    <!-- Floating Hamburger Menu Button on bottom-right -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerTournaments"
+        android:layout_below="@id/searchViewTournaments"
+        android:layout_above="@+id/fabCreateTournament"
+        android:layout_marginTop="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabCreateTournament"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
+        android:src="@drawable/ic_add"
+        android:contentDescription="Create tournament"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
     <ImageButton
         android:id="@+id/hamburgerButton"
         android:layout_width="56dp"
@@ -31,6 +63,5 @@
         android:src="@drawable/ic_menu_hamburger"
         android:contentDescription="Menu"
         android:tint="@android:color/white" />
+
 </RelativeLayout>
-
-

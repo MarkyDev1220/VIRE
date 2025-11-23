@@ -64,6 +64,8 @@ class BuySellActivity : BaseActivity() {
             popup.menu.add("Settings")
             popup.menu.add("Tournaments")
             popup.menu.add("Rankings")
+            popup.menu.add("Friends")
+            popup.menu.add("Search")
 
             popup.setOnMenuItemClickListener { item ->
                 when(item.title.toString()) {
@@ -76,6 +78,8 @@ class BuySellActivity : BaseActivity() {
                     "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
                     "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
                     "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
+                    "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
+                    "Search" -> startActivity(Intent(this, SearchActivity::class.java))
                 }
                 true
             }
