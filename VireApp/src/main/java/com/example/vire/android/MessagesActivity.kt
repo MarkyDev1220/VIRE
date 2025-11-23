@@ -1,5 +1,6 @@
 package com.example.vire.android
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
@@ -8,6 +9,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.PopupMenu
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -27,6 +29,14 @@ class MessagesActivity : BaseActivity() {
     private var chatAdapter: ChatAdapter? = null
 
     private var activeUser: String? = null
+
+    private val newMessageLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val selectedUser = result.data?.getStringExtra("selected_user") ?: return@registerForActivityResult
+                openChatWithUser(selectedUser)
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,22 +63,25 @@ class MessagesActivity : BaseActivity() {
         usersAdapter = MessagesListAdapter(
             MessageManager.getLastMessagesForAllUsers()
         ) { selectedUser ->
-
-            activeUser = selectedUser
-            chatHeader.text = selectedUser
-
-            val messages = MessageManager.getMessagesForUser(selectedUser)
-            chatAdapter = ChatAdapter(messages)
-            recyclerChat.adapter = chatAdapter
-            recyclerChat.layoutManager = LinearLayoutManager(this).apply {
-                stackFromEnd = true
-            }
-
-            recyclerChat.scrollToPosition(messages.size - 1)
+            openChatWithUser(selectedUser)
         }
 
         recyclerUsers.adapter = usersAdapter
         recyclerUsers.layoutManager = LinearLayoutManager(this)
+    }
+
+    private fun openChatWithUser(selectedUser: String) {
+        activeUser = selectedUser
+        chatHeader.text = selectedUser
+
+        val messages = MessageManager.getMessagesForUser(selectedUser)
+        chatAdapter = ChatAdapter(messages)
+        recyclerChat.adapter = chatAdapter
+        recyclerChat.layoutManager = LinearLayoutManager(this).apply {
+            stackFromEnd = true
+        }
+
+        recyclerChat.scrollToPosition(messages.size - 1)
     }
 
     private fun setupSendMessage() {
@@ -78,11 +91,14 @@ class MessagesActivity : BaseActivity() {
             if (text.isEmpty()) return@setOnClickListener
 
             val newMessage = Message("Me", text)
-            val targetList = MessageManager.getMessagesForUser(user)
-            targetList.add(newMessage)
+            MessageManager.sendMessageForUser(user, newMessage)
 
-            chatAdapter?.notifyNewMessage()
-            recyclerChat.scrollToPosition(targetList.size - 1)
+            chatAdapter?.notifyItemInserted(MessageManager.getMessagesForUser(user).size - 1)
+            recyclerChat.scrollToPosition(MessageManager.getMessagesForUser(user).size - 1)
+
+            // Update user list preview immediately
+            usersAdapter.updateData(MessageManager.getLastMessagesForAllUsers())
+
             messageInput.text.clear()
         }
     }
@@ -100,8 +116,10 @@ class MessagesActivity : BaseActivity() {
     private fun setupMenu() {
         menuBtn.setOnClickListener { button ->
             val popup = PopupMenu(this, button)
-            val menuItems = listOf("Home", "Profile", "Messages", "Buy/Sell", "Challenges",
-                "Quest", "Settings", "Tournaments", "Rankings")
+            val menuItems = listOf(
+                "Home", "Profile", "Messages", "Buy/Sell", "Challenges",
+                "Quest", "Settings", "Tournaments", "Rankings", "Friends", "Search"
+            )
             menuItems.forEach { popup.menu.add(it) }
 
             popup.setOnMenuItemClickListener { item ->
@@ -115,6 +133,8 @@ class MessagesActivity : BaseActivity() {
                     "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
                     "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
                     "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
+                    "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
+                    "Search" -> startActivity(Intent(this, SearchActivity::class.java))
                 }
                 true
             }
@@ -124,13 +144,19 @@ class MessagesActivity : BaseActivity() {
 
     private fun setupNewMessageButton() {
         newMessageBtn.setOnClickListener {
-            startActivity(Intent(this, NewMessagesActivity::class.java))
+            val intent = Intent(this, NewMessagesActivity::class.java)
+            newMessageLauncher.launch(intent)
         }
     }
 
     override fun onResume() {
         super.onResume()
+        // Refresh user list and active chat if any
         usersAdapter.updateData(MessageManager.getLastMessagesForAllUsers())
-        activeUser?.let { _ -> chatAdapter?.notifyDataSetChanged() }
+        activeUser?.let { user ->
+            chatAdapter?.notifyDataSetChanged()
+            recyclerChat.scrollToPosition(MessageManager.getMessagesForUser(user).size - 1)
+        }
     }
 }
+

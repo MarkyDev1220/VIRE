@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 
 class NewPostActivity : AppCompatActivity() {
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_new_post)
@@ -20,39 +21,36 @@ class NewPostActivity : AppCompatActivity() {
         val addVideo: ImageButton = findViewById(R.id.addVideoButton)
         val postButton: Button = findViewById(R.id.postButton)
 
-        // Get username from intent or fallback
         val username = intent.getStringExtra("username") ?: "User"
 
         postButton.setOnClickListener {
-            val postContent = postEditText.text.toString().trim()
-            if (postContent.isNotEmpty()) {
-                // Create Post object
-                val post = Post(username, postContent)
+            val content = postEditText.text.toString().trim()
 
-                // Add to FeedManager (global + profile feed)
+            if (content.isNotEmpty()) {
+                val post = Post(username, content)
+
                 FeedManager.addPost(post)
 
-                // Return post to launcher
                 val resultIntent = Intent()
                 resultIntent.putExtra("new_post", post)
                 setResult(Activity.RESULT_OK, resultIntent)
 
                 Toast.makeText(this, "Post created!", Toast.LENGTH_SHORT).show()
-                finish() // close activity after posting
+                finish()
             } else {
                 Toast.makeText(this, "Write something before posting!", Toast.LENGTH_SHORT).show()
             }
         }
 
         addPhoto.setOnClickListener {
-            Toast.makeText(this, "Add Photo option clicked", Toast.LENGTH_SHORT).show()
-            // TODO: Implement photo picker
+            Toast.makeText(this, "Add Photo feature coming soon", Toast.LENGTH_SHORT).show()
         }
 
         addVideo.setOnClickListener {
-            Toast.makeText(this, "Add Video option clicked", Toast.LENGTH_SHORT).show()
-            // TODO: Implement video picker
+            Toast.makeText(this, "Add Video feature coming soon", Toast.LENGTH_SHORT).show()
         }
     }
+
+
 }
 

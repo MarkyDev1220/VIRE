@@ -44,37 +44,33 @@ class ChallengeAdapter(
             tvGame.text = item.game
             tvChallenger.text = "Challenger: ${item.challenger}"
             tvOpponent.text = "Opponent: ${item.opponent ?: "Open"}"
-            tvDesc.text = if (item.description.length > 120) item.description.substring(0, 117) + "..." else item.description
+            tvDesc.text = item.safeDescription()
+
 
             itemView.setOnClickListener { onAction(item, Action.VIEW) }
 
             btnAccept.isEnabled = item.status == ChallengeRequest.Status.OPEN
             btnAccept.setOnClickListener { onAction(item, Action.ACCEPT) }
 
-            // Popup menu IDs for clarity and safety
+            // Popup menu
             val MENU_EDIT = 1
             val MENU_DELETE = 2
 
-            btnMore.setOnClickListener { anchor ->
-                try {
-                    val popup = PopupMenu(itemView.context, anchor)
-                    popup.menu.add(0, MENU_EDIT, 0, "Edit")
-                    popup.menu.add(0, MENU_DELETE, 1, "Delete")
-                    popup.setOnMenuItemClickListener { menuItem ->
-                        when (menuItem.itemId) {
-                            MENU_EDIT -> onAction(item, Action.EDIT)
-                            MENU_DELETE -> onAction(item, Action.DELETE)
-                        }
-                        true
+            btnMore?.setOnClickListener { view ->
+                val popup = PopupMenu(itemView.context, view)
+                popup.menu.add(0, MENU_EDIT, 0, "Edit")
+                popup.menu.add(0, MENU_DELETE, 1, "Delete")
+                popup.setOnMenuItemClickListener { menuItem ->
+                    when (menuItem.itemId) {
+                        MENU_EDIT -> onAction(item, Action.EDIT)
+                        MENU_DELETE -> onAction(item, Action.DELETE)
                     }
-                    popup.show()
-                } catch (e: Exception) {
-                    // Fallback: if popup fails for any reason, call delete to avoid leaving UI unusable.
-                    e.printStackTrace()
-                    onAction(item, Action.DELETE)
+                    true
                 }
+                popup.show()
             }
         }
+
     }
 
     companion object {

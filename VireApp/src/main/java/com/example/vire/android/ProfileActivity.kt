@@ -2,6 +2,7 @@ package com.example.vire.android
 
 import android.app.AlertDialog
 import android.app.DatePickerDialog
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.Drawable
@@ -19,45 +20,41 @@ class ProfileActivity : BaseActivity() {
     private lateinit var coverPhoto: ImageView
     private lateinit var changeProfilePicButton: ImageButton
     private lateinit var changeCoverButton: ImageButton
-    private lateinit var editThemeButton: Button
-    private lateinit var logoutButton: Button
     private lateinit var usernameText: TextView
     private lateinit var emailText: TextView
     private lateinit var aboutMeText: TextView
     private lateinit var gamesText: TextView
-    private lateinit var editProfileButton: Button
     private lateinit var genderText: TextView
 
-    // Social icons
     private lateinit var socialDiscord: ImageButton
     private lateinit var socialTiktok: ImageButton
     private lateinit var socialInstagram: ImageButton
-
-    // Profile feed
+    private lateinit var addFriendButton: Button
     private lateinit var profileFeedListView: ListView
     private lateinit var profileFeedAdapter: ArrayAdapter<String>
     private val profileFeedPosts = mutableListOf<String>()
 
     private var changingCoverPhoto = false
+    private lateinit var editPenButton: ImageButton
 
-    // Pick image for profile or cover
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             if (changingCoverPhoto) coverPhoto.setImageURI(uri)
             else profileImage.setImageURI(uri)
+            saveProfileImage(uri)
         }
     }
 
-    // Pick custom theme image
     private val pickCustomBackgroundLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             val root = findViewById<ScrollView>(R.id.scrollViewRoot)
             root.background = null
-            val drawable: Drawable? = Drawable.createFromStream(contentResolver.openInputStream(uri), uri.toString())
+            val drawable: Drawable? =
+                Drawable.createFromStream(contentResolver.openInputStream(uri), uri.toString())
             root.background = drawable
             Toast.makeText(this, "Custom theme applied!", Toast.LENGTH_SHORT).show()
         }
@@ -72,33 +69,22 @@ class ProfileActivity : BaseActivity() {
         coverPhoto = findViewById(R.id.coverPhoto)
         changeProfilePicButton = findViewById(R.id.changeProfilePicButton)
         changeCoverButton = findViewById(R.id.changeCoverButton)
-        editThemeButton = findViewById(R.id.editThemeButton)
-        logoutButton = findViewById(R.id.logoutButton)
         usernameText = findViewById(R.id.profileUsername)
         emailText = findViewById(R.id.profileEmail)
         aboutMeText = findViewById(R.id.profileAboutMe)
         gamesText = findViewById(R.id.profileGames)
-        editProfileButton = findViewById(R.id.editProfileButton)
         genderText = findViewById(R.id.profileGender)
 
         socialDiscord = findViewById(R.id.socialDiscord)
         socialTiktok = findViewById(R.id.socialTiktok)
         socialInstagram = findViewById(R.id.socialInstagram)
+        addFriendButton = findViewById(R.id.addFriendButton)
+        editPenButton = findViewById(R.id.editPenButton)
 
-        // Profile feed ListView
         profileFeedListView = findViewById(R.id.profileFeedListView)
-        profileFeedAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, profileFeedPosts)
+        profileFeedAdapter =
+            ArrayAdapter(this, android.R.layout.simple_list_item_1, profileFeedPosts)
         profileFeedListView.adapter = profileFeedAdapter
-
-        // Set profile info
-        val email = intent.getStringExtra("email") ?: "email"
-        val username = intent.getStringExtra("username") ?: "User"
-        usernameText.text = username
-        emailText.text = email
-
-        aboutMeText.text = "About Me: Add a description..."
-        gamesText.text = "Games: Add your favorite TCG games..."
-        genderText.text = "Gender: Not set"
 
         // Change profile pic
         changeProfilePicButton.setOnClickListener {
@@ -112,18 +98,8 @@ class ProfileActivity : BaseActivity() {
             pickImageLauncher.launch("image/*")
         }
 
-        // Edit theme button
-        editThemeButton.setOnClickListener { showThemePickerDialog() }
-
-        // Logout
-        logoutButton.setOnClickListener {
-            Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
-        }
-
-        // Edit profile button
-        editProfileButton.setOnClickListener { showEditProfileDialog() }
+        // Edit profile
+        editPenButton.setOnClickListener { showEditProfileDialog() }
 
         // Social links
         socialDiscord.setOnClickListener { openSocialLink("https://discord.com/users/123456") }
@@ -143,11 +119,13 @@ class ProfileActivity : BaseActivity() {
             popup.menu.add("Settings")
             popup.menu.add("Tournaments")
             popup.menu.add("Rankings")
+            popup.menu.add("Friends")
+            popup.menu.add("Search")
 
             popup.setOnMenuItemClickListener { item ->
                 when (item.title.toString()) {
                     "Home" -> startActivity(Intent(this, HomeActivity::class.java))
-                    "Profile" -> { /* Already here */ }
+                    "Profile" -> startActivity(Intent(this, ProfileActivity::class.java))
                     "Messages" -> startActivity(Intent(this, MessagesActivity::class.java))
                     "Buy/Sell" -> startActivity(Intent(this, BuySellActivity::class.java))
                     "Challenges" -> startActivity(Intent(this, ChallengesActivity::class.java))
@@ -155,6 +133,8 @@ class ProfileActivity : BaseActivity() {
                     "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
                     "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
                     "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
+                    "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
+                    "Search" -> startActivity(Intent(this, SearchActivity::class.java))
                 }
                 true
             }
@@ -164,12 +144,86 @@ class ProfileActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Refresh profile feed from FeedManager
+
+        val loggedInUser = loadUser(this)
+        val profileUsername = intent.getStringExtra("username") ?: loggedInUser?.username ?: ""
+
+        // Set Add Friend visibility
+        addFriendButton.visibility =
+            if (loggedInUser?.username.equals(profileUsername, ignoreCase = true)) Button.GONE
+            else Button.VISIBLE
+
+        // Load profile info
+        val user = loggedInUser
+        if (user != null) {
+            usernameText.text = profileUsername
+            emailText.text = user.email
+            genderText.text = "Gender: ${user.gender}"
+            gamesText.text = "Games: ${user.favoriteGames.joinToString(", ")}"
+            user.profileImageUri?.let { profileImage.setImageURI(it) }
+        }
+
+        // Refresh feed
         profileFeedPosts.clear()
         profileFeedPosts.addAll(
-            FeedManager.getProfileFeed(usernameText.text.toString()).map { "${it.username}: ${it.content}" }
+            FeedManager.getProfileFeed(profileUsername)
+                .map { "${it.username}: ${it.content}" }
         )
         profileFeedAdapter.notifyDataSetChanged()
+    }
+
+    private fun showEditProfileDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_edit_profile, null)
+        val usernameInput = dialogView.findViewById<EditText>(R.id.editUsername)
+        val emailInput = dialogView.findViewById<EditText>(R.id.editEmail)
+        val aboutMeInput = dialogView.findViewById<EditText>(R.id.editAboutMe)
+        val gamesInput = dialogView.findViewById<EditText>(R.id.editGames)
+        val dobInput = dialogView.findViewById<EditText>(R.id.editDOB)
+        val themeBtn = dialogView.findViewById<Button>(R.id.editThemeButtonDialog)
+
+        val user = loadUser(this)
+        user?.let {
+            usernameInput.setText(it.username)
+            emailInput.setText(it.email)
+            aboutMeInput.setText(aboutMeText.text.toString().replace("About Me: ", ""))
+            gamesInput.setText(it.favoriteGames.joinToString(", "))
+            dobInput.setText(it.dateOfBirth)
+        }
+
+        dobInput.inputType = InputType.TYPE_NULL
+        dobInput.setOnClickListener {
+            val calendar = Calendar.getInstance()
+            DatePickerDialog(
+                this,
+                { _, year, month, dayOfMonth -> dobInput.setText("${month + 1}/$dayOfMonth/$year") },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+            ).show()
+        }
+
+        themeBtn.setOnClickListener { showThemePickerDialog() }
+
+        AlertDialog.Builder(this)
+            .setTitle("Edit Profile")
+            .setView(dialogView)
+            .setPositiveButton("Save") { _, _ ->
+                val updatedUser = User(
+                    id = 1,
+                    username = usernameInput.text.toString(),
+                    email = emailInput.text.toString(),
+                    gender = user?.gender ?: "",
+                    dateOfBirth = dobInput.text.toString(),
+                    favoriteGames = gamesInput.text.toString().split(",").map { it.trim() },
+                    profileImageUri = user?.profileImageUri,
+                    is13Plus = user?.is13Plus ?: true
+                )
+                saveUser(updatedUser, this)
+                Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show()
+                onResume()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun showThemePickerDialog() {
@@ -190,78 +244,54 @@ class ProfileActivity : BaseActivity() {
             .show()
     }
 
-    private fun showEditProfileDialog() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_edit_profile, null)
-        val usernameInput = dialogView.findViewById<EditText>(R.id.editUsername)
-        val emailInput = dialogView.findViewById<EditText>(R.id.editEmail)
-        val aboutMeInput = dialogView.findViewById<EditText>(R.id.editAboutMe)
-        val gamesInput = dialogView.findViewById<EditText>(R.id.editGames)
-        val dobInput = dialogView.findViewById<EditText>(R.id.editDOB)
-
-        usernameInput.setText(usernameText.text.toString())
-        emailInput.setText(emailText.text.toString())
-        aboutMeInput.setText(aboutMeText.text.toString().replace("About Me: ", ""))
-        gamesInput.setText(gamesText.text.toString().replace("Games: ", ""))
-
-        dobInput.inputType = InputType.TYPE_NULL
-        dobInput.setOnClickListener {
-            val calendar = Calendar.getInstance()
-            DatePickerDialog(
-                this,
-                { _, year, month, dayOfMonth -> dobInput.setText("${month + 1}/$dayOfMonth/$year") },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-            ).show()
-        }
-
-        val tcgGames = arrayOf(
-            "Magic: The Gathering",
-            "Pokemon TCG",
-            "Yu-Gi-Oh!",
-            "Battle Spirits Saga (BSS)",
-            "Cardfight Vanguard (CFV)",
-            "Lorcana",
-            "Force of Will (FOW)"
-        )
-        val selectedGames = mutableListOf<String>()
-        val existingGames = gamesInput.text.toString().split(", ").filter { it.isNotBlank() }
-        selectedGames.addAll(existingGames)
-
-        gamesInput.setOnClickListener {
-            val checkedItems = BooleanArray(tcgGames.size) { selectedGames.contains(tcgGames[it]) }
-            AlertDialog.Builder(this)
-                .setTitle("Select TCG Games")
-                .setMultiChoiceItems(tcgGames, checkedItems) { _, which, isChecked ->
-                    if (isChecked) selectedGames.add(tcgGames[which])
-                    else selectedGames.remove(tcgGames[which])
-                }
-                .setPositiveButton("OK") { _, _ -> gamesInput.setText(selectedGames.joinToString(", ")) }
-                .setNegativeButton("Cancel", null)
-                .show()
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle("Edit Profile")
-            .setView(dialogView)
-            .setPositiveButton("Save") { _, _ ->
-                usernameText.text = usernameInput.text.toString()
-                emailText.text = emailInput.text.toString()
-                aboutMeText.text = "About Me: ${aboutMeInput.text}"
-                gamesText.text = "Games: ${gamesInput.text}"
-                Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
     private fun openSocialLink(url: String) {
         try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            startActivity(intent)
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(this, "Cannot open link", Toast.LENGTH_SHORT).show()
         }
     }
+
+    /** --- SharedPreferences --- */
+    private fun saveUser(user: User, context: Context) {
+        val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        prefs.edit().apply {
+            putString("username", user.username)
+            putString("email", user.email)
+            putString("gender", user.gender)
+            putString("dob", user.dateOfBirth)
+            putStringSet("games", user.favoriteGames.toSet())
+            putString("profileUri", user.profileImageUri?.toString())
+            putBoolean("is13Plus", user.is13Plus)
+            apply()
+        }
+    }
+
+    private fun saveProfileImage(uri: Uri) {
+        val prefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putString("profileUri", uri.toString()).apply()
+    }
+
+    private fun loadUser(context: Context): User? {
+        val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val username = prefs.getString("username", null) ?: return null
+        val email = prefs.getString("email", "") ?: ""
+        val gender = prefs.getString("gender", "") ?: ""
+        val dob = prefs.getString("dob", "") ?: ""
+        val games = prefs.getStringSet("games", emptySet())?.toList() ?: emptyList()
+        val profileUri = prefs.getString("profileUri", null)?.let { Uri.parse(it) }
+        val is13Plus = prefs.getBoolean("is13Plus", false)
+        return User(
+            id = 1,
+            username = username,
+            email = email,
+            gender = gender,
+            dateOfBirth = dob,
+            favoriteGames = games,
+            profileImageUri = profileUri,
+            is13Plus = is13Plus
+        )
+    }
 }
+

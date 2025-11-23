@@ -40,10 +40,10 @@ class ChallengesActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_challenges)
 
-        // header/hamburger (bottom-right button in layout)
+        // Header/hamburger
         hamburgerButton = findViewById(R.id.hamburgerButton)
         hamburgerButton.setOnClickListener {
-            val popup = android.widget.PopupMenu(this, it)
+            val popup = PopupMenu(this, it)
             popup.menu.add("Home")
             popup.menu.add("Profile")
             popup.menu.add("Messages")
@@ -53,7 +53,8 @@ class ChallengesActivity : BaseActivity() {
             popup.menu.add("Settings")
             popup.menu.add("Tournaments")
             popup.menu.add("Rankings")
-
+            popup.menu.add("Friends")
+            popup.menu.add("Search")
             popup.setOnMenuItemClickListener { item ->
                 when (item.title.toString()) {
                     "Home" -> startActivity(Intent(this, HomeActivity::class.java))
@@ -65,6 +66,8 @@ class ChallengesActivity : BaseActivity() {
                     "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
                     "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
                     "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
+                    "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
+                    "Search" -> startActivity(Intent(this, SearchActivity::class.java))
                 }
                 true
             }
@@ -97,7 +100,9 @@ class ChallengesActivity : BaseActivity() {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
         spinnerGame.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) { filterAndSearch() }
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                filterAndSearch()
+            }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
@@ -110,7 +115,7 @@ class ChallengesActivity : BaseActivity() {
         // FAB create
         fabCreate.setOnClickListener { openCreateDialog() }
 
-        // Prepare notification channel for system notifications (if you use NotificationHelper)
+        // Notification channel
         NotificationHelper.ensureChannel(this)
 
         refreshList()
@@ -134,19 +139,14 @@ class ChallengesActivity : BaseActivity() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle(item.title)
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_challenge_details, null)
-        val tvGame = view.findViewById<TextView>(R.id.detailGame)
-        val tvChallenger = view.findViewById<TextView>(R.id.detailChallenger)
-        val tvOpponent = view.findViewById<TextView>(R.id.detailOpponent)
-        val tvDesc = view.findViewById<TextView>(R.id.detailDesc)
-        val tvStake = view.findViewById<TextView>(R.id.detailStake)
-        val tvCreated = view.findViewById<TextView>(R.id.detailCreated)
-        tvGame.text = item.game
-        tvChallenger.text = "Challenger: ${item.challenger}"
-        tvOpponent.text = "Opponent: ${item.opponent ?: "Open"}"
-        tvDesc.text = item.description
-        tvStake.text = "Stake: ${item.stake}"
-        tvCreated.text = item.prettyCreatedAt()
-
+        view.apply {
+            findViewById<TextView>(R.id.detailGame).text = item.game
+            findViewById<TextView>(R.id.detailChallenger).text = "Challenger: ${item.challenger}"
+            findViewById<TextView>(R.id.detailOpponent).text = "Opponent: ${item.opponent ?: "Open"}"
+            findViewById<TextView>(R.id.detailDesc).text = item.description
+            findViewById<TextView>(R.id.detailStake).text = "Stake: ${item.stake}"
+            findViewById<TextView>(R.id.detailCreated).text = item.prettyCreatedAt(this@ChallengesActivity)
+        }
         builder.setView(view)
         builder.setPositiveButton("Close", null)
         builder.show()
@@ -165,12 +165,11 @@ class ChallengesActivity : BaseActivity() {
                 filterAndSearch()
                 Toast.makeText(this, "Challenge accepted (demo).", Toast.LENGTH_SHORT).show()
 
-                // Notify challenger
                 val notif = NotificationItem(
                     id = NotificationStore.nextId(),
                     toUser = item.challenger,
                     title = "Your challenge was accepted",
-                    message = "${currentUser} accepted your challenge '${item.title}'"
+                    message = "$currentUser accepted your challenge '${item.title}'"
                 )
                 NotificationStore.addNotification(notif)
                 NotificationHelper.showSystemNotification(this, notif.id.toInt(), notif.title, notif.message)
@@ -180,12 +179,10 @@ class ChallengesActivity : BaseActivity() {
     }
 
     private fun confirmDelete(item: ChallengeRequest) {
-        // Only allow deletion by the challenger
         if (!item.challenger.equals(currentUser, ignoreCase = true)) {
             Toast.makeText(this, "Only the challenger can delete this post.", Toast.LENGTH_SHORT).show()
             return
         }
-
         AlertDialog.Builder(this)
             .setTitle("Delete Challenge")
             .setMessage("Delete challenge '${item.title}'?")
@@ -199,7 +196,6 @@ class ChallengesActivity : BaseActivity() {
     }
 
     private fun confirmEdit(item: ChallengeRequest) {
-        // Only allow editing by the challenger
         if (!item.challenger.equals(currentUser, ignoreCase = true)) {
             Toast.makeText(this, "Only the challenger can edit this post.", Toast.LENGTH_SHORT).show()
             return
@@ -220,20 +216,19 @@ class ChallengesActivity : BaseActivity() {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
 
-        // pre-fill form
         etTitle.setText(item.title)
         etDesc.setText(item.description)
         etStake.setText(item.stake)
-        val gamePos = gameList.indexOf(item.game).coerceAtLeast(0)
-        spGame.setSelection(gamePos)
+        spGame.setSelection(gameList.indexOf(item.game).coerceAtLeast(0))
         acOpponent.setText(item.opponent ?: "")
 
-        // opponent autocomplete adapter (mutable)
-        val initialUsers = ArrayList(UserManager.getAllUsers())
+        // --- FIX: fetch usernames only ---
+        val initialUsers = ArrayList(UserManager.getAllUserObjects().map { it.username })
         val userAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, initialUsers)
         acOpponent.setAdapter(userAdapter)
         acOpponent.threshold = 1
         acOpponent.setOnClickListener { acOpponent.showDropDown() }
+
         acOpponent.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun afterTextChanged(s: Editable?) {}
@@ -241,26 +236,25 @@ class ChallengesActivity : BaseActivity() {
                 val q = s?.toString() ?: ""
                 val results = UserManager.searchUsers(q)
                 acOpponent.post {
-                    try {
-                        userAdapter.clear()
-                        userAdapter.addAll(results)
-                        userAdapter.notifyDataSetChanged()
-                        if (results.isNotEmpty()) try { acOpponent.showDropDown() } catch (_: Exception) {}
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+                    userAdapter.clear()
+                    for (user in results) {
+                        userAdapter.add(user.username)  // <-- use the username string
                     }
+                    userAdapter.notifyDataSetChanged()
+
+                    if (results.isNotEmpty()) try { acOpponent.showDropDown() } catch (_: Exception) {}
                 }
             }
         })
 
-        val builder = AlertDialog.Builder(this)
+        AlertDialog.Builder(this)
             .setTitle("Edit Challenge")
             .setView(view)
             .setPositiveButton("Save") { _, _ ->
                 val title = etTitle.text.toString().trim()
                 val game = spGame.selectedItem?.toString() ?: gameList[0]
                 val opponentTextRaw = acOpponent.text.toString().trim().ifEmpty { null }
-                val opponentText = opponentTextRaw?.let { if (it.isBlank()) null else it }
+                val opponentText = opponentTextRaw?.takeIf { it.isNotBlank() }
                 val desc = etDesc.text.toString().trim()
                 val stake = etStake.text.toString().trim().ifEmpty { "None" }
 
@@ -269,13 +263,11 @@ class ChallengesActivity : BaseActivity() {
                     return@setPositiveButton
                 }
 
-                // Validate opponent if provided
                 if (opponentText != null && !UserManager.userExists(opponentText)) {
                     Toast.makeText(this, "Opponent user not found: $opponentText", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
 
-                // Build updated challenge (preserve id, challenger, createdAt, and update status only if needed)
                 val updated = item.copy(
                     title = title,
                     game = game,
@@ -284,18 +276,16 @@ class ChallengesActivity : BaseActivity() {
                     stake = stake
                 )
 
-                val ok = ChallengeManager.updateChallenge(updated)
-                if (ok) {
+                if (ChallengeManager.updateChallenge(updated)) {
                     filterAndSearch()
                     Toast.makeText(this, "Challenge updated.", Toast.LENGTH_SHORT).show()
 
-                    // Optionally: notify the (new) opponent if different
                     if (opponentText != null && !opponentText.equals(item.opponent, ignoreCase = true)) {
                         val notif = NotificationItem(
                             id = NotificationStore.nextId(),
                             toUser = opponentText,
                             title = "You were challenged",
-                            message = "${currentUser} updated a challenge for you: '${updated.title}'"
+                            message = "$currentUser updated a challenge for you: '${updated.title}'"
                         )
                         NotificationStore.addNotification(notif)
                         NotificationHelper.showSystemNotification(this, notif.id.toInt(), notif.title, notif.message)
@@ -305,8 +295,7 @@ class ChallengesActivity : BaseActivity() {
                 }
             }
             .setNegativeButton("Cancel", null)
-
-        builder.show()
+            .show()
     }
 
     private fun openCreateDialog() {
@@ -321,58 +310,47 @@ class ChallengesActivity : BaseActivity() {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
 
-        // Create a mutable adapter backed by an ArrayList — safer for updates
-        val initialUsers = ArrayList(UserManager.getAllUsers())
+        val initialUsers = ArrayList(UserManager.getAllUserObjects().map { it.username })
         val userAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, initialUsers)
         acOpponent.setAdapter(userAdapter)
         acOpponent.threshold = 1
         acOpponent.setOnClickListener { acOpponent.showDropDown() }
 
-        // Safe text watcher updates
         acOpponent.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun afterTextChanged(s: Editable?) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                try {
-                    val q = s?.toString() ?: ""
-                    val results = UserManager.searchUsers(q)
-                    // update adapter on UI thread
-                    acOpponent.post {
-                        try {
-                            userAdapter.clear()
-                            userAdapter.addAll(results)
-                            userAdapter.notifyDataSetChanged()
-                            if (results.isNotEmpty()) {
-                                try { acOpponent.showDropDown() } catch (ignored: Exception) {}
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
+                val q = s?.toString() ?: ""
+                val results = UserManager.searchUsers(q)
+                acOpponent.post {
+                    userAdapter.clear()
+                    for (user in results) {
+                        userAdapter.add(user.username)
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                    userAdapter.notifyDataSetChanged()
+
+                    if (results.isNotEmpty()) try { acOpponent.showDropDown() } catch (_: Exception) {}
                 }
             }
         })
 
-        val builder = AlertDialog.Builder(this)
+        AlertDialog.Builder(this)
             .setTitle("Create Challenge")
             .setView(view)
             .setPositiveButton("Post") { _, _ ->
                 val title = etTitle.text.toString().trim()
                 val game = spGame.selectedItem?.toString() ?: games[1]
                 val opponentTextRaw = acOpponent.text.toString().trim().ifEmpty { null }
-                val opponentText = opponentTextRaw?.let { if (it.isBlank()) null else it }
+                val opponentText = opponentTextRaw?.takeIf { it.isNotBlank() }
                 val desc = etDesc.text.toString().trim()
                 val stake = etStake.text.toString().trim().ifEmpty { "None" }
-                val challenger = currentUser // TODO: replace with current signed-in user
+                val challenger = currentUser
 
                 if (title.isEmpty()) {
                     Toast.makeText(this, "Please add a title", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
 
-                // Validate opponent if provided
                 if (opponentText != null && !UserManager.userExists(opponentText)) {
                     Toast.makeText(this, "Opponent user not found: $opponentText", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
@@ -391,22 +369,18 @@ class ChallengesActivity : BaseActivity() {
                 filterAndSearch()
                 Toast.makeText(this, "Challenge posted.", Toast.LENGTH_SHORT).show()
 
-                // If opponent specified, create/store a notification and show a system notification too
                 if (opponentText != null) {
                     val notif = NotificationItem(
                         id = NotificationStore.nextId(),
                         toUser = opponentText,
                         title = "You were challenged",
-                        message = "${challenger} challenged you to '${title}'"
+                        message = "$challenger challenged you to '$title'"
                     )
                     NotificationStore.addNotification(notif)
-                    // system notification
                     NotificationHelper.showSystemNotification(this, notif.id.toInt(), notif.title, notif.message)
-                    // TODO: If you have device tokens, trigger remote push (FCM) here
                 }
             }
             .setNegativeButton("Cancel", null)
-
-        builder.show()
+            .show()
     }
 }

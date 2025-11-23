@@ -64,6 +64,7 @@
                     android:layout_height="wrap_content"/>
             </LinearLayout>
 
+            <!-- Logout -->
             <LinearLayout
                 android:id="@+id/logoutOption"
                 android:orientation="horizontal"
@@ -73,7 +74,23 @@
                 android:background="?attr/selectableItemBackground"
                 android:layout_marginTop="8dp">
                 <TextView
-                    android:text="Log Out / Delete Account"
+                    android:text="Log Out"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+
+            <!-- Delete Profile -->
+            <LinearLayout
+                android:id="@+id/deleteProfileOption"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:layout_marginTop="8dp">
+                <TextView
+                    android:text="Delete Profile"
+                    android:textColor="#D32F2F"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"/>
             </LinearLayout>
