@@ -1,10 +1,9 @@
 package com.example.vire.android
 
-
 object GameResultManager {
 
     fun recordGameResult(username: String, result: String, opponent: String) {
-        // Create message
+
         val message = when (result.lowercase()) {
             "win" -> "won against $opponent!"
             "loss" -> "lost to $opponent."
@@ -12,10 +11,11 @@ object GameResultManager {
             else -> return
         }
 
-        // Create Post object
-        val post = Post(username, message)
-
-        // Add post to FeedManager (updates global feed + profile feed)
-        FeedManager.addPost(post)
+        // NEW: use updated FeedManager API
+        FeedManager.addPost(
+            username = username,
+            content = message,
+            imageUri = null
+        )
     }
 }

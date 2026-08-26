@@ -13,7 +13,7 @@ open class BaseActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
     }
 
-    protected fun setupHamburgerMenu() {
+    protected open fun setupHamburgerMenu() {
         val hamburgerButton = findViewById<ImageButton>(R.id.hamburgerButton)
         hamburgerButton?.setOnClickListener { view ->
             showHamburgerMenu(view)

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="20dp"
+    android:background="@color/light_gray">
+
+    <!-- TOP BAR: Add Friend (left) + X (right) -->
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Add Friend Title -->
+        <TextView
+            android:id="@+id/addFriendHeader"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Add Friend"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"/>
+
+        <!-- Close (X) Button -->
+        <ImageButton
+            android:id="@+id/closeAddFriend"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_close"
+            android:tint="@android:color/black"
+            android:contentDescription="Close"/>
+    </LinearLayout>
+
+    <!-- Username Input -->
+    <EditText
+        android:id="@+id/friendUsernameInput"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="Enter username"
+        android:padding="12dp"
+        android:background="@drawable/search_bar_bg"
+        android:textColor="@android:color/black"
+        android:textColorHint="@color/dark_gray"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- Add Friend Button -->
+    <Button
+        android:id="@+id/addFriendSubmit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Send Friend Request"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/purple_500"
+        android:padding="12dp"/>
+</LinearLayout>

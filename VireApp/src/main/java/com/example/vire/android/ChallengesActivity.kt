@@ -90,7 +90,6 @@ class ChallengesActivity : BaseActivity() {
                 ChallengeAdapter.Action.ACCEPT -> confirmAccept(item)
                 ChallengeAdapter.Action.EDIT -> confirmEdit(item)
                 ChallengeAdapter.Action.DELETE -> confirmDelete(item)
-                else -> Unit
             }
         }
         recycler.adapter = adapter

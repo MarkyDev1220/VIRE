@@ -1,64 +1,125 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:background="#FAFAFA">
+    android:background="@color/darker_gray"
+    android:padding="16dp">
 
-    <!-- Post Input -->
+    <!-- TOP BAR -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:id="@+id/newPostTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Post"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="8dp"/>
+
+        <ImageButton
+            android:id="@+id/closeNewPost"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="8dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_close"
+            android:tint="@android:color/white"
+            android:contentDescription="Close"/>
+    </RelativeLayout>
+
+
+    <!-- PROFILE HEADER -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+
+        <ImageView
+            android:id="@+id/userAvatar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_profile_placeholder"
+            android:background="@drawable/circle_bg"
+            android:contentDescription="User Avatar"
+            android:layout_marginEnd="10dp"/>
+
+        <TextView
+            android:id="@+id/userName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mark Jones"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
+    </LinearLayout>
+
+    <!-- POST INPUT -->
     <EditText
         android:id="@+id/postEditText"
         android:layout_width="match_parent"
         android:layout_height="150dp"
         android:hint="What's on your mind?"
         android:gravity="top|start"
-        android:background="@android:drawable/edit_text"
+        android:background="@drawable/search_bar_bg"
         android:padding="12dp"
-        android:textColor="#212121"
+        android:textColor="@android:color/black"
+        android:textColorHint="@color/black"
         android:textSize="16sp"
         android:layout_marginBottom="12dp"/>
 
-    <!-- Media Buttons -->
+    <!-- POST BUTTON -->
+    <Button
+        android:id="@+id/postButton"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:text="Post"
+        android:backgroundTint="@color/purple_500"
+        android:textColor="@android:color/white"
+        android:textAllCaps="false"
+        android:paddingVertical="8dp"
+        android:textSize="14sp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- MEDIA BAR -->
     <LinearLayout
+        android:id="@+id/mediaBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_marginBottom="16dp">
+        android:layout_marginTop="8dp">
 
         <ImageButton
             android:id="@+id/addPhotoButton"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:layout_marginEnd="16dp"
-            android:background="@drawable/circle_bg"
-            android:padding="12dp"
-            android:src="@android:drawable/ic_menu_camera"
-            android:contentDescription="Add Photo"
-            android:tint="#FFFFFF"/>
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/ic_gallery"
+            android:background="@android:color/transparent"
+            android:tint="@android:color/white"
+            android:contentDescription="Add Photo"/>
 
         <ImageButton
             android:id="@+id/addVideoButton"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:background="@drawable/circle_bg"
-            android:padding="12dp"
-            android:src="@android:drawable/ic_menu_slideshow"
-            android:contentDescription="Add Video"
-            android:tint="#FFFFFF"/>
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/ic_video"
+            android:background="@android:color/transparent"
+            android:tint="@android:color/white"
+            android:contentDescription="Add Video"/>
     </LinearLayout>
-
-    <!-- Post Button -->
-    <Button
-        android:id="@+id/postButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Post"
-        android:backgroundTint="#009688"
-        android:textColor="#FFFFFF"
-        android:textAllCaps="false"
-        android:padding="12dp"
-        android:textSize="16sp"/>
 </LinearLayout>
-

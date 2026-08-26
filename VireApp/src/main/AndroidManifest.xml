@@ -8,8 +8,8 @@
 
         <!-- Signup/Login/Profile/Home Activities -->
         <activity android:name=".ProfileActivity" />
-        <activity android:name=".MainActivity" />
         <activity android:name=".MessagesActivity" />
+        <activity android:name=".HomeActivity" />
         <activity android:name=".BuySellActivity" />
         <activity android:name=".ChallengesActivity" />
         <activity android:name=".QuestActivity" />
@@ -25,11 +25,12 @@
         <activity android:name=".NewPostActivity" />
         <activity android:name=".FriendsActivity" />
         <activity android:name=".SearchActivity" />
+        <activity android:name=".AddFriendActivity" />
 
 
         <!-- Launcher Activity -->
         <activity
-            android:name=".HomeActivity"
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

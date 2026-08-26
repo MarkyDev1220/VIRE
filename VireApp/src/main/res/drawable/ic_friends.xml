@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Person 1 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M9,8a3,3 0 1,0 0,-6a3,3 0 1,0 0,6z"/>
+
+    <!-- Person 1 Body -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M15,20v-2c0,-2.21 -3.58,-4 -8,-4s-8,1.79 -8,4v2h16z"/>
+
+    <!-- Person 2 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M19,8a3,3 0 1,0 0,-6a3,3 0 1,0 0,6z"/>
+
+    <!-- Person 2 Body -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,20v-2c0,-2.21 -3.58,-4 -8,-4c-0.69,0 -1.35,0.06 -2,0.17c2.33,1.02 4,2.53 4,4.83v1h6z"/>
+</vector>

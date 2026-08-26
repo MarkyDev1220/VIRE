@@ -4,42 +4,125 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="@color/darker_gray">
 
-    <!-- News Feed List -->
+    <View
+        android:id="@+id/topSpacer"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:background="@android:color/transparent"/>
 
-    <!-- Floating Add Post Button (+) on bottom-left -->
+
+    <!-- TOP POST COMPOSER -->
+    <LinearLayout
+        android:id="@+id/postComposer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:background="@color/dark_gray"
+        android:gravity="center_vertical"
+        android:layout_marginTop="20dp"
+        android:layout_below="@id/topSpacer">
+
+
+    <ImageView
+            android:id="@+id/userAvatar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_profile_placeholder"
+            android:background="@drawable/circle_bg"
+            android:contentDescription="User Avatar"
+            android:layout_marginEnd="10dp"/>
+
+        <TextView
+            android:id="@+id/createPostPrompt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="What's on your mind?"
+            android:textColor="@color/light_gray"
+            android:textSize="16sp"
+            android:background="@drawable/search_bar_bg"
+            android:padding="12dp"
+            android:gravity="center_vertical"/>
+    </LinearLayout>
+
+    <!-- NEWSFEED LIST -->
     <ListView
         android:id="@+id/feedListView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/fabAddPost"
-        android:layout_alignParentTop="true"
-        android:layout_marginTop="17dp"
-        android:layout_marginBottom="15dp" />
+        android:layout_below="@id/postComposer"
+        android:layout_above="@id/bottomNav"
+        android:divider="@color/dark_blue"
+        android:dividerHeight="8dp"
+        android:padding="8dp"
+        android:layout_marginBottom="4dp"/>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAddPost"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <!-- BOTTOM NAVIGATION BAR -->
+    <LinearLayout
+        android:id="@+id/bottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="65dp"
+        android:orientation="horizontal"
+        android:background="@color/purple_700"
+        android:gravity="center"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentStart="true"
-        android:layout_margin="16dp"
-        android:contentDescription="Add Post"
-        android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="@android:color/holo_purple" />
+        android:paddingHorizontal="12dp">
 
-    <!-- Floating Hamburger Menu Button on bottom-right -->
-    <ImageButton
-        android:id="@+id/hamburgerButton"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_margin="16dp"
-        android:background="@drawable/circle_bg"
-        android:src="@android:drawable/ic_menu_sort_by_size"
-        android:contentDescription="Menu"
-        android:tint="@android:color/white" />
+        <!-- Home -->
+        <ImageButton
+            android:id="@+id/navHome"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/ic_home"
+            android:background="@android:color/transparent"
+            android:tint="@android:color/white"
+            android:contentDescription="Home"/>
 
+        <!-- Profile -->
+        <ImageButton
+            android:id="@+id/navProfile"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/ic_profile"
+            android:background="@android:color/transparent"
+            android:tint="@android:color/white"
+            android:contentDescription="Profile"/>
+
+        <!-- Create Post (+) -->
+        <ImageButton
+            android:id="@+id/navCreatePost"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/ic_add"
+            android:background="@drawable/circle_bg"
+            android:tint="@android:color/white"
+            android:contentDescription="Create Post"/>
+
+        <!-- Friends -->
+        <ImageButton
+            android:id="@+id/navFriends"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/ic_friends"
+            android:background="@android:color/transparent"
+            android:tint="@android:color/white"
+            android:contentDescription="Friends"/>
+
+        <!-- Menu (Hamburger) -->
+        <ImageButton
+            android:id="@+id/navMenu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/ic_menu_hamburger"
+            android:background="@android:color/transparent"
+            android:tint="@android:color/white"
+            android:contentDescription="Menu"/>
+    </LinearLayout>
 </RelativeLayout>
