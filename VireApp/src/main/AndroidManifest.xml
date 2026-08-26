@@ -1,36 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <application
+
+<application
         android:allowBackup="false"
         android:supportsRtl="true"
         android:theme="@style/Theme.VIRE">
 
         <!-- Signup/Login/Profile/Home Activities -->
-        <activity android:name=".ProfileActivity" />
-        <activity android:name=".MessagesActivity" />
-        <activity android:name=".HomeActivity" />
-        <activity android:name=".BuySellActivity" />
-        <activity android:name=".ChallengesActivity" />
-        <activity android:name=".QuestActivity" />
-        <activity android:name=".SettingsActivity" />
-        <activity android:name=".TournamentsActivity" />
-        <activity android:name=".SignupActivity" />
-        <activity android:name=".DrawerActivity" />
-        <activity android:name=".ForgotPasswordActivity" />
-        <activity android:name=".RankingsActivity" />
-        <activity android:name=".NewMessagesActivity" />
-        <activity android:name=".BlockedUsersActivity" />
-        <activity android:name=".TwoFactorActivity" />
-        <activity android:name=".NewPostActivity" />
-        <activity android:name=".FriendsActivity" />
-        <activity android:name=".SearchActivity" />
-        <activity android:name=".AddFriendActivity" />
+        <activity android:name=".android.ProfileActivity" />
+        <activity android:name=".android.MessagesActivity" />
+        <activity android:name=".android.MainActivity" />
+        <activity android:name=".android.BuySellActivity" />
+        <activity android:name=".android.ChallengesActivity" />
+        <activity android:name=".android.QuestActivity" />
+        <activity android:name=".android.SettingsActivity" />
+        <activity android:name=".android.TournamentsActivity" />
+        <activity android:name=".android.SignupActivity" />
+        <activity android:name=".android.DrawerActivity" />
+        <activity android:name=".android.ForgotPasswordActivity" />
+        <activity android:name=".android.RankingsActivity" />
+        <activity android:name=".android.NewMessagesActivity" />
+        <activity android:name=".android.BlockedUsersActivity" />
+        <activity android:name=".android.TwoFactorActivity" />
+        <activity android:name=".android.NewPostActivity" />
+        <activity android:name=".android.FriendsActivity" />
+        <activity android:name=".android.SearchActivity" />
+        <activity android:name=".android.AddFriendActivity" />
 
 
         <!-- Launcher Activity -->
         <activity
-            android:name=".MainActivity"
+            android:name=".android.HomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

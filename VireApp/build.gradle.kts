@@ -4,10 +4,10 @@ plugins {
 }
 
 android {
-    namespace = "com.example.vire.android"
+    namespace = "com.vire.android"
     compileSdk = 37
     defaultConfig {
-        applicationId = "com.example.vire.android"
+        applicationId = "com.vire.android"
         minSdk = 30
         targetSdk = 35
         versionCode = 1

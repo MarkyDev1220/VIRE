@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "com.example.vire.shared"
+        namespace = "com.vire.shared"
         compileSdk = 37
         minSdk = 30
 
