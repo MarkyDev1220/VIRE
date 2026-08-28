@@ -10,7 +10,7 @@
         <!-- Signup/Login/Profile/Home Activities -->
         <activity android:name=".android.ProfileActivity" />
         <activity android:name=".android.MessagesActivity" />
-        <activity android:name=".android.MainActivity" />
+        <activity android:name=".android.HomeActivity" />
         <activity android:name=".android.BuySellActivity" />
         <activity android:name=".android.ChallengesActivity" />
         <activity android:name=".android.QuestActivity" />
@@ -31,7 +31,7 @@
 
         <!-- Launcher Activity -->
         <activity
-            android:name=".android.HomeActivity"
+            android:name=".android.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
