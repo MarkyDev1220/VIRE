@@ -9,7 +9,7 @@ android {
     defaultConfig {
         applicationId = "com.vire.android"
         minSdk = 30
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
     }
@@ -43,6 +43,16 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.foundation.layout.android)
     implementation("com.google.android.material:material:1.9.0")
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("com.google.android.material:material:1.12.0")
+
+    // Firebase & Picasso
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
+    implementation(libs.picasso)
 
     debugImplementation(libs.compose.ui.tooling)
 }

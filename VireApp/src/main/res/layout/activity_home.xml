@@ -4,14 +4,15 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/darker_gray">
+    android:background="@color/darker_gray"
+    android:fitsSystemWindows="true"
+    android:paddingBottom="16dp">
 
     <View
         android:id="@+id/topSpacer"
         android:layout_width="match_parent"
         android:layout_height="20dp"
         android:background="@android:color/transparent"/>
-
 
     <!-- TOP POST COMPOSER -->
     <LinearLayout
@@ -25,8 +26,7 @@
         android:layout_marginTop="20dp"
         android:layout_below="@id/topSpacer">
 
-
-    <ImageView
+        <ImageView
             android:id="@+id/userAvatar"
             android:layout_width="40dp"
             android:layout_height="40dp"
@@ -126,3 +126,4 @@
             android:contentDescription="Menu"/>
     </LinearLayout>
 </RelativeLayout>
+

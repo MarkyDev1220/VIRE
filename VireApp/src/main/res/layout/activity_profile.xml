@@ -4,7 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FAFAFA"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:fitsSystemWindows="true"
+    android:paddingBottom="24dp">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -18,6 +20,7 @@
             android:layout_height="180dp"
             android:scaleType="centerCrop"
             android:src="@drawable/default_cover"
+            android:elevation="6dp"
             android:contentDescription="Cover Photo" />
 
         <!-- Change Cover Photo Button -->
@@ -43,6 +46,7 @@
             android:layout_marginTop="-60dp"
             android:background="@drawable/profile_image_bg"
             android:padding="4dp"
+            android:elevation="6dp"
             android:src="@drawable/ic_profile_placeholder"
             android:contentDescription="Profile Picture" />
 
@@ -58,7 +62,7 @@
             android:tint="@android:color/white"
             android:contentDescription="Change Profile Picture" />
 
-        <!-- Edit Pen Button (moved below cover photo) -->
+        <!-- Edit Pen Button -->
         <ImageButton
             android:id="@+id/editPenButton"
             android:layout_width="40dp"

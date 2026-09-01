@@ -12,6 +12,7 @@ fun saveUser(user: User, context: Context) {
         putString("dob", user.dateOfBirth)
         putStringSet("games", user.favoriteGames.toSet())
         putString("profileUri", user.profileImageUri?.toString())
+        putString("coverImageUri", user.coverImageUri?.toString())
         putBoolean("is13Plus", user.is13Plus)
         apply()
     }
@@ -25,6 +26,7 @@ fun loadUser(context: Context): User? {
     val dob = prefs.getString("dob", "") ?: ""
     val games = prefs.getStringSet("games", emptySet())?.toList() ?: emptyList()
     val profileUri = prefs.getString("profileUri", null)?.let { Uri.parse(it) }
+    val coverImageUri = prefs.getString("coverImageUri", null)?.let { Uri.parse(it) }
     val is13Plus = prefs.getBoolean("is13Plus", false)
     return User(
         id = 1,
@@ -34,6 +36,7 @@ fun loadUser(context: Context): User? {
         dateOfBirth = dob,
         favoriteGames = games,
         profileImageUri = profileUri,
-        is13Plus = is13Plus
+        coverImageUri = coverImageUri,
+        is13Plus = is13Plus,
     )
 }

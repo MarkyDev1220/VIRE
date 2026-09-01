@@ -11,6 +11,7 @@ data class User(
     val favoriteGames: List<String>,
     val profileImageUri: Uri? = null,
     val is13Plus: Boolean = true,
-    val friends: MutableList<Long> = mutableListOf()
+    val friends: MutableList<Long> = mutableListOf(),
+    val coverImageUri: Uri?
 )
 

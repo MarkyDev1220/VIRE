@@ -30,17 +30,30 @@ class SearchActivity : BaseActivity() {
         // Load all users except the logged-in user
         updateUserList(UserManager.getAllUserObjects().filter { it.id != loggedInUserId })
 
-        // Search input listener
+        // SEARCH INPUT LISTENER (FIXED)
         searchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val results = UserManager.searchUsers(s.toString(), excludeUserId = loggedInUserId)
+                val query = s.toString().trim().lowercase()
+
+                if (query.isEmpty()) {
+                    updateUserList(UserManager.getAllUserObjects().filter { it.id != loggedInUserId })
+                    return
+                }
+
+                // FIXED SEARCH: CASE-INSENSITIVE + USERNAME MATCHING
+                val results = UserManager.getAllUserObjects()
+                    .filter { it.id != loggedInUserId }
+                    .filter { it.username.lowercase().contains(query) }
+
                 updateUserList(results)
             }
+
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // Click: view profile
+        // CLICK: VIEW PROFILE
         usersListView.setOnItemClickListener { _, _, position, _ ->
             val selectedUser = displayedUsers[position]
             val intent = Intent(this, ProfileActivity::class.java)
@@ -48,7 +61,7 @@ class SearchActivity : BaseActivity() {
             startActivity(intent)
         }
 
-        // Long click: add/remove friend
+        // LONG CLICK: ADD/REMOVE FRIEND
         usersListView.setOnItemLongClickListener { _, _, position, _ ->
             val selectedUser = displayedUsers[position]
             val currentUser = UserManager.getUserById(loggedInUserId)
@@ -81,11 +94,12 @@ class SearchActivity : BaseActivity() {
             true
         }
 
-        // Hamburger menu (bottom-right)
+        // HAMBURGER MENU
         val hamburgerButton = findViewById<ImageButton>(R.id.hamburgerButton)
         hamburgerButton.setOnClickListener { showMenu(it) }
     }
 
+    // FIXED LIST UPDATE
     private fun updateUserList(users: List<User>) {
         displayedUsers.clear()
         displayedUsers.addAll(users)

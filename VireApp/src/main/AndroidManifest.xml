@@ -1,43 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+        <!-- Core permissions your app needs -->
+        <uses-permission android:name="android.permission.INTERNET" />
+        <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-<application
-        android:allowBackup="false"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.VIRE">
+        <!-- Needed for uploading profile pictures, backgrounds, posts -->
+        <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+        <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+        <!-- Android 13+ photo picker compatibility -->
+        <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
-        <!-- Signup/Login/Profile/Home Activities -->
-        <activity android:name=".android.ProfileActivity" />
-        <activity android:name=".android.MessagesActivity" />
-        <activity android:name=".android.HomeActivity" />
-        <activity android:name=".android.BuySellActivity" />
-        <activity android:name=".android.ChallengesActivity" />
-        <activity android:name=".android.QuestActivity" />
-        <activity android:name=".android.SettingsActivity" />
-        <activity android:name=".android.TournamentsActivity" />
-        <activity android:name=".android.SignupActivity" />
-        <activity android:name=".android.DrawerActivity" />
-        <activity android:name=".android.ForgotPasswordActivity" />
-        <activity android:name=".android.RankingsActivity" />
-        <activity android:name=".android.NewMessagesActivity" />
-        <activity android:name=".android.BlockedUsersActivity" />
-        <activity android:name=".android.TwoFactorActivity" />
-        <activity android:name=".android.NewPostActivity" />
-        <activity android:name=".android.FriendsActivity" />
-        <activity android:name=".android.SearchActivity" />
-        <activity android:name=".android.AddFriendActivity" />
+        <!-- Needed for notifications (Android 13+) -->
+        <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+        <!-- Needed if you use any foreground services (uploading, messaging, etc.) -->
+        <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-        <!-- Launcher Activity -->
-        <activity
-            android:name=".android.MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+        <!-- If your app uses camera for profile pictures -->
+        <uses-permission android:name="android.permission.CAMERA" />
 
-    </application>
+        <application
+            android:allowBackup="false"
+            android:supportsRtl="true"
+            android:theme="@style/Theme.VIRE">
+
+                <!-- Signup/Login/Profile/Home Activities -->
+                <activity android:name=".android.ProfileActivity" />
+                <activity android:name=".android.MessagesActivity" />
+                <activity android:name=".android.MainActivity" />
+                <activity android:name=".android.BuySellActivity" />
+                <activity android:name=".android.ChallengesActivity" />
+                <activity android:name=".android.QuestActivity" />
+                <activity android:name=".android.SettingsActivity" />
+                <activity android:name=".android.TournamentsActivity" />
+                <activity android:name=".android.SignupActivity" />
+                <activity android:name=".android.DrawerActivity" />
+                <activity android:name=".android.ForgotPasswordActivity" />
+                <activity android:name=".android.RankingsActivity" />
+                <activity android:name=".android.NewMessagesActivity" />
+                <activity android:name=".android.BlockedUsersActivity" />
+                <activity android:name=".android.TwoFactorActivity" />
+                <activity android:name=".android.NewPostActivity" />
+                <activity android:name=".android.FriendsActivity" />
+                <activity android:name=".android.SearchActivity" />
+                <activity android:name=".android.AddFriendActivity" />
+
+                <!-- Launcher Activity -->
+                <activity
+                    android:name=".android.HomeActivity"
+                    android:exported="true">
+                        <intent-filter>
+                                <action android:name="android.intent.action.MAIN" />
+                                <category android:name="android.intent.category.LAUNCHER" />
+                        </intent-filter>
+                </activity>
+
+        </application>
 </manifest>
+

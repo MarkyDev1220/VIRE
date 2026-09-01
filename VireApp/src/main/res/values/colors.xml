@@ -13,4 +13,13 @@
     <color name="navy_blue">#000080</color>
     <color name="midnight_blue">#191970</color>
     <color name="black">#000000</color>
+    <color name="profile_bg_light">#FAFAFA</color>
+    <color name="profile_bg_dark">#FAFAFA</color>
+
+    <color name="text_primary">#212121</color>
+    <color name="text_primary_dark">#212121</color>
+
+    <color name="text_secondary">#333333</color>
+    <color name="text_secondary_dark">#333333</color>
+
 </resources>
