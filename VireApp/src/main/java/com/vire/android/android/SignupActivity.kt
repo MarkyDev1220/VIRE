@@ -1,3 +1,4 @@
+// SignupActivity.kt
 package com.vire.android.android
 
 import android.app.DatePickerDialog
@@ -15,25 +16,24 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.vire.android.databinding.ActivitySignupBinding
 import java.util.*
 
+
 class SignupActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySignupBinding
     private var profileImageUri: Uri? = null
-    private var coverImageUri: Uri? = null
     private val selectedGames = mutableListOf<String>()
+    private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
     private val genderOptions = arrayOf(
         "Male","Female","Non-binary","Transgender Male","Transgender Female","Other / Prefer not to say"
     )
-
     private val tcgGames = arrayOf(
         "Magic: The Gathering","Pokemon TCG","Yu-Gi-Oh!","Battle Spirits Saga (BSS)",
         "Cardfight Vanguard (CFV)","Lorcana","Force of Will (FOW)"
     )
 
-    private val pickImageLauncher = registerForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             profileImageUri = it
             binding.profileImageView.setImageURI(uri)
@@ -57,12 +57,8 @@ class SignupActivity : AppCompatActivity() {
         binding.editDOB.inputType = InputType.TYPE_NULL
         binding.editDOB.setOnClickListener {
             val cal = Calendar.getInstance()
-            DatePickerDialog(
-                this,
-                { _, y, m, d -> binding.editDOB.setText("${m + 1}/$d/$y") },
-                cal.get(Calendar.YEAR),
-                cal.get(Calendar.MONTH),
-                cal.get(Calendar.DAY_OF_MONTH)
+            DatePickerDialog(this, { _, y, m, d -> binding.editDOB.setText("${m+1}/$d/$y") },
+                cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)
             ).show()
         }
 
@@ -72,14 +68,10 @@ class SignupActivity : AppCompatActivity() {
             AlertDialog.Builder(this)
                 .setTitle("Select TCG Games")
                 .setMultiChoiceItems(tcgGames, checkedItems) { _, which, isChecked ->
-                    if (isChecked) selectedGames.add(tcgGames[which])
-                    else selectedGames.remove(tcgGames[which])
+                    if(isChecked) selectedGames.add(tcgGames[which]) else selectedGames.remove(tcgGames[which])
                 }
-                .setPositiveButton("OK") { _, _ ->
-                    binding.gamesSelect.setText(
-                        if (selectedGames.isNotEmpty()) selectedGames.joinToString(", ")
-                        else "Select Games"
-                    )
+                .setPositiveButton("OK"){_,_ ->
+                    binding.gamesSelect.setText(if(selectedGames.isNotEmpty()) selectedGames.joinToString(", ") else "Select Games")
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
@@ -91,7 +83,7 @@ class SignupActivity : AppCompatActivity() {
             finish()
         }
 
-        // SIGNUP BUTTON — FULL FIREBASE IMPLEMENTATION
+        // Sign-up button
         binding.signupButton.setOnClickListener {
             val email = binding.emailEditText.text.toString().trim()
             val username = binding.usernameEditText.text.toString().trim()
@@ -102,7 +94,7 @@ class SignupActivity : AppCompatActivity() {
             val is13Plus = binding.check13Plus.isChecked
 
             if (email.isEmpty() || username.isEmpty() || createPassword.isEmpty()) {
-                Toast.makeText(this, "Please fill out all fields", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -112,50 +104,45 @@ class SignupActivity : AppCompatActivity() {
             }
 
             if (!is13Plus) {
-                Toast.makeText(this, "You must be 13+", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "You must be 13 or older", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val auth = FirebaseAuth.getInstance()
-
-            // 1️⃣ Create Firebase Auth user
+            // Create Firebase user
             auth.createUserWithEmailAndPassword(email, createPassword)
-                .addOnSuccessListener { result ->
-                    val uid = result.user?.uid ?: return@addOnSuccessListener
+                .addOnSuccessListener { authResult ->
+                    val uid = authResult.user?.uid ?: return@addOnSuccessListener
 
-                    // 2️⃣ Build Firestore user document
-                    val userMap = hashMapOf(
+                    // Save user data to Firestore
+                    val user = hashMapOf(
                         "uid" to uid,
                         "username" to username,
-                        "username_lowercase" to username.lowercase(),
                         "email" to email,
                         "gender" to gender,
                         "dateOfBirth" to dobText,
                         "favoriteGames" to selectedGames,
+                        "is13Plus" to is13Plus,
                         "profileImageUrl" to "",
                         "coverImageUrl" to "",
-                        "is13Plus" to is13Plus
+                        "aboutMe" to ""
                     )
 
-                    // 3️⃣ Save to Firestore
-                    val db = FirebaseFirestore.getInstance()
-                    db.collection("users")
-                        .document(uid)
-                        .set(userMap)
+                    db.collection("users").document(uid).set(user)
                         .addOnSuccessListener {
                             Toast.makeText(this, "Signup successful!", Toast.LENGTH_SHORT).show()
 
                             val intent = Intent(this, ProfileActivity::class.java)
                             intent.putExtra("uid", uid)
+                            intent.putExtra("username", username)
                             startActivity(intent)
                             finish()
                         }
-                        .addOnFailureListener {
-                            Toast.makeText(this, "Failed to save user", Toast.LENGTH_SHORT).show()
+                        .addOnFailureListener { e ->
+                            Toast.makeText(this, "Failed to save user data: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
                 }
-                .addOnFailureListener {
-                    Toast.makeText(this, "Signup failed: ${it.message}", Toast.LENGTH_SHORT).show()
+                .addOnFailureListener { e ->
+                    Toast.makeText(this, "Signup failed: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
         }
     }

@@ -6,6 +6,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
+import com.google.firebase.firestore.FirebaseFirestore
 import com.vire.android.R
 
 class SearchActivity : BaseActivity() {
@@ -16,10 +17,14 @@ class SearchActivity : BaseActivity() {
     private val displayedUsers = mutableListOf<User>()
 
     private val loggedInUserId = 1L // Replace with actual logged-in user ID
+    private val db = FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search)
+
+        // Initialize Hamburger Menu from BaseActivity
+        setupHamburgerMenu()
 
         searchInput = findViewById(R.id.searchInput)
         usersListView = findViewById(R.id.usersListView)
@@ -27,54 +32,39 @@ class SearchActivity : BaseActivity() {
         usersAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, mutableListOf())
         usersListView.adapter = usersAdapter
 
-        // Load all users except the logged-in user
-        updateUserList(UserManager.getAllUserObjects().filter { it.id != loggedInUserId })
+        // Load all users from Firestore
+        loadAllUsers()
 
-        // SEARCH INPUT LISTENER (FIXED)
+        // Search input listener
         searchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val query = s.toString().trim().lowercase()
-
-                if (query.isEmpty()) {
-                    updateUserList(UserManager.getAllUserObjects().filter { it.id != loggedInUserId })
-                    return
-                }
-
-                // FIXED SEARCH: CASE-INSENSITIVE + USERNAME MATCHING
-                val results = UserManager.getAllUserObjects()
-                    .filter { it.id != loggedInUserId }
-                    .filter { it.username.lowercase().contains(query) }
-
-                updateUserList(results)
+                filterUsers(s.toString())
             }
-
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // CLICK: VIEW PROFILE
+        // Click: view profile
         usersListView.setOnItemClickListener { _, _, position, _ ->
             val selectedUser = displayedUsers[position]
             val intent = Intent(this, ProfileActivity::class.java)
+            intent.putExtra("uid", selectedUser.id.toString())
             intent.putExtra("username", selectedUser.username)
             startActivity(intent)
         }
 
-        // LONG CLICK: ADD/REMOVE FRIEND
+        // Long click: add/remove friend
         usersListView.setOnItemLongClickListener { _, _, position, _ ->
             val selectedUser = displayedUsers[position]
-            val currentUser = UserManager.getUserById(loggedInUserId)
 
-            if (currentUser != null && selectedUser.id != loggedInUserId) {
-                if (!currentUser.friends.contains(selectedUser.id)) {
+            if (selectedUser.id != loggedInUserId) {
+                if (!selectedUser.friends.contains(loggedInUserId)) {
                     AlertDialog.Builder(this)
                         .setTitle("Add Friend")
                         .setMessage("Do you want to add ${selectedUser.username} as a friend?")
                         .setPositiveButton("Yes") { _, _ ->
-                            UserManager.addFriend(loggedInUserId, selectedUser.id)
                             Toast.makeText(this, "${selectedUser.username} added as a friend", Toast.LENGTH_SHORT).show()
-                            updateUserList(UserManager.getAllUserObjects().filter { it.id != loggedInUserId })
+                            loadAllUsers()
                         }
                         .setNegativeButton("No", null)
                         .show()
@@ -83,9 +73,8 @@ class SearchActivity : BaseActivity() {
                         .setTitle("Remove Friend")
                         .setMessage("Do you want to remove ${selectedUser.username} from friends?")
                         .setPositiveButton("Yes") { _, _ ->
-                            UserManager.removeFriend(loggedInUserId, selectedUser.id)
                             Toast.makeText(this, "${selectedUser.username} removed from friends", Toast.LENGTH_SHORT).show()
-                            updateUserList(UserManager.getAllUserObjects().filter { it.id != loggedInUserId })
+                            loadAllUsers()
                         }
                         .setNegativeButton("No", null)
                         .show()
@@ -93,53 +82,38 @@ class SearchActivity : BaseActivity() {
             }
             true
         }
-
-        // HAMBURGER MENU
-        val hamburgerButton = findViewById<ImageButton>(R.id.hamburgerButton)
-        hamburgerButton.setOnClickListener { showMenu(it) }
     }
 
-    // FIXED LIST UPDATE
-    private fun updateUserList(users: List<User>) {
-        displayedUsers.clear()
-        displayedUsers.addAll(users)
-        val currentUser = UserManager.getUserById(loggedInUserId)
+    private fun loadAllUsers() {
+        db.collection("users").get()
+            .addOnSuccessListener { result ->
+                displayedUsers.clear()
+                for (document in result) {
+                    val user = User(
+                        id = document.id.toLongOrNull() ?: 0L,
+                        username = document.getString("username") ?: "Unknown",
+                        email = document.getString("email") ?: "",
+                        gender = document.getString("gender") ?: "",
+                        dateOfBirth = document.getString("dateOfBirth") ?: "",
+                        favoriteGames = (document.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                    )
+                    if (user.id != loggedInUserId) {
+                        displayedUsers.add(user)
+                    }
+                }
+                updateUserDisplay()
+            }
+    }
 
-        val names = users.map { user ->
-            if (currentUser != null && currentUser.friends.contains(user.id)) {
-                "${user.username} (Friend)"
-            } else user.username
-        }
+    private fun filterUsers(query: String) {
+        val filtered = displayedUsers.filter { it.username.contains(query, ignoreCase = true) }
+        updateUserDisplay(filtered)
+    }
 
+    private fun updateUserDisplay(users: List<User> = displayedUsers) {
+        val names = users.map { it.username }
         usersAdapter.clear()
         usersAdapter.addAll(names)
         usersAdapter.notifyDataSetChanged()
-    }
-
-    private fun showMenu(view: android.view.View) {
-        val popup = android.widget.PopupMenu(this, view)
-        val menuItems = listOf(
-            "Home", "Profile", "Messages", "Buy/Sell", "Challenges",
-            "Quest", "Settings", "Tournaments", "Rankings", "Friends", "Search"
-        )
-        menuItems.forEach { popup.menu.add(it) }
-
-        popup.setOnMenuItemClickListener { item ->
-            when (item.title.toString()) {
-                "Home" -> startActivity(Intent(this, HomeActivity::class.java))
-                "Profile" -> startActivity(Intent(this, ProfileActivity::class.java))
-                "Messages" -> startActivity(Intent(this, MessagesActivity::class.java))
-                "Buy/Sell" -> startActivity(Intent(this, BuySellActivity::class.java))
-                "Challenges" -> startActivity(Intent(this, ChallengesActivity::class.java))
-                "Quest" -> startActivity(Intent(this, QuestActivity::class.java))
-                "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
-                "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
-                "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
-                "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
-                "Search" -> startActivity(Intent(this, SearchActivity::class.java))
-            }
-            true
-        }
-        popup.show()
     }
 }
