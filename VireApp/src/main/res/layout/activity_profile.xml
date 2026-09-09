@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/scrollViewRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FAFAFA"
     android:fillViewport="true"
     android:fitsSystemWindows="true"
+    android:background="#FAFAFA"
     android:paddingBottom="24dp">
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="0dp">
+        android:layout_height="wrap_content">
 
         <!-- Cover Photo -->
         <ImageView
@@ -26,27 +26,27 @@
         <!-- Change Cover Photo Button -->
         <ImageButton
             android:id="@+id/changeCoverButton"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_alignBottom="@id/coverPhoto"
             android:layout_alignEnd="@id/coverPhoto"
             android:layout_margin="12dp"
             android:background="@drawable/circle_bg"
             android:src="@drawable/ic_camera"
-            android:tint="@android:color/white"
-            android:contentDescription="Change Cover Photo" />
+            android:contentDescription="Change Cover Photo"
+            app:tint="@android:color/white" />
 
         <!-- Profile Image -->
         <ImageView
             android:id="@+id/profileImage"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
+            android:layout_width="130dp"
+            android:layout_height="130dp"
             android:layout_below="@id/coverPhoto"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="-60dp"
+            android:layout_marginTop="-65dp"
             android:background="@drawable/profile_image_bg"
             android:padding="4dp"
-            android:elevation="6dp"
+            android:elevation="8dp"
             android:scaleType="centerCrop"
             android:adjustViewBounds="true"
             android:clipToOutline="true"
@@ -56,28 +56,28 @@
         <!-- Change Profile Pic Button -->
         <ImageButton
             android:id="@+id/changeProfilePicButton"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_alignEnd="@id/profileImage"
             android:layout_alignBottom="@id/profileImage"
             android:background="@drawable/circle_bg"
             android:src="@drawable/ic_camera"
-            android:tint="@android:color/white"
-            android:contentDescription="Change Profile Picture" />
+            android:contentDescription="Change Profile Picture"
+            app:tint="@android:color/white" />
 
         <!-- Edit Pen Button -->
         <ImageButton
             android:id="@+id/editPenButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:layout_below="@id/coverPhoto"
             android:layout_alignParentEnd="true"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="16dp"
             android:background="@drawable/circle_bg"
             android:src="@drawable/ic_pen"
-            android:tint="@android:color/white"
-            android:contentDescription="Edit Profile" />
+            android:contentDescription="Edit Profile"
+            app:tint="@android:color/white" />
 
         <!-- Profile Info Layout -->
         <LinearLayout
@@ -97,7 +97,7 @@
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="#212121"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="12dp" />
 
             <TextView
                 android:id="@+id/profileUsername"
@@ -142,7 +142,7 @@
                 android:text="Games: "
                 android:textSize="16sp"
                 android:textColor="#333333"
-                android:layout_marginBottom="8dp"
+                android:layout_marginBottom="12dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:background="?attr/selectableItemBackground"
@@ -162,7 +162,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 android:gravity="center">
 
                 <ImageButton
@@ -244,9 +244,10 @@
             android:layout_margin="16dp"
             android:background="@drawable/circle_bg"
             android:src="@drawable/ic_menu_hamburger"
-            android:tint="@android:color/white"
-            android:contentDescription="Menu" />
+            android:contentDescription="Menu"
+            app:tint="@android:color/white" />
 
     </RelativeLayout>
 
 </ScrollView>
+

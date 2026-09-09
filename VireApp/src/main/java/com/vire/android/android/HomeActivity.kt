@@ -1,12 +1,17 @@
 package com.vire.android.android
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.ImageButton
 import android.widget.ListView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.vire.android.R
 
 class HomeActivity : BaseActivity() {
@@ -21,6 +26,8 @@ class HomeActivity : BaseActivity() {
     private lateinit var navFriends: ImageButton
     private lateinit var navMenu: ImageButton
 
+    private var cachedUsername: String = "User"
+
     private val createPostLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -32,24 +39,25 @@ class HomeActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
-        // FEED LIST
-        feedListView = findViewById(R.id.feedListView)
+        FirebaseApp.initializeApp(this)
 
-        feedAdapter = PostAdapter(
-            this,
-            FeedManager.getGlobalFeed().toMutableList()
-        )
+        // Load username immediately from SharedPreferences
+        loadUsernameFromSharedPrefs()
+
+        // Refresh username from Firestore asynchronously
+        refreshUsernameFromFirestore()
+
+        feedListView = findViewById(R.id.feedListView)
+        feedAdapter = PostAdapter(this, FeedManager.getGlobalFeed().toMutableList())
         feedListView.adapter = feedAdapter
 
-        // POST COMPOSER ("What's on your mind?")
         createPostPrompt = findViewById(R.id.createPostPrompt)
+
+        // ✅ FIXED: No username passed through Intent
         createPostPrompt.setOnClickListener {
-            val intent = Intent(this, NewPostActivity::class.java)
-            intent.putExtra("username", "User")
-            createPostLauncher.launch(intent)
+            createPostLauncher.launch(Intent(this, NewPostActivity::class.java))
         }
 
-        // BOTTOM NAV BUTTONS
         navHome = findViewById(R.id.navHome)
         navProfile = findViewById(R.id.navProfile)
         navCreatePost = findViewById(R.id.navCreatePost)
@@ -57,13 +65,45 @@ class HomeActivity : BaseActivity() {
         navMenu = findViewById(R.id.navMenu)
 
         setupBottomNav()
-
         refreshFeed()
     }
 
     override fun onResume() {
         super.onResume()
+        loadUsernameFromSharedPrefs()
         refreshFeed()
+    }
+
+    private fun loadUsernameFromSharedPrefs() {
+        val prefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        cachedUsername = prefs.getString("username", "User") ?: "User"
+    }
+
+    private fun refreshUsernameFromFirestore() {
+        val auth = try {
+            FirebaseAuth.getInstance()
+        } catch (e: Exception) {
+            return
+        }
+
+        val uid = auth.currentUser?.uid ?: return
+
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(uid)
+            .get()
+            .addOnSuccessListener { doc ->
+                val username = doc.getString("username")
+                if (!username.isNullOrEmpty()) {
+                    cachedUsername = username
+
+                    val prefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                    prefs.edit().putString("username", username).apply()
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Could not refresh username", Toast.LENGTH_SHORT).show()
+            }
     }
 
     private fun refreshFeed() {
@@ -75,19 +115,17 @@ class HomeActivity : BaseActivity() {
     }
 
     private fun setupBottomNav() {
-
         navHome.setOnClickListener {
-            // Already on Home — no navigation needed
+            // Already on Home
         }
 
         navProfile.setOnClickListener {
             startActivity(Intent(this, ProfileActivity::class.java))
         }
 
+        // ✅ FIXED: No username passed through Intent
         navCreatePost.setOnClickListener {
-            val intent = Intent(this, NewPostActivity::class.java)
-            intent.putExtra("username", "User")
-            createPostLauncher.launch(intent)
+            createPostLauncher.launch(Intent(this, NewPostActivity::class.java))
         }
 
         navFriends.setOnClickListener {
@@ -97,7 +135,6 @@ class HomeActivity : BaseActivity() {
         navMenu.setOnClickListener { anchor ->
             val popup = android.widget.PopupMenu(this, anchor)
             popup.menu.apply {
-
                 add("Messages")
                 add("Buy/Sell")
                 add("Challenges")
@@ -105,14 +142,11 @@ class HomeActivity : BaseActivity() {
                 add("Settings")
                 add("Tournaments")
                 add("Rankings")
-
                 add("Search")
             }
 
             popup.setOnMenuItemClickListener { item ->
                 when (item.title.toString()) {
-
-
                     "Messages" -> startActivity(Intent(this, MessagesActivity::class.java))
                     "Buy/Sell" -> startActivity(Intent(this, BuySellActivity::class.java))
                     "Challenges" -> startActivity(Intent(this, ChallengesActivity::class.java))
@@ -120,7 +154,6 @@ class HomeActivity : BaseActivity() {
                     "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
                     "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
                     "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
-
                     "Search" -> startActivity(Intent(this, SearchActivity::class.java))
                 }
                 true
@@ -130,4 +163,5 @@ class HomeActivity : BaseActivity() {
         }
     }
 }
+
 

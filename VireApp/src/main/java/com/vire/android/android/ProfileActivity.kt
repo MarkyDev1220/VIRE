@@ -39,12 +39,13 @@ class ProfileActivity : BaseActivity() {
     private lateinit var profileFeedAdapter: ArrayAdapter<String>
     private val profileFeedPosts = mutableListOf<String>()
 
+    private lateinit var editPenButton: ImageButton
+    private lateinit var hamburgerButton: ImageButton
+
     private var selectedProfileUri: Uri? = null
     private var selectedCoverUri: Uri? = null
     private var changingCoverPhoto = false
-    private lateinit var editPenButton: ImageButton
 
-    // Cache the UID once so we don't depend on currentUser being non-null later
     private var currentUid: String? = null
 
     private val pickImageLauncher = registerForActivityResult(
@@ -54,12 +55,10 @@ class ProfileActivity : BaseActivity() {
         uri?.let {
             if (changingCoverPhoto) {
                 selectedCoverUri = uri
-                // Local preview
                 profileSafeLoad(uri, coverPhoto)
                 uploadImageToStorage(uid, uri, "coverImageUrl")
             } else {
                 selectedProfileUri = uri
-                // Local preview
                 profileSafeLoad(uri, profileImage)
                 uploadImageToStorage(uid, uri, "profileImageUrl")
             }
@@ -87,10 +86,6 @@ class ProfileActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
 
-        // Hamburger menu from BaseActivity
-        setupHamburgerMenu()
-
-        // Bind views
         profileImage = findViewById(R.id.profileImage)
         coverPhoto = findViewById(R.id.coverPhoto)
         changeProfilePicButton = findViewById(R.id.changeProfilePicButton)
@@ -112,7 +107,41 @@ class ProfileActivity : BaseActivity() {
             ArrayAdapter(this, android.R.layout.simple_list_item_1, profileFeedPosts)
         profileFeedListView.adapter = profileFeedAdapter
 
-        // Resolve UID safely
+        hamburgerButton = findViewById(R.id.hamburgerButton)
+
+        hamburgerButton.setOnClickListener {
+            val popup = android.widget.PopupMenu(this, it)
+            popup.menu.add("Home")
+            popup.menu.add("Profile")
+            popup.menu.add("Messages")
+            popup.menu.add("Buy/Sell")
+            popup.menu.add("Challenges")
+            popup.menu.add("Quest")
+            popup.menu.add("Settings")
+            popup.menu.add("Tournaments")
+            popup.menu.add("Rankings")
+            popup.menu.add("Friends")
+            popup.menu.add("Search")
+
+            popup.setOnMenuItemClickListener { item ->
+                when (item.title.toString()) {
+                    "Home" -> startActivity(Intent(this, HomeActivity::class.java))
+                    "Profile" -> startActivity(Intent(this, ProfileActivity::class.java))
+                    "Messages" -> startActivity(Intent(this, MessagesActivity::class.java))
+                    "Buy/Sell" -> startActivity(Intent(this, BuySellActivity::class.java))
+                    "Challenges" -> startActivity(Intent(this, ChallengesActivity::class.java))
+                    "Quest" -> startActivity(Intent(this, QuestActivity::class.java))
+                    "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
+                    "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
+                    "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
+                    "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
+                    "Search" -> startActivity(Intent(this, SearchActivity::class.java))
+                }
+                true
+            }
+            popup.show()
+        }
+
         val explicitUid = intent.getStringExtra("uid")
         val authUser = FirebaseAuth.getInstance().currentUser
         val uid = explicitUid ?: authUser?.uid
@@ -126,7 +155,6 @@ class ProfileActivity : BaseActivity() {
         currentUid = uid
         loadUserProfile(uid)
 
-        // Image change buttons
         changeProfilePicButton.setOnClickListener {
             changingCoverPhoto = false
             pickImageLauncher.launch("image/*")
@@ -137,10 +165,8 @@ class ProfileActivity : BaseActivity() {
             pickImageLauncher.launch("image/*")
         }
 
-        // Edit profile button
         editPenButton.setOnClickListener { showEditProfileDialog() }
 
-        // Social icons
         socialDiscord.setOnClickListener { openSocialLink("https://discord.com/users/123456") }
         socialTiktok.setOnClickListener { openSocialLink("https://www.tiktok.com/@example") }
         socialInstagram.setOnClickListener { openSocialLink("https://instagram.com/example") }
@@ -154,7 +180,6 @@ class ProfileActivity : BaseActivity() {
             openSocialLink("https://kick.com/example")
         }
 
-        // Add friend button
         addFriendButton.setOnClickListener {
             Toast.makeText(this, "Friend system coming soon.", Toast.LENGTH_SHORT).show()
         }
@@ -162,21 +187,15 @@ class ProfileActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-
-        // Refresh feed if available
         try {
             val loggedInUser = loadUser(this)
             if (loggedInUser != null) {
                 profileFeedPosts.clear()
-                // Placeholder for feed loading
                 profileFeedAdapter.notifyDataSetChanged()
             }
-        } catch (e: Exception) {
-            // Silently fail for feed loading
-        }
+        } catch (_: Exception) {}
     }
 
-    // Load user profile from Firestore
     private fun loadUserProfile(uid: String) {
         val db = FirebaseFirestore.getInstance()
 
@@ -202,20 +221,14 @@ class ProfileActivity : BaseActivity() {
                 val profileUrl = doc.getString("profileImageUrl")
                 val coverUrl = doc.getString("coverImageUrl")
 
-                if (!profileUrl.isNullOrEmpty()) {
-                    remoteSafeLoad(profileUrl, profileImage)
-                }
-
-                if (!coverUrl.isNullOrEmpty()) {
-                    remoteSafeLoad(coverUrl, coverPhoto)
-                }
+                if (!profileUrl.isNullOrEmpty()) remoteSafeLoad(profileUrl, profileImage)
+                if (!coverUrl.isNullOrEmpty()) remoteSafeLoad(coverUrl, coverPhoto)
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Failed to load profile", Toast.LENGTH_SHORT).show()
             }
     }
 
-    // Upload image to Firebase Storage
     private fun uploadImageToStorage(uid: String, uri: Uri, fieldName: String) {
         try {
             val storageRef = FirebaseStorage.getInstance().reference
@@ -235,7 +248,6 @@ class ProfileActivity : BaseActivity() {
         }
     }
 
-    // Save image URL to Firestore
     private fun updateImageUrlInFirestore(uid: String, fieldName: String, url: String) {
         val db = FirebaseFirestore.getInstance()
 
@@ -294,6 +306,7 @@ class ProfileActivity : BaseActivity() {
                         dateOfBirth = dobInput.text.toString(),
                         favoriteGames = gamesInput.text.toString().split(",").map { it.trim() },
                         profileImageUri = user?.profileImageUri,
+                        coverImageUri = user?.coverImageUri,
                         is13Plus = user?.is13Plus ?: true
                     )
                     saveUser(updatedUser, this)
@@ -333,42 +346,26 @@ class ProfileActivity : BaseActivity() {
         try {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         } catch (e: Exception) {
-            e.printStackTrace()
             Toast.makeText(this, "Cannot open link", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // Local URI loading with safe scaling
     private fun profileSafeLoad(uri: Uri, target: ImageView) {
         try {
-            Picasso.get()
-                .load(uri)
-                .fit()
-                .centerCrop()
-                .into(target)
+            Picasso.get().load(uri).fit().centerCrop().into(target)
         } catch (e: Exception) {
             try {
-                target.setImageURI(uri) // fallback
-            } catch (ex: Exception) {
-                // Silently fail
-            }
+                target.setImageURI(uri)
+            } catch (_: Exception) {}
         }
     }
 
-    // Remote URL loading with safe scaling
     private fun remoteSafeLoad(url: String, target: ImageView) {
         try {
-            Picasso.get()
-                .load(url)
-                .fit()
-                .centerCrop()
-                .into(target)
-        } catch (e: Exception) {
-            // ignore, keep placeholder
-        }
+            Picasso.get().load(url).fit().centerCrop().into(target)
+        } catch (_: Exception) {}
     }
 
-    /** --- SharedPreferences --- */
     private fun saveUser(user: User, context: Context) {
         try {
             val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
@@ -379,6 +376,7 @@ class ProfileActivity : BaseActivity() {
                 putString("dob", user.dateOfBirth)
                 putStringSet("games", user.favoriteGames.toSet())
                 putString("profileUri", user.profileImageUri?.toString())
+                putString("coverUri", user.coverImageUri?.toString())
                 putBoolean("is13Plus", user.is13Plus)
                 apply()
             }
@@ -405,6 +403,7 @@ class ProfileActivity : BaseActivity() {
             val dob = prefs.getString("dob", "") ?: ""
             val games = prefs.getStringSet("games", emptySet())?.toList() ?: emptyList()
             val profileUri = prefs.getString("profileUri", null)?.let { Uri.parse(it) }
+            val coverUri = prefs.getString("coverUri", null)?.let { Uri.parse(it) }
             val is13Plus = prefs.getBoolean("is13Plus", false)
             User(
                 id = 1,
@@ -414,6 +413,7 @@ class ProfileActivity : BaseActivity() {
                 dateOfBirth = dob,
                 favoriteGames = games,
                 profileImageUri = profileUri,
+                coverImageUri = coverUri,
                 is13Plus = is13Plus
             )
         } catch (e: Exception) {
@@ -421,3 +421,4 @@ class ProfileActivity : BaseActivity() {
         }
     }
 }
+

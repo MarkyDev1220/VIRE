@@ -65,6 +65,10 @@ class PostAdapter(
         val input = EditText(context)
         input.hint = "Write a comment..."
 
+        // ⭐ Load REAL username from SharedPreferences
+        val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val realUsername = prefs.getString("username", "Unknown") ?: "Unknown"
+
         AlertDialog.Builder(context)
             .setTitle("Add comment")
             .setView(input)
@@ -72,7 +76,7 @@ class PostAdapter(
                 val commentText = input.text.toString().trim()
                 if (commentText.isNotEmpty()) {
                     val comment = Comment(
-                        username = "User", // Replace with actual logged-in user later
+                        username = realUsername, // ⭐ REAL username
                         text = commentText
                     )
                     post.comments.add(comment)
@@ -84,4 +88,3 @@ class PostAdapter(
             .show()
     }
 }
-

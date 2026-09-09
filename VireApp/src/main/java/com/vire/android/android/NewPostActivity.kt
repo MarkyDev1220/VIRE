@@ -1,6 +1,7 @@
 package com.vire.android.android
 
 import android.app.Activity
+import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.widget.*
@@ -12,7 +13,6 @@ class NewPostActivity : AppCompatActivity() {
 
     private var selectedImageUri: Uri? = null
 
-    // Image picker launcher
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
@@ -26,31 +26,30 @@ class NewPostActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_new_post)
 
-        // UI elements
         val postEditText: EditText = findViewById(R.id.postEditText)
         val addPhoto: ImageButton = findViewById(R.id.addPhotoButton)
         val addVideo: ImageButton = findViewById(R.id.addVideoButton)
         val postButton: Button = findViewById(R.id.postButton)
         val closeButton: ImageButton = findViewById(R.id.closeNewPost)
+        val userNameText: TextView = findViewById(R.id.userName)
 
-        val username = intent.getStringExtra("username") ?: "User"
+        // ✅ Always load username from SharedPreferences
+        val prefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
+        val username = prefs.getString("username", "Unknown") ?: "Unknown"
 
-        // Close (X) button
-        closeButton.setOnClickListener {
-            finish()
-        }
+        // ✅ Update the UI with the actual username
+        userNameText.text = username
 
-        // Photo picker
+        closeButton.setOnClickListener { finish() }
+
         addPhoto.setOnClickListener {
             pickImageLauncher.launch("image/*")
         }
 
-        // Video picker placeholder
         addVideo.setOnClickListener {
             Toast.makeText(this, "Video posting coming soon!", Toast.LENGTH_SHORT).show()
         }
 
-        // Post button logic
         postButton.setOnClickListener {
             val content = postEditText.text.toString().trim()
 
@@ -59,7 +58,7 @@ class NewPostActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Add post to feed
+            // ✅ Add post with correct username
             FeedManager.addPost(
                 username = username,
                 content = content,
@@ -73,6 +72,3 @@ class NewPostActivity : AppCompatActivity() {
         }
     }
 }
-
-
-
