@@ -17,12 +17,14 @@
             android:textStyle="bold"
             android:layout_marginBottom="12dp"/>
 
+        <!-- Username -->
         <EditText
             android:id="@+id/editUsername"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Username"/>
 
+        <!-- Email -->
         <EditText
             android:id="@+id/editEmail"
             android:layout_width="match_parent"
@@ -31,6 +33,7 @@
             android:inputType="textEmailAddress"
             android:layout_marginTop="8dp"/>
 
+        <!-- About Me -->
         <EditText
             android:id="@+id/editAboutMe"
             android:layout_width="match_parent"
@@ -39,15 +42,48 @@
             android:inputType="textMultiLine"
             android:layout_marginTop="8dp"/>
 
+        <!-- Favorite Games -->
         <EditText
             android:id="@+id/editGames"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Favorite Games (click to edit)"
-            android:focusable="false"
-            android:clickable="true"
+            android:hint="Favorite Games (comma separated)"
             android:layout_marginTop="8dp"/>
 
+        <!-- ⭐ NEW: Favorite Genres -->
+        <EditText
+            android:id="@+id/editGenres"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Favorite Genres (comma separated)"
+            android:layout_marginTop="8dp"/>
+
+        <!-- ⭐ NEW: Skill Level -->
+        <EditText
+            android:id="@+id/editSkillLevel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Skill Level (Beginner / Intermediate / Advanced)"
+            android:layout_marginTop="8dp"/>
+
+        <!-- ⭐ NEW: Local Gaming Area -->
+        <EditText
+            android:id="@+id/editLocalArea"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Local Gaming Area (City / Store)"
+            android:layout_marginTop="8dp"/>
+
+        <!-- ⭐ NEW: Gamer Bio -->
+        <EditText
+            android:id="@+id/editGamerBio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Gamer Bio"
+            android:inputType="textMultiLine"
+            android:layout_marginTop="8dp"/>
+
+        <!-- Date of Birth -->
         <EditText
             android:id="@+id/editDOB"
             android:layout_width="match_parent"
@@ -56,6 +92,7 @@
             android:focusable="false"
             android:layout_marginTop="8dp"/>
 
+        <!-- Gender -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -70,6 +107,7 @@
             android:layout_marginTop="4dp"
             android:entries="@array/gender_options"/>
 
+        <!-- Social Links -->
         <EditText
             android:id="@+id/editSocials"
             android:layout_width="match_parent"
@@ -87,5 +125,6 @@
             android:backgroundTint="#3F51B5"
             android:textColor="@android:color/white"
             android:layout_marginTop="12dp"/>
+
     </LinearLayout>
 </ScrollView>

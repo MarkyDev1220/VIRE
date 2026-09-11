@@ -9,6 +9,7 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
+import android.view.View
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -30,6 +31,12 @@ class ProfileActivity : BaseActivity() {
     private lateinit var aboutMeText: TextView
     private lateinit var gamesText: TextView
     private lateinit var genderText: TextView
+
+    // ⭐ NEW GAMER PROFILE FIELDS
+    private lateinit var genresText: TextView
+    private lateinit var skillLevelText: TextView
+    private lateinit var localAreaText: TextView
+    private lateinit var gamerBioText: TextView
 
     private lateinit var socialDiscord: ImageButton
     private lateinit var socialTiktok: ImageButton
@@ -96,6 +103,12 @@ class ProfileActivity : BaseActivity() {
         gamesText = findViewById(R.id.profileGames)
         genderText = findViewById(R.id.profileGender)
 
+        // ⭐ NEW GAMER PROFILE FIELDS
+        genresText = findViewById(R.id.profileGenres)
+        skillLevelText = findViewById(R.id.profileSkillLevel)
+        localAreaText = findViewById(R.id.profileLocalArea)
+        gamerBioText = findViewById(R.id.profileGamerBio)
+
         socialDiscord = findViewById(R.id.socialDiscord)
         socialTiktok = findViewById(R.id.socialTiktok)
         socialInstagram = findViewById(R.id.socialInstagram)
@@ -110,7 +123,7 @@ class ProfileActivity : BaseActivity() {
         hamburgerButton = findViewById(R.id.hamburgerButton)
 
         hamburgerButton.setOnClickListener {
-            val popup = android.widget.PopupMenu(this, it)
+            val popup = PopupMenu(this, it)
             popup.menu.add("Home")
             popup.menu.add("Profile")
             popup.menu.add("Messages")
@@ -167,18 +180,12 @@ class ProfileActivity : BaseActivity() {
 
         editPenButton.setOnClickListener { showEditProfileDialog() }
 
-        socialDiscord.setOnClickListener { openSocialLink("https://discord.com/users/123456") }
-        socialTiktok.setOnClickListener { openSocialLink("https://www.tiktok.com/@example") }
-        socialInstagram.setOnClickListener { openSocialLink("https://instagram.com/example") }
-        findViewById<ImageButton>(R.id.socialFacebook)?.setOnClickListener {
-            openSocialLink("https://facebook.com/example")
-        }
-        findViewById<ImageButton>(R.id.socialtwitch)?.setOnClickListener {
-            openSocialLink("https://twitch.tv/example")
-        }
-        findViewById<ImageButton>(R.id.socialkick)?.setOnClickListener {
-            openSocialLink("https://kick.com/example")
-        }
+        socialDiscord.setOnClickListener { openSocialLink("https://discord.com") }
+        socialTiktok.setOnClickListener { openSocialLink("https://tiktok.com") }
+        socialInstagram.setOnClickListener { openSocialLink("https://instagram.com") }
+        findViewById<ImageButton>(R.id.socialFacebook)?.setOnClickListener { openSocialLink("https://facebook.com") }
+        findViewById<ImageButton>(R.id.socialtwitch)?.setOnClickListener { openSocialLink("https://twitch.tv") }
+        findViewById<ImageButton>(R.id.socialkick)?.setOnClickListener { openSocialLink("https://kick.com") }
 
         addFriendButton.setOnClickListener {
             Toast.makeText(this, "Friend system coming soon.", Toast.LENGTH_SHORT).show()
@@ -187,13 +194,7 @@ class ProfileActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        try {
-            val loggedInUser = loadUser(this)
-            if (loggedInUser != null) {
-                profileFeedPosts.clear()
-                profileFeedAdapter.notifyDataSetChanged()
-            }
-        } catch (_: Exception) {}
+        currentUid?.let { loadUserProfile(it) }
     }
 
     private fun loadUserProfile(uid: String) {
@@ -212,11 +213,20 @@ class ProfileActivity : BaseActivity() {
                 aboutMeText.text = "About Me: ${doc.getString("aboutMe") ?: "No bio yet"}"
 
                 val games = (doc.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
-                gamesText.text = if (games.isNotEmpty()) {
-                    "Games: ${games.joinToString(", ")}"
-                } else {
-                    "Games: None added yet"
-                }
+                gamesText.text = "Games: ${if (games.isNotEmpty()) games.joinToString(", ") else "None added yet"}"
+
+                // ⭐ NEW GAMER PROFILE FIELDS
+                val genres = (doc.get("favoriteGenres") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                genresText.text = "Favorite Genres: ${if (genres.isNotEmpty()) genres.joinToString(", ") else "None"}"
+
+                val skillLevel = doc.getString("skillLevel") ?: ""
+                skillLevelText.text = "Skill Level: ${if (skillLevel.isNotEmpty()) skillLevel else "Not set"}"
+
+                val localArea = doc.getString("localArea") ?: ""
+                localAreaText.text = "Local Gaming Area: ${if (localArea.isNotEmpty()) localArea else "Not set"}"
+
+                val gamerBio = doc.getString("gamerBio") ?: ""
+                gamerBioText.text = "Gamer Bio: ${if (gamerBio.isNotEmpty()) gamerBio else "None"}"
 
                 val profileUrl = doc.getString("profileImageUrl")
                 val coverUrl = doc.getString("coverImageUrl")
@@ -229,54 +239,33 @@ class ProfileActivity : BaseActivity() {
             }
     }
 
-    private fun uploadImageToStorage(uid: String, uri: Uri, fieldName: String) {
-        try {
-            val storageRef = FirebaseStorage.getInstance().reference
-                .child("user_images/$uid/$fieldName.jpg")
-
-            storageRef.putFile(uri)
-                .addOnSuccessListener {
-                    storageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
-                        updateImageUrlInFirestore(uid, fieldName, downloadUrl.toString())
-                    }
-                }
-                .addOnFailureListener {
-                    Toast.makeText(this, "Image upload failed", Toast.LENGTH_SHORT).show()
-                }
-        } catch (e: Exception) {
-            Toast.makeText(this, "Error uploading image: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun updateImageUrlInFirestore(uid: String, fieldName: String, url: String) {
-        val db = FirebaseFirestore.getInstance()
-
-        db.collection("users").document(uid)
-            .update(fieldName, url)
-            .addOnSuccessListener {
-                Toast.makeText(this, "Image updated!", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener {
-                Toast.makeText(this, "Failed to update image URL", Toast.LENGTH_SHORT).show()
-            }
-    }
-
     private fun showEditProfileDialog() {
         try {
             val dialogView = layoutInflater.inflate(R.layout.dialog_edit_profile, null)
+
             val usernameInput = dialogView.findViewById<EditText>(R.id.editUsername)
             val emailInput = dialogView.findViewById<EditText>(R.id.editEmail)
             val aboutMeInput = dialogView.findViewById<EditText>(R.id.editAboutMe)
             val gamesInput = dialogView.findViewById<EditText>(R.id.editGames)
+            val genresInput = dialogView.findViewById<EditText>(R.id.editGenres)
+            val skillInput = dialogView.findViewById<EditText>(R.id.editSkillLevel)
+            val areaInput = dialogView.findViewById<EditText>(R.id.editLocalArea)
+            val gamerBioInput = dialogView.findViewById<EditText>(R.id.editGamerBio)
             val dobInput = dialogView.findViewById<EditText>(R.id.editDOB)
+            val genderSpinner = dialogView.findViewById<Spinner>(R.id.editGender)
             val themeBtn = dialogView.findViewById<Button>(R.id.editThemeButtonDialog)
 
             val user = loadUser(this)
+
             user?.let {
                 usernameInput.setText(it.username)
                 emailInput.setText(it.email)
                 aboutMeInput.setText(aboutMeText.text.toString().replace("About Me: ", ""))
                 gamesInput.setText(it.favoriteGames.joinToString(", "))
+                genresInput.setText(it.favoriteGenres.joinToString(", "))
+                skillInput.setText(it.skillLevel)
+                areaInput.setText(it.localArea)
+                gamerBioInput.setText(it.gamerBio)
                 dobInput.setText(it.dateOfBirth)
             }
 
@@ -285,7 +274,9 @@ class ProfileActivity : BaseActivity() {
                 val calendar = Calendar.getInstance()
                 DatePickerDialog(
                     this,
-                    { _, year, month, dayOfMonth -> dobInput.setText("${month + 1}/$dayOfMonth/$year") },
+                    { _, year, month, dayOfMonth ->
+                        dobInput.setText("${month + 1}/$dayOfMonth/$year")
+                    },
                     calendar.get(Calendar.YEAR),
                     calendar.get(Calendar.MONTH),
                     calendar.get(Calendar.DAY_OF_MONTH)
@@ -302,21 +293,75 @@ class ProfileActivity : BaseActivity() {
                         id = 1,
                         username = usernameInput.text.toString(),
                         email = emailInput.text.toString(),
-                        gender = user?.gender ?: "",
+                        gender = genderSpinner.selectedItem?.toString() ?: "",
                         dateOfBirth = dobInput.text.toString(),
-                        favoriteGames = gamesInput.text.toString().split(",").map { it.trim() },
+                        favoriteGames = gamesInput.text.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() },
+                        favoriteGenres = genresInput.text.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() },
+                        skillLevel = skillInput.text.toString(),
+                        localArea = areaInput.text.toString(),
+                        gamerBio = gamerBioInput.text.toString(),
                         profileImageUri = user?.profileImageUri,
                         coverImageUri = user?.coverImageUri,
                         is13Plus = user?.is13Plus ?: true
                     )
                     saveUser(updatedUser, this)
+                    saveUserToFirestore(updatedUser)
+
                     Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show()
-                    onResume()
+                    currentUid?.let { loadUserProfile(it) }
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
         } catch (e: Exception) {
             Toast.makeText(this, "Error opening edit dialog: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun saveUserToFirestore(user: User) {
+        val uid = currentUid ?: return
+        val db = FirebaseFirestore.getInstance()
+
+        val data = hashMapOf(
+            "username" to user.username,
+            "email" to user.email,
+            "gender" to user.gender,
+            "dateOfBirth" to user.dateOfBirth,
+            "favoriteGames" to user.favoriteGames,
+            "favoriteGenres" to user.favoriteGenres,
+            "skillLevel" to user.skillLevel,
+            "localArea" to user.localArea,
+            "gamerBio" to user.gamerBio
+        )
+
+        db.collection("users").document(uid)
+            .update(data as Map<String, Any>)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Firestore updated!", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Failed to update Firestore", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun uploadImageToStorage(uid: String, uri: Uri, fieldName: String) {
+        try {
+            val storageRef = FirebaseStorage.getInstance().reference
+                .child("profileImages/$uid/$fieldName.jpg")
+
+            storageRef.putFile(uri)
+                .addOnSuccessListener {
+                    storageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                        FirebaseFirestore.getInstance()
+                            .collection("users")
+                            .document(uid)
+                            .update(fieldName, downloadUrl.toString())
+                    }
+                }
+                .addOnFailureListener {
+                    Toast.makeText(this, "Image upload failed", Toast.LENGTH_SHORT).show()
+                }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error uploading image: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -368,13 +413,17 @@ class ProfileActivity : BaseActivity() {
 
     private fun saveUser(user: User, context: Context) {
         try {
-            val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+            val prefs = context.getSharedPreferences("user_prefs", MODE_PRIVATE)
             prefs.edit().apply {
                 putString("username", user.username)
                 putString("email", user.email)
                 putString("gender", user.gender)
                 putString("dob", user.dateOfBirth)
                 putStringSet("games", user.favoriteGames.toSet())
+                putStringSet("genres", user.favoriteGenres.toSet())
+                putString("skillLevel", user.skillLevel)
+                putString("localArea", user.localArea)
+                putString("gamerBio", user.gamerBio)
                 putString("profileUri", user.profileImageUri?.toString())
                 putString("coverUri", user.coverImageUri?.toString())
                 putBoolean("is13Plus", user.is13Plus)
@@ -385,23 +434,18 @@ class ProfileActivity : BaseActivity() {
         }
     }
 
-    private fun saveProfileImage(uri: Uri) {
-        try {
-            val prefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-            prefs.edit().putString("profileUri", uri.toString()).apply()
-        } catch (e: Exception) {
-            Toast.makeText(this, "Error saving image: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
-    }
-
     private fun loadUser(context: Context): User? {
         return try {
-            val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+            val prefs = context.getSharedPreferences("user_prefs", MODE_PRIVATE)
             val username = prefs.getString("username", null) ?: return null
             val email = prefs.getString("email", "") ?: ""
             val gender = prefs.getString("gender", "") ?: ""
             val dob = prefs.getString("dob", "") ?: ""
             val games = prefs.getStringSet("games", emptySet())?.toList() ?: emptyList()
+            val genres = prefs.getStringSet("genres", emptySet())?.toList() ?: emptyList()
+            val skillLevel = prefs.getString("skillLevel", "") ?: ""
+            val localArea = prefs.getString("localArea", "") ?: ""
+            val gamerBio = prefs.getString("gamerBio", "") ?: ""
             val profileUri = prefs.getString("profileUri", null)?.let { Uri.parse(it) }
             val coverUri = prefs.getString("coverUri", null)?.let { Uri.parse(it) }
             val is13Plus = prefs.getBoolean("is13Plus", false)
@@ -412,6 +456,10 @@ class ProfileActivity : BaseActivity() {
                 gender = gender,
                 dateOfBirth = dob,
                 favoriteGames = games,
+                favoriteGenres = genres,
+                skillLevel = skillLevel,
+                localArea = localArea,
+                gamerBio = gamerBio,
                 profileImageUri = profileUri,
                 coverImageUri = coverUri,
                 is13Plus = is13Plus
@@ -421,4 +469,3 @@ class ProfileActivity : BaseActivity() {
         }
     }
 }
-

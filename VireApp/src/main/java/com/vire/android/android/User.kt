@@ -14,6 +14,12 @@ data class User(
     val dateOfBirth: String = "",
     val favoriteGames: List<String> = emptyList(),
 
+    // ⭐ NEW GAMER PROFILE FIELDS
+    val favoriteGenres: List<String> = emptyList(),
+    val skillLevel: String = "",
+    val localArea: String = "",
+    val gamerBio: String = "",
+
     // ⭐ PROFILE IMAGES
     val profileImageUri: Uri? = null,
     val coverImageUri: Uri? = null,
