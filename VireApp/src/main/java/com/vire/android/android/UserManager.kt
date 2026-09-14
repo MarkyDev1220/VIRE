@@ -9,12 +9,11 @@ object UserManager {
     )
 
     private val users = mutableListOf<User>()
-    private var nextId = 1L
 
     // Legacy username-only methods
     fun getAllUsernames(): List<String> = users.map { it.username } + demoUsers
 
-    fun searchUsers(query: String, excludeUserId: Long? = null): List<User> {
+    fun searchUsers(query: String, excludeUserId: String? = null): List<User> {
         val q = query.trim().lowercase()
         return users.filter {
             (excludeUserId == null || it.id != excludeUserId) &&
@@ -27,7 +26,7 @@ object UserManager {
 
     // Full user management
     fun addUser(user: User) {
-        users.add(user.copy(id = nextId++))
+        users.add(user)
     }
 
     fun updateUser(updated: User) {
@@ -36,12 +35,11 @@ object UserManager {
     }
 
     fun getUser(username: String): User? = users.find { it.username.equals(username, true) }
-    fun getUserById(id: Long): User? = users.find { it.id == id }
+    fun getUserById(id: String): User? = users.find { it.id == id }
     fun getAllUserObjects(): List<User> = users.toList()
-    fun nextId(): Long = nextId++
 
     // Friends by ID
-    fun addFriend(currentUserId: Long, friendId: Long) {
+    fun addFriend(currentUserId: String, friendId: String) {
         val currentUser = getUserById(currentUserId)
         val friend = getUserById(friendId)
         if (currentUser != null && friend != null && currentUserId != friendId) {
@@ -52,7 +50,7 @@ object UserManager {
         }
     }
 
-    fun removeFriend(currentUserId: Long, friendId: Long) {
+    fun removeFriend(currentUserId: String, friendId: String) {
         val currentUser = getUserById(currentUserId)
         val friend = getUserById(friendId)
         currentUser?.friends?.remove(friendId)
@@ -61,7 +59,7 @@ object UserManager {
         if (friend != null) updateUser(friend)
     }
 
-    fun getFriends(userId: Long): List<User> =
+    fun getFriends(userId: String): List<User> =
         getUserById(userId)?.friends?.mapNotNull { getUserById(it) } ?: emptyList()
 
     fun getDeviceTokenForUser(username: String): String? = null

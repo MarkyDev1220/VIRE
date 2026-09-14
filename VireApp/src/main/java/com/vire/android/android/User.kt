@@ -3,7 +3,7 @@ package com.vire.android.android
 import android.net.Uri
 
 data class User(
-    val id: Long = 0L,
+    val id: String = "",
 
     // ⭐ REQUIRED FIELDS
     val username: String,
@@ -28,6 +28,6 @@ data class User(
     val is13Plus: Boolean = true,
 
     // ⭐ FRIEND SYSTEM (future)
-    val friends: MutableList<Long> = mutableListOf()
+    val friends: MutableList<String> = mutableListOf()
 )
 

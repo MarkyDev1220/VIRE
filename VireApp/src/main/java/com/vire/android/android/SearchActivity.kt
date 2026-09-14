@@ -4,8 +4,10 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.vire.android.R
 
@@ -16,14 +18,13 @@ class SearchActivity : BaseActivity() {
     private lateinit var usersAdapter: ArrayAdapter<String>
     private val displayedUsers = mutableListOf<User>()
 
-    private val loggedInUserId = 1L // Replace with actual logged-in user ID
     private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search)
 
-        // Initialize Hamburger Menu from BaseActivity
         setupHamburgerMenu()
 
         searchInput = findViewById(R.id.searchInput)
@@ -32,10 +33,8 @@ class SearchActivity : BaseActivity() {
         usersAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, mutableListOf())
         usersListView.adapter = usersAdapter
 
-        // Load all users from Firestore
         loadAllUsers()
 
-        // Search input listener
         searchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -44,64 +43,68 @@ class SearchActivity : BaseActivity() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // Click: view profile
+        // Tap: view profile
         usersListView.setOnItemClickListener { _, _, position, _ ->
             val selectedUser = displayedUsers[position]
             val intent = Intent(this, ProfileActivity::class.java)
-            intent.putExtra("uid", selectedUser.id.toString())
-            intent.putExtra("username", selectedUser.username)
+            intent.putExtra("uid", selectedUser.id)
             startActivity(intent)
         }
 
-        // Long click: add/remove friend
+        // Long press: add friend
         usersListView.setOnItemLongClickListener { _, _, position, _ ->
             val selectedUser = displayedUsers[position]
+            val currentUid = auth.currentUser?.uid
 
-            if (selectedUser.id != loggedInUserId) {
-                if (!selectedUser.friends.contains(loggedInUserId)) {
-                    AlertDialog.Builder(this)
-                        .setTitle("Add Friend")
-                        .setMessage("Do you want to add ${selectedUser.username} as a friend?")
-                        .setPositiveButton("Yes") { _, _ ->
-                            Toast.makeText(this, "${selectedUser.username} added as a friend", Toast.LENGTH_SHORT).show()
-                            loadAllUsers()
-                        }
-                        .setNegativeButton("No", null)
-                        .show()
-                } else {
-                    AlertDialog.Builder(this)
-                        .setTitle("Remove Friend")
-                        .setMessage("Do you want to remove ${selectedUser.username} from friends?")
-                        .setPositiveButton("Yes") { _, _ ->
-                            Toast.makeText(this, "${selectedUser.username} removed from friends", Toast.LENGTH_SHORT).show()
-                            loadAllUsers()
-                        }
-                        .setNegativeButton("No", null)
-                        .show()
+            if (currentUid == null || selectedUser.id == currentUid) return@setOnItemLongClickListener true
+
+            AlertDialog.Builder(this)
+                .setTitle("Add Friend")
+                .setMessage("Do you want to send a friend request to ${selectedUser.username}?")
+                .setPositiveButton("Yes") { _, _ ->
+                    FriendManager.sendRequest(selectedUser.id) { success ->
+                        Toast.makeText(
+                            this@SearchActivity,
+                            if (success) "Friend request sent" else "Failed to send request",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
-            }
+                .setNegativeButton("No", null)
+                .show()
+
             true
         }
     }
 
     private fun loadAllUsers() {
+        val currentUid = auth.currentUser?.uid
         db.collection("users").get()
             .addOnSuccessListener { result ->
                 displayedUsers.clear()
                 for (document in result) {
+                    val uid = document.id
+                    if (uid == currentUid) continue
+
                     val user = User(
-                        id = document.id.toLongOrNull() ?: 0L,
+                        id = uid,
                         username = document.getString("username") ?: "Unknown",
                         email = document.getString("email") ?: "",
                         gender = document.getString("gender") ?: "",
                         dateOfBirth = document.getString("dateOfBirth") ?: "",
-                        favoriteGames = (document.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                        favoriteGames = (document.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                        favoriteGenres = (document.get("favoriteGenres") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                        skillLevel = document.getString("skillLevel") ?: "",
+                        localArea = document.getString("localArea") ?: "",
+                        gamerBio = document.getString("gamerBio") ?: ""
                     )
-                    if (user.id != loggedInUserId) {
-                        displayedUsers.add(user)
-                    }
+                    displayedUsers.add(user)
                 }
                 updateUserDisplay()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Error loading users: ${e.message}", Toast.LENGTH_LONG).show()
+                Log.e("SearchActivity", "Firestore error", e)
             }
     }
 
@@ -113,7 +116,13 @@ class SearchActivity : BaseActivity() {
     private fun updateUserDisplay(users: List<User> = displayedUsers) {
         val names = users.map { it.username }
         usersAdapter.clear()
-        usersAdapter.addAll(names)
+        if (names.isEmpty()) {
+            // Optional: You could show a "No users found" label here
+            usersAdapter.add("No users found")
+        } else {
+            usersAdapter.addAll(names)
+        }
         usersAdapter.notifyDataSetChanged()
     }
 }
+

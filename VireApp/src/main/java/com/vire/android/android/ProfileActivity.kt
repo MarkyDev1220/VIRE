@@ -188,8 +188,34 @@ class ProfileActivity : BaseActivity() {
         findViewById<ImageButton>(R.id.socialkick)?.setOnClickListener { openSocialLink("https://kick.com") }
 
         addFriendButton.setOnClickListener {
-            Toast.makeText(this, "Friend system coming soon.", Toast.LENGTH_SHORT).show()
+            val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+            val profileUid = intent.getStringExtra("uid") ?: return@setOnClickListener
+
+            if (currentUid == null) {
+                Toast.makeText(this, "You must be logged in.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (currentUid == profileUid) {
+                Toast.makeText(this, "You cannot add yourself.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            FriendManager.isFriend(profileUid) { isFriend ->
+                if (isFriend) {
+                    Toast.makeText(this, "Already friends.", Toast.LENGTH_SHORT).show()
+                } else {
+                    FriendManager.sendRequest(profileUid) { success ->
+                        Toast.makeText(
+                            this,
+                            if (success) "Friend request sent!" else "Failed to send request.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
         }
+
     }
 
     override fun onResume() {
@@ -290,7 +316,7 @@ class ProfileActivity : BaseActivity() {
                 .setView(dialogView)
                 .setPositiveButton("Save") { _, _ ->
                     val updatedUser = User(
-                        id = 1,
+                        id = currentUid ?: "",
                         username = usernameInput.text.toString(),
                         email = emailInput.text.toString(),
                         gender = genderSpinner.selectedItem?.toString() ?: "",
@@ -450,7 +476,7 @@ class ProfileActivity : BaseActivity() {
             val coverUri = prefs.getString("coverUri", null)?.let { Uri.parse(it) }
             val is13Plus = prefs.getBoolean("is13Plus", false)
             User(
-                id = 1,
+                id = FirebaseAuth.getInstance().currentUser?.uid ?: "",
                 username = username,
                 email = email,
                 gender = gender,
