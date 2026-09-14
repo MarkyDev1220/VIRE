@@ -147,3 +147,4 @@ class PlayerFinderActivity : BaseActivity() {
         playersAdapter.notifyDataSetChanged()
     }
 }
+
