@@ -16,17 +16,35 @@ object FriendManager {
         val senderUid = currentUid() ?: return onResult(false)
         if (senderUid == receiverUid) return onResult(false)
 
-        val data = hashMapOf(
-            "fromUid" to senderUid,
-            "toUid" to receiverUid,
-            "status" to "pending",
-            "createdAt" to Timestamp.now()
-        )
+        // Check if already friends or if request already exists
+        isFriend(receiverUid) { alreadyFriends ->
+            if (alreadyFriends) return@isFriend onResult(false)
 
-        db.collection("friendRequests")
-            .add(data)
-            .addOnSuccessListener { onResult(true) }
-            .addOnFailureListener { onResult(false) }
+            db.collection("friendRequests")
+                .whereEqualTo("fromUid", senderUid)
+                .whereEqualTo("toUid", receiverUid)
+                .whereEqualTo("status", "pending")
+                .get()
+                .addOnSuccessListener { result ->
+                    if (!result.isEmpty) {
+                        // Request already pending
+                        onResult(false)
+                    } else {
+                        val data = hashMapOf(
+                            "fromUid" to senderUid,
+                            "toUid" to receiverUid,
+                            "status" to "pending",
+                            "createdAt" to Timestamp.now()
+                        )
+
+                        db.collection("friendRequests")
+                            .add(data)
+                            .addOnSuccessListener { onResult(true) }
+                            .addOnFailureListener { onResult(false) }
+                    }
+                }
+                .addOnFailureListener { onResult(false) }
+        }
     }
 
     /** Accept a friend request and create friendship */
@@ -61,20 +79,25 @@ object FriendManager {
     fun removeFriend(otherUid: String, onResult: (Boolean) -> Unit) {
         val uid = currentUid() ?: return onResult(false)
         db.collection("friends")
-            .whereIn("userA", listOf(uid, otherUid))
             .get()
             .addOnSuccessListener { result ->
                 val batch = db.batch()
+                var found = false
                 for (doc in result) {
                     val a = doc.getString("userA")
                     val b = doc.getString("userB")
                     if ((a == uid && b == otherUid) || (a == otherUid && b == uid)) {
                         batch.delete(doc.reference)
+                        found = true
                     }
                 }
-                batch.commit()
-                    .addOnSuccessListener { onResult(true) }
-                    .addOnFailureListener { onResult(false) }
+                if (found) {
+                    batch.commit()
+                        .addOnSuccessListener { onResult(true) }
+                        .addOnFailureListener { onResult(false) }
+                } else {
+                    onResult(false)
+                }
             }
             .addOnFailureListener { onResult(false) }
     }
@@ -83,7 +106,6 @@ object FriendManager {
     fun isFriend(otherUid: String, onResult: (Boolean) -> Unit) {
         val uid = currentUid() ?: return onResult(false)
         db.collection("friends")
-            .whereIn("userA", listOf(uid, otherUid))
             .get()
             .addOnSuccessListener { result ->
                 var found = false
@@ -104,7 +126,6 @@ object FriendManager {
     fun getFriends(onResult: (List<String>) -> Unit) {
         val uid = currentUid() ?: return onResult(emptyList())
         db.collection("friends")
-            .whereIn("userA", listOf(uid))
             .get()
             .addOnSuccessListener { result ->
                 val friends = mutableListOf<String>()
@@ -112,6 +133,7 @@ object FriendManager {
                     val a = doc.getString("userA")
                     val b = doc.getString("userB")
                     if (a == uid && !b.isNullOrEmpty()) friends.add(b)
+                    else if (b == uid && !a.isNullOrEmpty()) friends.add(a)
                 }
                 onResult(friends)
             }

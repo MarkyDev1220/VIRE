@@ -52,6 +52,10 @@
                 <activity android:name=".android.FriendsActivity" />
                 <activity android:name=".android.SearchActivity" />
                 <activity android:name=".android.AddFriendActivity" />
+                <activity android:name=".android.PlayerFinderActivity" />
+                <activity android:name=".android.CreateGameNightActivity" />
+                <activity android:name=".android.GameNightListActivity" />
+                <activity android:name=".android.GameNightDetailsActivity" />
 
                 <!-- Launcher Activity -->
                 <activity

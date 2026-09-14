@@ -63,20 +63,26 @@ class PlayerFinderActivity : BaseActivity() {
 
             if (currentUid == null || selectedUser.id == currentUid) return@setOnItemLongClickListener true
 
-            AlertDialog.Builder(this)
-                .setTitle("Add Friend")
-                .setMessage("Send friend request to ${selectedUser.username}?")
-                .setPositiveButton("Yes") { _, _ ->
-                    FriendManager.sendRequest(selectedUser.id) { success ->
-                        Toast.makeText(
-                            this@PlayerFinderActivity,
-                            if (success) "Friend request sent" else "Failed to send request",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+            FriendManager.isFriend(selectedUser.id) { alreadyFriends ->
+                if (alreadyFriends) {
+                    Toast.makeText(this, "${selectedUser.username} is already your friend.", Toast.LENGTH_SHORT).show()
+                } else {
+                    AlertDialog.Builder(this)
+                        .setTitle("Add Friend")
+                        .setMessage("Send friend request to ${selectedUser.username}?")
+                        .setPositiveButton("Yes") { _, _ ->
+                            FriendManager.sendRequest(selectedUser.id) { success ->
+                                Toast.makeText(
+                                    this@PlayerFinderActivity,
+                                    if (success) "Friend request sent" else "Failed to send request (already pending?)",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                        .setNegativeButton("No", null)
+                        .show()
                 }
-                .setNegativeButton("No", null)
-                .show()
+            }
 
             true
         }

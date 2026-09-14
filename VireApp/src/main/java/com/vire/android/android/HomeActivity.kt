@@ -143,6 +143,7 @@ class HomeActivity : BaseActivity() {
                 add("Tournaments")
                 add("Rankings")
                 add("Search")
+                add("Game Nights")
             }
 
             popup.setOnMenuItemClickListener { item ->
@@ -155,6 +156,7 @@ class HomeActivity : BaseActivity() {
                     "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
                     "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
                     "Search" -> startActivity(Intent(this, SearchActivity::class.java))
+                    "Game Nights" -> startActivity(Intent(this, GameNightListActivity::class.java))
                 }
                 true
             }

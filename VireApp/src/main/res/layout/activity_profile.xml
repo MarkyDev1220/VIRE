@@ -255,6 +255,23 @@
             android:text="Add Friend"
             android:layout_marginTop="16dp" />
 
+        <!-- Hosted Game Nights -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Hosted Game Nights"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="8dp"/>
+
+        <ListView
+            android:id="@+id/hostedGameNightsListView"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:divider="#EEEEEE"
+            android:dividerHeight="1dp" />
+
         <!-- Profile Feed -->
         <TextView
             android:layout_width="match_parent"

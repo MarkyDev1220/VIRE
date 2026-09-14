@@ -34,6 +34,7 @@ open class BaseActivity : AppCompatActivity() {
         popup.menu.add("Rankings")
         popup.menu.add("Friends")
         popup.menu.add("Search")
+        popup.menu.add("Game Nights")
 
         popup.setOnMenuItemClickListener { item ->
             when (item.title.toString()) {
@@ -48,6 +49,7 @@ open class BaseActivity : AppCompatActivity() {
                 "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
                 "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
                 "Search" -> startActivity(Intent(this, SearchActivity::class.java))
+                "Game Nights" -> startActivity(Intent(this, GameNightListActivity::class.java))
             }
             true
         }

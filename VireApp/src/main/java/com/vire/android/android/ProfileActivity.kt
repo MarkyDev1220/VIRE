@@ -46,6 +46,10 @@ class ProfileActivity : BaseActivity() {
     private lateinit var profileFeedAdapter: ArrayAdapter<String>
     private val profileFeedPosts = mutableListOf<String>()
 
+    private lateinit var hostedGameNightsListView: ListView
+    private lateinit var hostedGameNightsAdapter: ArrayAdapter<String>
+    private val hostedGameNightsList = mutableListOf<GameNight>()
+
     private lateinit var editPenButton: ImageButton
     private lateinit var hamburgerButton: ImageButton
 
@@ -119,6 +123,16 @@ class ProfileActivity : BaseActivity() {
         profileFeedAdapter =
             ArrayAdapter(this, android.R.layout.simple_list_item_1, profileFeedPosts)
         profileFeedListView.adapter = profileFeedAdapter
+
+        hostedGameNightsListView = findViewById(R.id.hostedGameNightsListView)
+        hostedGameNightsAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, mutableListOf())
+        hostedGameNightsListView.adapter = hostedGameNightsAdapter
+
+        hostedGameNightsListView.setOnItemClickListener { _, _, position, _ ->
+            val intent = Intent(this, GameNightDetailsActivity::class.java)
+            intent.putExtra("game_night", hostedGameNightsList[position])
+            startActivity(intent)
+        }
 
         hamburgerButton = findViewById(R.id.hamburgerButton)
 
@@ -259,10 +273,26 @@ class ProfileActivity : BaseActivity() {
 
                 if (!profileUrl.isNullOrEmpty()) remoteSafeLoad(profileUrl, profileImage)
                 if (!coverUrl.isNullOrEmpty()) remoteSafeLoad(coverUrl, coverPhoto)
+
+                // Load Game Nights for this user
+                loadHostedGameNights(uid)
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Failed to load profile", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    private fun loadHostedGameNights(uid: String) {
+        GameNightManager.getGameNights { list ->
+            val filtered = list.filter { it.hostUid == uid }
+            hostedGameNightsList.clear()
+            hostedGameNightsList.addAll(filtered)
+
+            val displayStrings = filtered.map { "${it.gameTitle}\n${it.date} @ ${it.time}" }
+            hostedGameNightsAdapter.clear()
+            hostedGameNightsAdapter.addAll(displayStrings)
+            hostedGameNightsAdapter.notifyDataSetChanged()
+        }
     }
 
     private fun showEditProfileDialog() {

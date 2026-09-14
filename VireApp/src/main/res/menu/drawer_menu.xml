@@ -9,4 +9,5 @@
     <item android:id="@+id/nav_settings" android:title="Settings" />
     <item android:id="@+id/nav_tournaments" android:title="Tournaments" />
     <item android:id="@+id/nav_Rankings" android:title="Rankings" />
+    <item android:id="@+id/nav_game_nights" android:title="Game Nights" />
 </menu>
