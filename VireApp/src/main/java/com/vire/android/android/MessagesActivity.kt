@@ -37,14 +37,6 @@ class MessagesActivity : BaseActivity() {
     private var activeUser: String? = null
     private var isNewMessageMode = false
 
-    private val newMessageLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                val selectedUser = result.data?.getStringExtra("selected_user") ?: return@registerForActivityResult
-                openChatWithUser(selectedUser)
-            }
-        }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_messages)
@@ -131,39 +123,7 @@ class MessagesActivity : BaseActivity() {
 
     override fun setupHamburgerMenu() {
         menuBtn.setOnClickListener { anchor ->
-            val popup = PopupMenu(this, anchor)
-            popup.menu.apply {
-                add("Home")
-                add("Profile")
-                add("Messages")
-                add("Buy/Sell")
-                add("Challenges")
-                add("Quest")
-                add("Settings")
-                add("Tournaments")
-                add("Rankings")
-                add("Friends")
-                add("Search")
-            }
-
-            popup.setOnMenuItemClickListener { item ->
-                when (item.title.toString()) {
-                    "Home" -> startActivity(Intent(this, HomeActivity::class.java))
-                    "Profile" -> startActivity(Intent(this, ProfileActivity::class.java))
-                    "Messages" -> startActivity(Intent(this, MessagesActivity::class.java))
-                    "Buy/Sell" -> startActivity(Intent(this, BuySellActivity::class.java))
-                    "Challenges" -> startActivity(Intent(this, ChallengesActivity::class.java))
-                    "Quest" -> startActivity(Intent(this, QuestActivity::class.java))
-                    "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
-                    "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
-                    "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
-                    "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
-                    "Search" -> startActivity(Intent(this, SearchActivity::class.java))
-                }
-                true
-            }
-
-            popup.show()
+            showHamburgerMenu(anchor)
         }
     }
 
@@ -238,5 +198,3 @@ class MessagesActivity : BaseActivity() {
         }
     }
 }
-
-

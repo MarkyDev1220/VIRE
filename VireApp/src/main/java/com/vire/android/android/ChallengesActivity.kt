@@ -34,47 +34,13 @@ class ChallengesActivity : BaseActivity() {
         "Force of Will (FOW)"
     )
 
-    // Replace this with your authenticated user id when available
     private val currentUser = "demoUser"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_challenges)
 
-        // Header/hamburger
-        hamburgerButton = findViewById(R.id.hamburgerButton)
-        hamburgerButton.setOnClickListener {
-            val popup = PopupMenu(this, it)
-            popup.menu.add("Home")
-            popup.menu.add("Profile")
-            popup.menu.add("Messages")
-            popup.menu.add("Buy/Sell")
-            popup.menu.add("Challenges")
-            popup.menu.add("Quest")
-            popup.menu.add("Settings")
-            popup.menu.add("Tournaments")
-            popup.menu.add("Rankings")
-            popup.menu.add("Friends")
-            popup.menu.add("Search")
-            popup.setOnMenuItemClickListener { item ->
-                when (item.title.toString()) {
-                    "Home" -> startActivity(Intent(this, HomeActivity::class.java))
-                    "Profile" -> startActivity(Intent(this, ProfileActivity::class.java))
-                    "Messages" -> startActivity(Intent(this, MessagesActivity::class.java))
-                    "Buy/Sell" -> startActivity(Intent(this, BuySellActivity::class.java))
-                    "Challenges" -> startActivity(Intent(this, ChallengesActivity::class.java))
-                    "Quest" -> startActivity(Intent(this, QuestActivity::class.java))
-                    "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
-                    "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
-                    "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
-                    "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
-                    "Search" -> startActivity(Intent(this, SearchActivity::class.java))
-                }
-                true
-            }
-            popup.show()
-        }
-
+        setupHamburgerMenu()
         findViewById<TextView>(R.id.challengesText).text = "Challenges"
 
         recycler = findViewById(R.id.recyclerChallenges)
@@ -83,7 +49,6 @@ class ChallengesActivity : BaseActivity() {
         fabCreate = findViewById(R.id.fabCreateChallenge)
         emptyText = findViewById(R.id.emptyTextChallenges)
 
-        // Recycler
         recycler.layoutManager = LinearLayoutManager(this)
         adapter = ChallengeAdapter(ChallengeManager.getChallenges()) { item, action ->
             when (action) {
@@ -95,7 +60,6 @@ class ChallengesActivity : BaseActivity() {
         }
         recycler.adapter = adapter
 
-        // Spinner
         spinnerGame.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, games).apply {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
@@ -106,16 +70,13 @@ class ChallengesActivity : BaseActivity() {
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
-        // Search
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean { filterAndSearch(); return true }
             override fun onQueryTextChange(newText: String?): Boolean { filterAndSearch(); return true }
         })
 
-        // FAB create
         fabCreate.setOnClickListener { openCreateDialog() }
 
-        // Notification channel
         NotificationHelper.ensureChannel(this)
 
         refreshList()
@@ -163,7 +124,7 @@ class ChallengesActivity : BaseActivity() {
             .setPositiveButton("Accept") { _, _ ->
                 ChallengeManager.acceptChallenge(item.id, currentUser)
                 filterAndSearch()
-                Toast.makeText(this, "Challenge accepted (demo).", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Challenge accepted", Toast.LENGTH_SHORT).show()
 
                 val notif = NotificationItem(
                     id = NotificationStore.nextId(),
@@ -222,7 +183,6 @@ class ChallengesActivity : BaseActivity() {
         spGame.setSelection(gameList.indexOf(item.game).coerceAtLeast(0))
         acOpponent.setText(item.opponent ?: "")
 
-        // --- FIX: fetch usernames only ---
         val initialUsers = ArrayList(UserManager.getAllUserObjects().map { it.username })
         val userAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, initialUsers)
         acOpponent.setAdapter(userAdapter)
@@ -238,10 +198,9 @@ class ChallengesActivity : BaseActivity() {
                 acOpponent.post {
                     userAdapter.clear()
                     for (user in results) {
-                        userAdapter.add(user.username)  // <-- use the username string
+                        userAdapter.add(user.username)
                     }
                     userAdapter.notifyDataSetChanged()
-
                     if (results.isNotEmpty()) try { acOpponent.showDropDown() } catch (_: Exception) {}
                 }
             }
@@ -328,7 +287,6 @@ class ChallengesActivity : BaseActivity() {
                         userAdapter.add(user.username)
                     }
                     userAdapter.notifyDataSetChanged()
-
                     if (results.isNotEmpty()) try { acOpponent.showDropDown() } catch (_: Exception) {}
                 }
             }

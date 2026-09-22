@@ -169,8 +169,15 @@ class ProfileActivity : BaseActivity() {
             popup.show()
         }
 
+        val auth = try {
+            FirebaseAuth.getInstance()
+        } catch (e: IllegalStateException) {
+            Toast.makeText(this, "Firebase not initialized. Please check your configuration.", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
         val explicitUid = intent.getStringExtra("uid")
-        val authUser = FirebaseAuth.getInstance().currentUser
+        val authUser = auth.currentUser
         val uid = explicitUid ?: authUser?.uid
 
         if (uid == null) {
@@ -216,6 +223,11 @@ class ProfileActivity : BaseActivity() {
             }
 
             FriendManager.isFriend(profileUid) { isFriend ->
+                val db = try {
+                    FirebaseFirestore.getInstance()
+                } catch (e: IllegalStateException) {
+                    return@isFriend
+                }
                 if (isFriend) {
                     Toast.makeText(this, "Already friends.", Toast.LENGTH_SHORT).show()
                 } else {
@@ -238,7 +250,12 @@ class ProfileActivity : BaseActivity() {
     }
 
     private fun loadUserProfile(uid: String) {
-        val db = FirebaseFirestore.getInstance()
+        val db = try {
+            FirebaseFirestore.getInstance()
+        } catch (e: IllegalStateException) {
+            Toast.makeText(this, "Firebase not initialized", Toast.LENGTH_SHORT).show()
+            return
+        }
 
         db.collection("users").document(uid).get()
             .addOnSuccessListener { doc ->
@@ -375,7 +392,11 @@ class ProfileActivity : BaseActivity() {
 
     private fun saveUserToFirestore(user: User) {
         val uid = currentUid ?: return
-        val db = FirebaseFirestore.getInstance()
+        val db = try {
+            FirebaseFirestore.getInstance()
+        } catch (e: IllegalStateException) {
+            return
+        }
 
         val data = hashMapOf(
             "username" to user.username,
@@ -401,16 +422,24 @@ class ProfileActivity : BaseActivity() {
 
     private fun uploadImageToStorage(uid: String, uri: Uri, fieldName: String) {
         try {
-            val storageRef = FirebaseStorage.getInstance().reference
+            val storage = try {
+                FirebaseStorage.getInstance()
+            } catch (e: IllegalStateException) {
+                Toast.makeText(this, "Firebase Storage not available", Toast.LENGTH_SHORT).show()
+                return
+            }
+            val storageRef = storage.reference
                 .child("profileImages/$uid/$fieldName.jpg")
 
             storageRef.putFile(uri)
                 .addOnSuccessListener {
                     storageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
-                        FirebaseFirestore.getInstance()
-                            .collection("users")
-                            .document(uid)
-                            .update(fieldName, downloadUrl.toString())
+                        try {
+                            FirebaseFirestore.getInstance()
+                                .collection("users")
+                                .document(uid)
+                                .update(fieldName, downloadUrl.toString())
+                        } catch (_: IllegalStateException) {}
                     }
                 }
                 .addOnFailureListener {

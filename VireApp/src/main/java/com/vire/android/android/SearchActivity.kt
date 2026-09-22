@@ -18,8 +18,8 @@ class SearchActivity : BaseActivity() {
     private lateinit var usersAdapter: ArrayAdapter<String>
     private val displayedUsers = mutableListOf<User>()
 
-    private val db = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance()
+    private val db by lazy { FirebaseFirestore.getInstance() }
+    private val auth by lazy { FirebaseAuth.getInstance() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

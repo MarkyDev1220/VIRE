@@ -19,8 +19,8 @@ class PlayerFinderActivity : BaseActivity() {
     private lateinit var playersAdapter: ArrayAdapter<String>
 
     private val displayedPlayers = mutableListOf<User>()
-    private val db = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance()
+    private val db by lazy { FirebaseFirestore.getInstance() }
+    private val auth by lazy { FirebaseAuth.getInstance() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -21,20 +21,13 @@ open class BaseActivity : AppCompatActivity() {
         }
     }
 
-    private fun showHamburgerMenu(anchor: View) {
+    protected fun showHamburgerMenu(anchor: View) {
         val popup = PopupMenu(this, anchor)
-        popup.menu.add("Home")
-        popup.menu.add("Profile")
-        popup.menu.add("Messages")
-        popup.menu.add("Buy/Sell")
-        popup.menu.add("Challenges")
-        popup.menu.add("Quest")
-        popup.menu.add("Settings")
-        popup.menu.add("Tournaments")
-        popup.menu.add("Rankings")
-        popup.menu.add("Friends")
-        popup.menu.add("Search")
-        popup.menu.add("Game Nights")
+        val menuItems = listOf(
+            "Home", "Profile", "Messages", "Buy/Sell", "Challenges",
+            "Quest", "Settings", "Tournaments", "Rankings", "Friends", "Search", "Find Players", "Game Nights"
+        )
+        menuItems.forEach { popup.menu.add(it) }
 
         popup.setOnMenuItemClickListener { item ->
             when (item.title.toString()) {
@@ -49,6 +42,7 @@ open class BaseActivity : AppCompatActivity() {
                 "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
                 "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
                 "Search" -> startActivity(Intent(this, SearchActivity::class.java))
+                "Find Players" -> startActivity(Intent(this, PlayerFinderActivity::class.java))
                 "Game Nights" -> startActivity(Intent(this, GameNightListActivity::class.java))
             }
             true

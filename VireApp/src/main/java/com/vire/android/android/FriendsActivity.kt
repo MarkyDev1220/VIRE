@@ -21,7 +21,7 @@ class FriendsActivity : BaseActivity() {
     private lateinit var requestsAdapter: ArrayAdapter<String>
     private val displayedRequests = mutableListOf<Pair<String, String>>() // (requestId, fromUid)
 
-    private val db = FirebaseFirestore.getInstance()
+    private val db by lazy { FirebaseFirestore.getInstance() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

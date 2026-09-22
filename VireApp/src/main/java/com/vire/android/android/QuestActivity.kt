@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.*
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -18,7 +19,6 @@ class QuestActivity : BaseActivity() {
     private lateinit var filterTypeSpinner: Spinner
     private lateinit var fabCreate: FloatingActionButton
     private lateinit var emptyText: TextView
-    private lateinit var hamburgerButton: ImageButton
 
     private val games = listOf(
         "Magic: The Gathering",
@@ -30,46 +30,13 @@ class QuestActivity : BaseActivity() {
         "Battle Spirits Saga (BSS)"
     )
 
-    // Replace with real signed-in user
     private val currentUser = "demoUser"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_quest)
 
-        hamburgerButton = findViewById(R.id.hamburgerButton)
-        hamburgerButton.setOnClickListener {
-            val popup = android.widget.PopupMenu(this, it)
-            popup.menu.add("Home")
-            popup.menu.add("Profile")
-            popup.menu.add("Messages")
-            popup.menu.add("Buy/Sell")
-            popup.menu.add("Challenges")
-            popup.menu.add("Quest")
-            popup.menu.add("Settings")
-            popup.menu.add("Tournaments")
-            popup.menu.add("Rankings")
-            popup.menu.add("Friends")
-            popup.menu.add("Search")
-
-            popup.setOnMenuItemClickListener { item ->
-                when (item.title.toString()) {
-                    "Home" -> startActivity(Intent(this, HomeActivity::class.java))
-                    "Profile" -> startActivity(Intent(this, ProfileActivity::class.java))
-                    "Messages" -> startActivity(Intent(this, MessagesActivity::class.java))
-                    "Buy/Sell" -> startActivity(Intent(this, BuySellActivity::class.java))
-                    "Challenges" -> startActivity(Intent(this, ChallengesActivity::class.java))
-                    "Quest" -> startActivity(Intent(this, QuestActivity::class.java))
-                    "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
-                    "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
-                    "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
-                    "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
-                    "Search" -> startActivity(Intent(this, SearchActivity::class.java))
-                }
-                true
-            }
-            popup.show()
-        }
+        setupHamburgerMenu()
 
         searchView = findViewById(R.id.searchViewQuest)
         filterTypeSpinner = findViewById(R.id.filterQuestType)
@@ -87,13 +54,12 @@ class QuestActivity : BaseActivity() {
         }
         recycler.adapter = adapter
 
-        // filter types
         val types = listOf("All", QuestRequest.Type.MATCHES.name, QuestRequest.Type.ISO.name, QuestRequest.Type.TEST.name)
         filterTypeSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, types).apply {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
         filterTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: android.view.View?, position: Int, id: Long) { filterAndSearch() }
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) { filterAndSearch() }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
@@ -110,7 +76,7 @@ class QuestActivity : BaseActivity() {
     private fun refreshList() {
         val list = QuestManager.getQuests()
         adapter.submitList(list)
-        emptyText.visibility = if (list.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+        emptyText.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
     }
 
     private fun filterAndSearch() {
@@ -124,7 +90,7 @@ class QuestActivity : BaseActivity() {
         }
         val filtered = QuestManager.search(q, type)
         adapter.submitList(filtered)
-        emptyText.visibility = if (filtered.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+        emptyText.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
     }
 
     private fun showQuestDetails(item: QuestRequest) {
@@ -193,7 +159,6 @@ class QuestActivity : BaseActivity() {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
 
-        // prefill
         etTitle.setText(item.title)
         etDesc.setText(item.description)
         etDetails.setText(item.details ?: "")

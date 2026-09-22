@@ -6,7 +6,7 @@ import com.google.firebase.Timestamp
 
 object FriendManager {
 
-    private val db = FirebaseFirestore.getInstance()
+    private val db by lazy { FirebaseFirestore.getInstance() }
 
     private fun currentUid(): String? =
         FirebaseAuth.getInstance().currentUser?.uid

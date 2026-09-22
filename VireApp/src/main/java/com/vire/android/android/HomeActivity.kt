@@ -39,7 +39,11 @@ class HomeActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
-        FirebaseApp.initializeApp(this)
+        try {
+            FirebaseApp.initializeApp(this)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Firebase initialization failed", Toast.LENGTH_SHORT).show()
+        }
 
         // Load username immediately from SharedPreferences
         loadUsernameFromSharedPrefs()

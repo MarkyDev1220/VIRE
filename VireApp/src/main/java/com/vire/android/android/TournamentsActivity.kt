@@ -19,7 +19,6 @@ class TournamentsActivity : BaseActivity() {
     private lateinit var searchView: SearchView
     private lateinit var fabCreate: FloatingActionButton
     private lateinit var emptyText: TextView
-    private lateinit var hamburgerButton: ImageButton
 
     private val games = listOf(
         "Magic: The Gathering",
@@ -31,48 +30,15 @@ class TournamentsActivity : BaseActivity() {
         "Battle Spirits Saga (BSS)"
     )
 
-    private val playerOptions = listOf(8, 16, 32) // even numbers: max 32
+    private val playerOptions = listOf(8, 16, 32)
 
-    // Replace with actual signed-in user
     private val currentUser = "demoUser"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_tournaments)
 
-        hamburgerButton = findViewById(R.id.hamburgerButton)
-        hamburgerButton.setOnClickListener {
-            val popup = android.widget.PopupMenu(this, it)
-            popup.menu.add("Home")
-            popup.menu.add("Profile")
-            popup.menu.add("Messages")
-            popup.menu.add("Buy/Sell")
-            popup.menu.add("Challenges")
-            popup.menu.add("Quest")
-            popup.menu.add("Settings")
-            popup.menu.add("Tournaments")
-            popup.menu.add("Rankings")
-            popup.menu.add("Friends")
-            popup.menu.add("Search")
-
-            popup.setOnMenuItemClickListener { item ->
-                when (item.title.toString()) {
-                    "Home" -> startActivity(Intent(this, HomeActivity::class.java))
-                    "Profile" -> startActivity(Intent(this, ProfileActivity::class.java))
-                    "Messages" -> startActivity(Intent(this, MessagesActivity::class.java))
-                    "Buy/Sell" -> startActivity(Intent(this, BuySellActivity::class.java))
-                    "Challenges" -> startActivity(Intent(this, ChallengesActivity::class.java))
-                    "Quest" -> startActivity(Intent(this, QuestActivity::class.java))
-                    "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
-                    "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
-                    "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
-                    "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
-                    "Search" -> startActivity(Intent(this, SearchActivity::class.java))
-                }
-                true
-            }
-            popup.show()
-        }
+        setupHamburgerMenu()
 
         searchView = findViewById(R.id.searchViewTournaments)
         fabCreate = findViewById(R.id.fabCreateTournament)
@@ -164,7 +130,6 @@ class TournamentsActivity : BaseActivity() {
     }
 
     private fun openEditDialog(item: TournamentRequest) {
-        // reuse create dialog layout for edits
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_create_tournament, null)
         val spPlayers = view.findViewById<Spinner>(R.id.createTournamentPlayers)
         val spGame = view.findViewById<Spinner>(R.id.createTournamentGame)
@@ -179,7 +144,6 @@ class TournamentsActivity : BaseActivity() {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
 
-        // prefill
         etName.setText(item.name)
         etBracket.setText(item.bracketLink)
         etPrizes.setText(item.prizesDescription ?: "")
@@ -199,21 +163,9 @@ class TournamentsActivity : BaseActivity() {
                 val bracket = etBracket.text.toString().trim()
                 val prizes = etPrizes.text.toString().trim().ifEmpty { null }
 
-                // validation
                 if (name.isEmpty()) { Toast.makeText(this, "Tournament name required", Toast.LENGTH_SHORT).show(); return@setPositiveButton }
                 if (bracket.isEmpty() || !Patterns.WEB_URL.matcher(bracket).matches()) {
                     Toast.makeText(this, "A valid bracket link is required", Toast.LENGTH_SHORT).show(); return@setPositiveButton
-                }
-                if (players !in playerOptions) {
-                    Toast.makeText(this, "Invalid player count", Toast.LENGTH_SHORT).show(); return@setPositiveButton
-                }
-
-                // if prizes points specified as "Points:4" - ensure between 4 and 6
-                if (prizes != null && prizes.startsWith("Points:", ignoreCase = true)) {
-                    val pts = prizes.substringAfter(":", "").toIntOrNull()
-                    if (pts == null || pts < 4 || pts > 6) {
-                        Toast.makeText(this, "Points must be between 4 and 6", Toast.LENGTH_SHORT).show(); return@setPositiveButton
-                    }
                 }
 
                 val updated = item.copy(
@@ -261,20 +213,9 @@ class TournamentsActivity : BaseActivity() {
                 val bracket = etBracket.text.toString().trim()
                 val prizes = etPrizes.text.toString().trim().ifEmpty { null }
 
-                // validations
                 if (name.isEmpty()) { Toast.makeText(this, "Tournament name is required", Toast.LENGTH_SHORT).show(); return@setPositiveButton }
                 if (bracket.isEmpty() || !Patterns.WEB_URL.matcher(bracket).matches()) {
                     Toast.makeText(this, "A valid bracket link is required", Toast.LENGTH_SHORT).show(); return@setPositiveButton
-                }
-                if (players !in playerOptions) {
-                    Toast.makeText(this, "Select a valid minimum number of players", Toast.LENGTH_SHORT).show(); return@setPositiveButton
-                }
-                // prizes points validation if used
-                if (prizes != null && prizes.startsWith("Points:", ignoreCase = true)) {
-                    val pts = prizes.substringAfter(":", "").toIntOrNull()
-                    if (pts == null || pts < 4 || pts > 6) {
-                        Toast.makeText(this, "Points must be between 4 and 6", Toast.LENGTH_SHORT).show(); return@setPositiveButton
-                    }
                 }
 
                 val t = TournamentRequest(

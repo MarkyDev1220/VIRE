@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.view.View
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Switch
@@ -18,13 +17,10 @@ class SettingsActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
+        setupHamburgerMenu()
+
         val sharedPref = getSharedPreferences("VirePrefs", MODE_PRIVATE)
 
-        // Hamburger menu
-        val hamburgerButton = findViewById<ImageButton>(R.id.hamburgerButton)
-        hamburgerButton.setOnClickListener { showMenu(it) }
-
-        // ================== Account ==================
         findViewById<LinearLayout>(R.id.changeProfileOption).setOnClickListener {
             startActivity(Intent(this, ProfileActivity::class.java))
         }
@@ -33,14 +29,12 @@ class SettingsActivity : BaseActivity() {
             startActivity(Intent(this, ForgotPasswordActivity::class.java))
         }
 
-        // Logout option
         findViewById<LinearLayout>(R.id.logoutOption).setOnClickListener {
             sharedPref.edit().clear().apply()
             startActivity(Intent(this, MainActivity::class.java))
             finishAffinity()
         }
 
-        // Delete profile option
         findViewById<LinearLayout>(R.id.deleteProfileOption).setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("Delete Profile")
@@ -55,7 +49,6 @@ class SettingsActivity : BaseActivity() {
                 .show()
         }
 
-        // ================== Notifications ==================
         val pushSwitch = findViewById<Switch>(R.id.pushNotificationsSwitch)
         pushSwitch.isChecked = sharedPref.getBoolean("push_notifications", true)
         pushSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -68,7 +61,6 @@ class SettingsActivity : BaseActivity() {
             sharedPref.edit().putBoolean("email_notifications", isChecked).apply()
         }
 
-        // ================== App Preferences ==================
         val darkModeSwitch = findViewById<Switch>(R.id.darkModeSwitch)
         darkModeSwitch.isChecked = sharedPref.getBoolean("dark_mode", false)
         darkModeSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -100,7 +92,6 @@ class SettingsActivity : BaseActivity() {
                 .show()
         }
 
-        // ================== Privacy & Security ==================
         findViewById<LinearLayout>(R.id.blockedUsersOption).setOnClickListener {
             startActivity(Intent(this, BlockedUsersActivity::class.java))
         }
@@ -119,7 +110,6 @@ class SettingsActivity : BaseActivity() {
                 .show()
         }
 
-        // ================== Support & About ==================
         findViewById<LinearLayout>(R.id.contactSupportOption).setOnClickListener {
             val intent = Intent(Intent.ACTION_SENDTO).apply {
                 data = Uri.parse("mailto:support@vire.com")
@@ -131,45 +121,13 @@ class SettingsActivity : BaseActivity() {
         findViewById<LinearLayout>(R.id.termsOption).setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://vire.com/terms")))
         }
-
-        // App version is just a TextView, no action needed
     }
 
-    private fun showMenu(view: View) {
-        val popup = android.widget.PopupMenu(this, view)
-        val menuItems = listOf(
-            "Home", "Profile", "Messages", "Buy/Sell", "Challenges",
-            "Quest", "Settings", "Tournaments", "Rankings", "Friends", "Search"
-        )
-        menuItems.forEach { popup.menu.add(it) }
-
-        popup.setOnMenuItemClickListener { item ->
-            when (item.title.toString()) {
-                "Home" -> startActivity(Intent(this, HomeActivity::class.java))
-                "Profile" -> startActivity(Intent(this, ProfileActivity::class.java))
-                "Messages" -> startActivity(Intent(this, MessagesActivity::class.java))
-                "Buy/Sell" -> startActivity(Intent(this, BuySellActivity::class.java))
-                "Challenges" -> startActivity(Intent(this, ChallengesActivity::class.java))
-                "Quest" -> startActivity(Intent(this, QuestActivity::class.java))
-                "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
-                "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
-                "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
-                "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
-                "Search" -> startActivity(Intent(this, SearchActivity::class.java))
-            }
-            true
-        }
-        popup.show()
-    }
-
-    /** --- Delete all user data from SharedPreferences --- */
     private fun deleteUser(context: Context) {
-        val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("user_prefs", MODE_PRIVATE)
         prefs.edit().clear().apply()
 
-        val virePrefs = context.getSharedPreferences("VirePrefs", Context.MODE_PRIVATE)
+        val virePrefs = context.getSharedPreferences("VirePrefs", MODE_PRIVATE)
         virePrefs.edit().clear().apply()
-
-        // TODO: also remove from any backend or database if applicable
     }
 }

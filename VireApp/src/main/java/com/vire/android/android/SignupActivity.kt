@@ -22,8 +22,8 @@ class SignupActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySignupBinding
     private var profileImageUri: Uri? = null
     private val selectedGames = mutableListOf<String>()
-    private val db = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance()
+    private val db by lazy { FirebaseFirestore.getInstance() }
+    private val auth by lazy { FirebaseAuth.getInstance() }
 
     private val genderOptions = arrayOf(
         "Male","Female","Non-binary","Transgender Male","Transgender Female","Other / Prefer not to say"
