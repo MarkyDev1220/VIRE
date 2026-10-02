@@ -1,18 +1,25 @@
 package com.vire.android.android
 
+import java.io.Serializable
+
 data class Post(
-    val id: String = java.util.UUID.randomUUID().toString(),
-    val username: String,
-    val content: String,
-    val imageUri: String? = null, // NEW: optional image
-    var likes: Int = 0,
-    val comments: MutableList<Comment> = mutableListOf(), // NEW: comment objects
+    val id: String = "",
+    val authorUid: String = "",
+    val username: String = "Gamer",
+    val authorAvatarUrl: String = "",
+    val content: String = "",
+    val imageUri: String? = null,
+    val postType: String = "General", // "General", "Deck Post", "Collection Post", "Game Night Post", "Looking for Players"
+    val likes: Int = 0,
+    val likedBy: List<String> = emptyList(),
+    val commentsCount: Int = 0,
     val timestamp: Long = System.currentTimeMillis()
-) : java.io.Serializable
+) : Serializable
 
 data class Comment(
-    val username: String,
-    val text: String,
+    val id: String = "",
+    val postId: String = "",
+    val username: String = "Gamer",
+    val text: String = "",
     val timestamp: Long = System.currentTimeMillis()
-) : java.io.Serializable
-
+) : Serializable

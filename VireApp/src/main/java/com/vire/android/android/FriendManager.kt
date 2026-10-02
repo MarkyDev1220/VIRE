@@ -156,4 +156,51 @@ object FriendManager {
             }
             .addOnFailureListener { onResult(emptyList()) }
     }
+
+    enum class FriendshipState {
+        NONE,
+        PENDING_SENT,
+        PENDING_RECEIVED,
+        FRIENDS
+    }
+
+    fun getFriendshipState(otherUid: String, onResult: (FriendshipState, String?) -> Unit) {
+        val uid = currentUid() ?: return onResult(FriendshipState.NONE, null)
+        if (uid == otherUid) return onResult(FriendshipState.NONE, null)
+
+        isFriend(otherUid) { isFr ->
+            if (isFr) {
+                onResult(FriendshipState.FRIENDS, null)
+                return@isFriend
+            }
+
+            db.collection("friendRequests")
+                .whereEqualTo("fromUid", uid)
+                .whereEqualTo("toUid", otherUid)
+                .whereEqualTo("status", "pending")
+                .get()
+                .addOnSuccessListener { sentSnap ->
+                    if (!sentSnap.isEmpty) {
+                        val reqId = sentSnap.documents.firstOrNull()?.id
+                        onResult(FriendshipState.PENDING_SENT, reqId)
+                    } else {
+                        db.collection("friendRequests")
+                            .whereEqualTo("fromUid", otherUid)
+                            .whereEqualTo("toUid", uid)
+                            .whereEqualTo("status", "pending")
+                            .get()
+                            .addOnSuccessListener { recvSnap ->
+                                if (!recvSnap.isEmpty) {
+                                    val reqId = recvSnap.documents.firstOrNull()?.id
+                                    onResult(FriendshipState.PENDING_RECEIVED, reqId)
+                                } else {
+                                    onResult(FriendshipState.NONE, null)
+                                }
+                            }
+                            .addOnFailureListener { onResult(FriendshipState.NONE, null) }
+                    }
+                }
+                .addOnFailureListener { onResult(FriendshipState.NONE, null) }
+        }
+    }
 }

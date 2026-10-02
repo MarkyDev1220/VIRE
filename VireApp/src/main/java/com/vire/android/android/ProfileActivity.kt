@@ -134,43 +134,11 @@ class ProfileActivity : BaseActivity() {
             startActivity(intent)
         }
 
-        hamburgerButton = findViewById(R.id.hamburgerButton)
-
-        hamburgerButton.setOnClickListener {
-            val popup = PopupMenu(this, it)
-            popup.menu.add("Home")
-            popup.menu.add("Profile")
-            popup.menu.add("Messages")
-            popup.menu.add("Buy/Sell")
-            popup.menu.add("Challenges")
-            popup.menu.add("Quest")
-            popup.menu.add("Settings")
-            popup.menu.add("Tournaments")
-            popup.menu.add("Rankings")
-            popup.menu.add("Friends")
-            popup.menu.add("Search")
-            popup.menu.add("Game Nights")
-
-            popup.setOnMenuItemClickListener { item ->
-                when (item.title.toString()) {
-                    "Home" -> startActivity(Intent(this, HomeActivity::class.java))
-                    "Profile" -> startActivity(Intent(this, ProfileActivity::class.java))
-                    "Messages" -> startActivity(Intent(this, MessagesActivity::class.java))
-                    "Buy/Sell" -> startActivity(Intent(this, BuySellActivity::class.java))
-                    "Challenges" -> startActivity(Intent(this, ChallengesActivity::class.java))
-                    "Quest" -> startActivity(Intent(this, QuestActivity::class.java))
-                    "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
-                    "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
-                    "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
-                    "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
-                    "Search" -> startActivity(Intent(this, SearchActivity::class.java))
-                    "Game Nights" -> startActivity(Intent(this, GameNightListActivity::class.java))
-
-                }
-                true
-            }
-            popup.show()
+        findViewById<Button>(R.id.viewCollectionButton)?.setOnClickListener {
+            startActivity(Intent(this, CollectionActivity::class.java))
         }
+
+        setupHamburgerMenu()
 
         val auth = try {
             FirebaseAuth.getInstance()

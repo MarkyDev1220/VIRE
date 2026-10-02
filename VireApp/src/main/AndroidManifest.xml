@@ -56,6 +56,12 @@
                 <activity android:name=".android.CreateGameNightActivity" />
                 <activity android:name=".android.GameNightListActivity" />
                 <activity android:name=".android.GameNightDetailsActivity" />
+                <activity android:name=".android.CollectionActivity" />
+                <activity android:name=".android.LocationListActivity" />
+                <activity android:name=".android.LocationDetailsActivity" />
+                <activity android:name=".android.TournamentDetailsActivity" />
+                <activity android:name=".android.CommunityListActivity" />
+                <activity android:name=".android.CommunityDetailsActivity" />
 
                 <!-- Launcher Activity -->
                 <activity

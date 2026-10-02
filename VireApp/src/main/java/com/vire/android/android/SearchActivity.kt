@@ -2,21 +2,26 @@ package com.vire.android.android
 
 import android.content.Intent
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.util.Log
+import android.view.View
 import android.widget.*
-import androidx.appcompat.app.AlertDialog
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.vire.android.R
 
 class SearchActivity : BaseActivity() {
 
-    private lateinit var searchInput: EditText
-    private lateinit var usersListView: ListView
-    private lateinit var usersAdapter: ArrayAdapter<String>
-    private val displayedUsers = mutableListOf<User>()
+    private lateinit var searchView: SearchView
+    private lateinit var spinnerCategory: Spinner
+    private lateinit var recyclerUsers: RecyclerView
+    private lateinit var emptyText: TextView
+    private lateinit var adapter: UserSearchAdapter
+
+    private val categories = listOf("All", "Username", "Favorite Game", "Local Area", "Skill Level")
+
+    private val allSearchItems = mutableListOf<UserSearchItem>()
 
     private val db by lazy { FirebaseFirestore.getInstance() }
     private val auth by lazy { FirebaseAuth.getInstance() }
@@ -27,67 +32,57 @@ class SearchActivity : BaseActivity() {
 
         setupHamburgerMenu()
 
-        searchInput = findViewById(R.id.searchInput)
-        usersListView = findViewById(R.id.usersListView)
+        searchView = findViewById(R.id.searchViewUsers)
+        spinnerCategory = findViewById(R.id.spinnerSearchCategory)
+        recyclerUsers = findViewById(R.id.recyclerUsers)
+        emptyText = findViewById(R.id.emptySearchText)
 
-        usersAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, mutableListOf())
-        usersListView.adapter = usersAdapter
-
-        loadAllUsers()
-
-        searchInput.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                filterUsers(s.toString())
+        recyclerUsers.layoutManager = LinearLayoutManager(this)
+        adapter = UserSearchAdapter(
+            onUserClick = { item ->
+                val intent = Intent(this, ProfileActivity::class.java)
+                intent.putExtra("uid", item.user.id)
+                startActivity(intent)
+            },
+            onActionClick = { item ->
+                handleFriendAction(item)
             }
-            override fun afterTextChanged(s: Editable?) {}
+        )
+        recyclerUsers.adapter = adapter
+
+        spinnerCategory.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories).apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+
+        spinnerCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                filterUsers()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                filterUsers()
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                filterUsers()
+                return true
+            }
         })
 
-        // Tap: view profile
-        usersListView.setOnItemClickListener { _, _, position, _ ->
-            val selectedUser = displayedUsers[position]
-            val intent = Intent(this, ProfileActivity::class.java)
-            intent.putExtra("uid", selectedUser.id)
-            startActivity(intent)
-        }
-
-        // Long press: add friend
-        usersListView.setOnItemLongClickListener { _, _, position, _ ->
-            val selectedUser = displayedUsers[position]
-            val currentUid = auth.currentUser?.uid
-
-            if (currentUid == null || selectedUser.id == currentUid) return@setOnItemLongClickListener true
-
-            FriendManager.isFriend(selectedUser.id) { alreadyFriends ->
-                if (alreadyFriends) {
-                    Toast.makeText(this, "${selectedUser.username} is already your friend.", Toast.LENGTH_SHORT).show()
-                } else {
-                    AlertDialog.Builder(this)
-                        .setTitle("Add Friend")
-                        .setMessage("Do you want to send a friend request to ${selectedUser.username}?")
-                        .setPositiveButton("Yes") { _, _ ->
-                            FriendManager.sendRequest(selectedUser.id) { success ->
-                                Toast.makeText(
-                                    this@SearchActivity,
-                                    if (success) "Friend request sent" else "Failed to send request (already pending?)",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                        .setNegativeButton("No", null)
-                        .show()
-                }
-            }
-
-            true
-        }
+        loadAllUsers()
     }
 
     private fun loadAllUsers() {
         val currentUid = auth.currentUser?.uid
         db.collection("users").get()
             .addOnSuccessListener { result ->
-                displayedUsers.clear()
+                allSearchItems.clear()
+                val loadedUsers = mutableListOf<Pair<User, String?>>()
+
                 for (document in result) {
                     val uid = document.id
                     if (uid == currentUid) continue
@@ -104,9 +99,32 @@ class SearchActivity : BaseActivity() {
                         localArea = document.getString("localArea") ?: "",
                         gamerBio = document.getString("gamerBio") ?: ""
                     )
-                    displayedUsers.add(user)
+                    val profileImageUrl = document.getString("profileImageUrl")
+                    loadedUsers.add(Pair(user, profileImageUrl))
                 }
-                updateUserDisplay()
+
+                if (loadedUsers.isEmpty()) {
+                    filterUsers()
+                    return@addOnSuccessListener
+                }
+
+                var pendingChecks = loadedUsers.size
+                for ((user, profileImageUrl) in loadedUsers) {
+                    FriendManager.getFriendshipState(user.id) { state, reqId ->
+                        allSearchItems.add(
+                            UserSearchItem(
+                                user = user,
+                                profileImageUrl = profileImageUrl,
+                                friendshipState = state,
+                                requestId = reqId
+                            )
+                        )
+                        pendingChecks--
+                        if (pendingChecks <= 0) {
+                            filterUsers()
+                        }
+                    }
+                }
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Error loading users: ${e.message}", Toast.LENGTH_LONG).show()
@@ -114,21 +132,70 @@ class SearchActivity : BaseActivity() {
             }
     }
 
-    private fun filterUsers(query: String) {
-        val filtered = displayedUsers.filter { it.username.contains(query, ignoreCase = true) }
-        updateUserDisplay(filtered)
+    private fun filterUsers() {
+        val query = searchView.query?.toString()?.trim()?.lowercase() ?: ""
+        val category = spinnerCategory.selectedItem?.toString() ?: "All"
+
+        val filtered = allSearchItems.filter { item ->
+            val user = item.user
+            if (query.isEmpty()) return@filter true
+
+            when (category) {
+                "Username" -> user.username.lowercase().contains(query)
+                "Favorite Game" -> user.favoriteGames.any { it.lowercase().contains(query) }
+                "Local Area" -> user.localArea.lowercase().contains(query)
+                "Skill Level" -> user.skillLevel.lowercase().contains(query)
+                else -> {
+                    user.username.lowercase().contains(query) ||
+                            user.localArea.lowercase().contains(query) ||
+                            user.skillLevel.lowercase().contains(query) ||
+                            user.favoriteGames.any { it.lowercase().contains(query) } ||
+                            user.favoriteGenres.any { it.lowercase().contains(query) } ||
+                            user.gamerBio.lowercase().contains(query)
+                }
+            }
+        }
+
+        adapter.submitList(filtered.toList())
+        emptyText.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
     }
 
-    private fun updateUserDisplay(users: List<User> = displayedUsers) {
-        val names = users.map { it.username }
-        usersAdapter.clear()
-        if (names.isEmpty()) {
-            // Optional: You could show a "No users found" label here
-            usersAdapter.add("No users found")
-        } else {
-            usersAdapter.addAll(names)
+    private fun handleFriendAction(item: UserSearchItem) {
+        when (item.friendshipState) {
+            FriendManager.FriendshipState.NONE -> {
+                FriendManager.sendRequest(item.user.id) { success ->
+                    if (success) {
+                        Toast.makeText(this, "Friend request sent to ${item.user.username}", Toast.LENGTH_SHORT).show()
+                        updateItemState(item.user.id, FriendManager.FriendshipState.PENDING_SENT, null)
+                    } else {
+                        Toast.makeText(this, "Failed to send request", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            FriendManager.FriendshipState.PENDING_RECEIVED -> {
+                val reqId = item.requestId ?: return
+                FriendManager.acceptRequest(reqId) { success ->
+                    if (success) {
+                        Toast.makeText(this, "Accepted friend request from ${item.user.username}", Toast.LENGTH_SHORT).show()
+                        updateItemState(item.user.id, FriendManager.FriendshipState.FRIENDS, null)
+                    } else {
+                        Toast.makeText(this, "Failed to accept request", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            else -> {}
         }
-        usersAdapter.notifyDataSetChanged()
+    }
+
+    private fun updateItemState(userId: String, newState: FriendManager.FriendshipState, reqId: String?) {
+        val index = allSearchItems.indexOfFirst { it.user.id == userId }
+        if (index >= 0) {
+            val oldItem = allSearchItems[index]
+            allSearchItems[index] = oldItem.copy(
+                friendshipState = newState,
+                requestId = reqId
+            )
+            filterUsers()
+        }
     }
 }
-

@@ -1,24 +1,26 @@
 package com.vire.android.android
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
+import android.widget.Button
 import android.widget.TextView
-import android.widget.PopupMenu
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.vire.android.R
 
 class TournamentAdapter(
-    initial: List<TournamentRequest>,
-    private val onAction: (TournamentRequest, Action) -> Unit
-) : ListAdapter<TournamentRequest, TournamentAdapter.VH>(DIFF) {
+    initial: List<Tournament> = emptyList(),
+    private val currentUid: String = "",
+    private val onTournamentClick: (Tournament) -> Unit,
+    private val onRegisterClick: (Tournament) -> Unit
+) : ListAdapter<Tournament, TournamentAdapter.VH>(DIFF) {
 
-    enum class Action { VIEW, EDIT, DELETE }
-
-    init { submitList(initial) }
+    init {
+        submitList(initial)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val v = LayoutInflater.from(parent.context).inflate(R.layout.item_tournament, parent, false)
@@ -30,47 +32,56 @@ class TournamentAdapter(
     }
 
     inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val tvName = itemView.findViewById<TextView>(R.id.tournamentName)
-        private val tvGame = itemView.findViewById<TextView>(R.id.tournamentGame)
-        private val tvPlayers = itemView.findViewById<TextView>(R.id.tournamentPlayers)
-        private val tvOrganizer = itemView.findViewById<TextView>(R.id.tournamentOrganizer)
-        private val btnMore = itemView.findViewById<ImageButton>(R.id.tournamentMore)
+        private val tvName: TextView = itemView.findViewById(R.id.tournamentName)
+        private val tvStatus: TextView = itemView.findViewById(R.id.tournamentStatus)
+        private val tvGameSystem: TextView = itemView.findViewById(R.id.tournamentGameSystem)
+        private val tvFormat: TextView = itemView.findViewById(R.id.tournamentFormat)
+        private val tvDateLoc: TextView = itemView.findViewById(R.id.tournamentDateLocation)
+        private val tvFee: TextView = itemView.findViewById(R.id.tournamentEntryFee)
+        private val tvPlayerCount: TextView = itemView.findViewById(R.id.tournamentPlayerCount)
+        private val btnJoin: Button = itemView.findViewById(R.id.btnJoinTournament)
 
-        fun bind(item: TournamentRequest) {
-            tvName.text = item.name
-            tvGame.text = item.game
-            tvPlayers.text = "Min players: ${item.minPlayers} (max 32)"
-            tvOrganizer.text = "Organizer: ${item.organizer}"
+        fun bind(tournament: Tournament) {
+            tvName.text = tournament.name
+            tvStatus.text = tournament.status
+            tvGameSystem.text = tournament.gameSystem
+            tvFormat.text = tournament.format
 
-            itemView.setOnClickListener { onAction(item, Action.VIEW) }
+            val dateLocStr = listOf(tournament.date, tournament.time, tournament.location)
+                .filter { it.isNotBlank() }
+                .joinToString(" • ")
+            tvDateLoc.text = if (dateLocStr.isNotBlank()) "📅 $dateLocStr" else "📅 Schedule TBD"
 
-            btnMore.setOnClickListener { anchor ->
-                try {
-                    val popup = PopupMenu(itemView.context, anchor)
-                    val MENU_EDIT = 1
-                    val MENU_DELETE = 2
-                    popup.menu.add(0, MENU_EDIT, 0, "Edit")
-                    popup.menu.add(0, MENU_DELETE, 1, "Delete")
-                    popup.setOnMenuItemClickListener { mi ->
-                        when (mi.itemId) {
-                            MENU_EDIT -> onAction(item, Action.EDIT)
-                            MENU_DELETE -> onAction(item, Action.DELETE)
-                        }
-                        true
-                    }
-                    popup.show()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    onAction(item, Action.VIEW)
-                }
+            tvFee.text = "Fee: ${tournament.entryFee.ifBlank { "Free" }}"
+            tvPlayerCount.text = "👥 ${tournament.participants.size} / ${tournament.maxParticipants} Players"
+
+            val isRegistered = tournament.participants.contains(currentUid)
+            if (isRegistered) {
+                btnJoin.text = "Registered ✓"
+                btnJoin.isEnabled = true
+                btnJoin.setBackgroundColor(Color.parseColor("#455A64"))
+            } else if (tournament.participants.size >= tournament.maxParticipants) {
+                btnJoin.text = "Full"
+                btnJoin.isEnabled = false
+                btnJoin.setBackgroundColor(Color.parseColor("#9E9E9E"))
+            } else {
+                btnJoin.text = "Join Event"
+                btnJoin.isEnabled = true
+                btnJoin.setBackgroundColor(Color.parseColor("#1565C0"))
             }
+
+            itemView.setOnClickListener { onTournamentClick(tournament) }
+            btnJoin.setOnClickListener { onRegisterClick(tournament) }
         }
     }
 
     companion object {
-        private val DIFF = object : DiffUtil.ItemCallback<TournamentRequest>() {
-            override fun areItemsTheSame(old: TournamentRequest, new: TournamentRequest) = old.id == new.id
-            override fun areContentsTheSame(old: TournamentRequest, new: TournamentRequest) = old == new
+        private val DIFF = object : DiffUtil.ItemCallback<Tournament>() {
+            override fun areItemsTheSame(oldItem: Tournament, newItem: Tournament): Boolean =
+                oldItem.id == newItem.id
+
+            override fun areContentsTheSame(oldItem: Tournament, newItem: Tournament): Boolean =
+                oldItem == newItem
         }
     }
 }

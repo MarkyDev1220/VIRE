@@ -75,8 +75,7 @@ class FriendsActivity : BaseActivity() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        val hamburgerButton = findViewById<ImageButton>(R.id.hamburgerButton)
-        hamburgerButton?.setOnClickListener { showMenu(it) }
+        setupHamburgerMenu()
     }
 
     private fun loadFriends() {
@@ -133,43 +132,48 @@ class FriendsActivity : BaseActivity() {
                         it.getString("username") ?: "Unknown"
                     }
                     val labels = mutableListOf<String>()
-                    for ((_, fromUid) in requests) {
-                        val name = nameMap[fromUid] ?: fromUid
+                    val requestItems = mutableListOf<Triple<String, String, String>>() // (reqId, fromUid, username)
+
+                    for ((reqId, fromUid) in requests) {
+                        val name = nameMap[fromUid] ?: "Gamer"
                         labels.add("Request from $name")
+                        requestItems.add(Triple(reqId, fromUid, name))
                     }
                     requestsAdapter.clear()
                     requestsAdapter.addAll(labels)
                     requestsAdapter.notifyDataSetChanged()
-                }
-        }
 
-        requestsListView.setOnItemClickListener { _, _, position, _ ->
-            val (reqId, fromUid) = displayedRequests[position]
-            AlertDialog.Builder(this)
-                .setTitle("Friend Request")
-                .setMessage("Accept friend request from $fromUid?")
-                .setPositiveButton("Accept") { _, _ ->
-                    FriendManager.acceptRequest(reqId) { success ->
-                        Toast.makeText(
-                            this,
-                            if (success) "Friend request accepted" else "Failed to accept",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        loadFriends()
-                        loadFriendRequests()
+                    requestsListView.setOnItemClickListener { _, _, position, _ ->
+                        if (position < requestItems.size) {
+                            val (reqId, _, name) = requestItems[position]
+                            AlertDialog.Builder(this)
+                                .setTitle("Friend Request")
+                                .setMessage("Accept friend request from $name?")
+                                .setPositiveButton("Accept") { _, _ ->
+                                    FriendManager.acceptRequest(reqId) { success ->
+                                        Toast.makeText(
+                                            this,
+                                            if (success) "Friend request accepted!" else "Failed to accept",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        loadFriends()
+                                        loadFriendRequests()
+                                    }
+                                }
+                                .setNegativeButton("Decline") { _, _ ->
+                                    FriendManager.declineRequest(reqId) { success ->
+                                        Toast.makeText(
+                                            this,
+                                            if (success) "Request declined" else "Failed to decline",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        loadFriendRequests()
+                                    }
+                                }
+                                .show()
+                        }
                     }
                 }
-                .setNegativeButton("Decline") { _, _ ->
-                    FriendManager.declineRequest(reqId) { success ->
-                        Toast.makeText(
-                            this,
-                            if (success) "Request declined" else "Failed to decline",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        loadFriendRequests()
-                    }
-                }
-                .show()
         }
     }
 
@@ -183,33 +187,5 @@ class FriendsActivity : BaseActivity() {
     private fun filterFriends(query: String) {
         val filtered = displayedFriends.filter { it.username.contains(query, ignoreCase = true) }
         updateFriendList(filtered)
-    }
-
-    private fun showMenu(view: View) {
-        val popup = PopupMenu(this, view)
-        val menuItems = listOf(
-            "Home", "Profile", "Messages", "Buy/Sell", "Challenges",
-            "Quest", "Settings", "Tournaments", "Rankings", "Friends", "Search", "Find Players"
-        )
-        menuItems.forEach { popup.menu.add(it) }
-
-        popup.setOnMenuItemClickListener { item ->
-            when (item.title.toString()) {
-                "Home" -> startActivity(Intent(this, HomeActivity::class.java))
-                "Profile" -> startActivity(Intent(this, ProfileActivity::class.java))
-                "Messages" -> startActivity(Intent(this, MessagesActivity::class.java))
-                "Buy/Sell" -> startActivity(Intent(this, BuySellActivity::class.java))
-                "Challenges" -> startActivity(Intent(this, ChallengesActivity::class.java))
-                "Quest" -> startActivity(Intent(this, QuestActivity::class.java))
-                "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
-                "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
-                "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
-                "Friends" -> startActivity(Intent(this, FriendsActivity::class.java))
-                "Search" -> startActivity(Intent(this, SearchActivity::class.java))
-                "Find Players" -> startActivity(Intent(this, PlayerFinderActivity::class.java))
-            }
-            true
-        }
-        popup.show()
     }
 }

@@ -111,10 +111,12 @@ class HomeActivity : BaseActivity() {
     }
 
     private fun refreshFeed() {
-        feedAdapter.apply {
-            posts.clear()
-            posts.addAll(FeedManager.getGlobalFeed())
-            notifyDataSetChanged()
+        FeedManager.fetchGlobalFeed { list ->
+            feedAdapter.apply {
+                posts.clear()
+                posts.addAll(list)
+                notifyDataSetChanged()
+            }
         }
     }
 
@@ -137,35 +139,7 @@ class HomeActivity : BaseActivity() {
         }
 
         navMenu.setOnClickListener { anchor ->
-            val popup = android.widget.PopupMenu(this, anchor)
-            popup.menu.apply {
-                add("Messages")
-                add("Buy/Sell")
-                add("Challenges")
-                add("Quest")
-                add("Settings")
-                add("Tournaments")
-                add("Rankings")
-                add("Search")
-                add("Game Nights")
-            }
-
-            popup.setOnMenuItemClickListener { item ->
-                when (item.title.toString()) {
-                    "Messages" -> startActivity(Intent(this, MessagesActivity::class.java))
-                    "Buy/Sell" -> startActivity(Intent(this, BuySellActivity::class.java))
-                    "Challenges" -> startActivity(Intent(this, ChallengesActivity::class.java))
-                    "Quest" -> startActivity(Intent(this, QuestActivity::class.java))
-                    "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
-                    "Tournaments" -> startActivity(Intent(this, TournamentsActivity::class.java))
-                    "Rankings" -> startActivity(Intent(this, RankingsActivity::class.java))
-                    "Search" -> startActivity(Intent(this, SearchActivity::class.java))
-                    "Game Nights" -> startActivity(Intent(this, GameNightListActivity::class.java))
-                }
-                true
-            }
-
-            popup.show()
+            showHamburgerMenu(anchor)
         }
     }
 }

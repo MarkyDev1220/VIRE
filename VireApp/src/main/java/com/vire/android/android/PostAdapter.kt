@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import com.google.firebase.auth.FirebaseAuth
 import com.vire.android.R
 
 class PostAdapter(
@@ -30,12 +31,14 @@ class PostAdapter(
         val likeButton = view.findViewById<Button>(R.id.likeButton)
         val commentButton = view.findViewById<Button>(R.id.commentButton)
 
+        val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: "demo_user"
+
         // Username + content
         usernameText.text = post.username
         contentText.text = post.content
 
         // Image support
-        if (post.imageUri != null) {
+        if (!post.imageUri.isNullOrEmpty()) {
             postImage.visibility = View.VISIBLE
             try {
                 postImage.setImageURI(Uri.parse(post.imageUri))
@@ -47,13 +50,16 @@ class PostAdapter(
         }
 
         // Like button
-        likeButton.text = "Like (${post.likes})"
+        val isLiked = post.likedBy.contains(currentUid)
+        likeButton.text = if (isLiked) "❤️ Liked (${post.likes})" else "🤍 Like (${post.likes})"
         likeButton.setOnClickListener {
-            FeedManager.likePost(post.id)
-            notifyDataSetChanged()
+            FeedManager.toggleLikePost(post.id, currentUid) {
+                notifyDataSetChanged()
+            }
         }
 
         // Comment button
+        commentButton.text = "💬 Comments (${post.commentsCount})"
         commentButton.setOnClickListener {
             showCommentDialog(post)
         }
@@ -65,7 +71,6 @@ class PostAdapter(
         val input = EditText(context)
         input.hint = "Write a comment..."
 
-        // ⭐ Load REAL username from SharedPreferences
         val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         val realUsername = prefs.getString("username", "Unknown") ?: "Unknown"
 
@@ -75,13 +80,10 @@ class PostAdapter(
             .setPositiveButton("Post") { _, _ ->
                 val commentText = input.text.toString().trim()
                 if (commentText.isNotEmpty()) {
-                    val comment = Comment(
-                        username = realUsername, // ⭐ REAL username
-                        text = commentText
-                    )
-                    post.comments.add(comment)
-                    notifyDataSetChanged()
-                    Toast.makeText(context, "Comment added", Toast.LENGTH_SHORT).show()
+                    FeedManager.addComment(post.id, realUsername, commentText) {
+                        notifyDataSetChanged()
+                        Toast.makeText(context, "Comment added", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             .setNegativeButton("Cancel", null)

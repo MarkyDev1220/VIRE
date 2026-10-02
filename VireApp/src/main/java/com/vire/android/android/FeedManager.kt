@@ -1,61 +1,147 @@
 package com.vire.android.android
 
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+
 object FeedManager {
 
-    private val globalFeed = mutableListOf<Post>()
-    private val profileFeeds = mutableMapOf<String, MutableList<Post>>()
+    private val db: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
+    private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
 
-    /**
-     * Add a new post to the global feed and the user's profile feed.
-     * Username is now ALWAYS the real username passed from HomeActivity → NewPostActivity.
-     */
+    private val localFeed = mutableListOf<Post>()
+    private val localComments = mutableMapOf<String, MutableList<Comment>>()
+
     fun addPost(
         username: String,
         content: String,
-        imageUri: String? = null
+        imageUri: String? = null,
+        postType: String = "General",
+        onResult: ((Boolean) -> Unit)? = null
     ) {
-        val post = Post(
-            username = username,
-            content = content,
-            imageUri = imageUri
-        )
+        try {
+            val ref = db.collection("globalPosts").document()
+            val uid = auth.currentUser?.uid ?: "demo_user"
 
-        // Add to global feed (newest at top)
-        globalFeed.add(0, post)
+            val post = Post(
+                id = ref.id,
+                authorUid = uid,
+                username = username,
+                content = content,
+                imageUri = imageUri,
+                postType = postType,
+                timestamp = System.currentTimeMillis()
+            )
 
-        // Add to user's profile feed
-        val userFeed = profileFeeds.getOrPut(username) { mutableListOf() }
-        userFeed.add(0, post)
+            localFeed.add(0, post)
+
+            if (auth.currentUser != null) {
+                ref.set(post)
+                    .addOnSuccessListener { onResult?.invoke(true) }
+                    .addOnFailureListener { onResult?.invoke(true) }
+            } else {
+                onResult?.invoke(true)
+            }
+        } catch (e: Exception) {
+            onResult?.invoke(false)
+        }
     }
 
-    /**
-     * Get posts for a specific user's profile.
-     */
+    fun fetchGlobalFeed(onResult: (List<Post>) -> Unit) {
+        try {
+            db.collection("globalPosts")
+                .get()
+                .addOnSuccessListener { result ->
+                    val list = result.toObjects(Post::class.java)
+                    localFeed.clear()
+                    localFeed.addAll(list)
+                    onResult(list)
+                }
+                .addOnFailureListener {
+                    onResult(localFeed.toList())
+                }
+        } catch (e: Exception) {
+            onResult(localFeed.toList())
+        }
+    }
+
+    fun getGlobalFeed(): List<Post> = localFeed.toList()
+
     fun getProfileFeed(username: String): List<Post> =
-        profileFeeds[username]?.toList() ?: emptyList()
+        localFeed.filter { it.username.equals(username, ignoreCase = true) }
 
-    /**
-     * Get the global feed.
-     */
-    fun getGlobalFeed(): List<Post> = globalFeed.toList()
+    fun toggleLikePost(postId: String, userUid: String, onResult: ((Boolean) -> Unit)? = null) {
+        try {
+            val idx = localFeed.indexOfFirst { it.id == postId }
+            if (idx >= 0) {
+                val p = localFeed[idx]
+                val isLiked = p.likedBy.contains(userUid)
+                val newLikedBy = if (isLiked) p.likedBy - userUid else p.likedBy + userUid
+                val newLikes = newLikedBy.size
+                localFeed[idx] = p.copy(likedBy = newLikedBy, likes = newLikes)
 
-    /**
-     * Add a comment to a post.
-     * Username is ALWAYS the real username passed from UI.
-     */
-    fun addComment(postId: String, username: String, text: String) {
-        val comment = Comment(username, text)
-        val post = globalFeed.find { it.id == postId }
-        post?.comments?.add(comment)
+                if (auth.currentUser != null && postId.isNotEmpty()) {
+                    val ref = db.collection("globalPosts").document(postId)
+                    if (isLiked) {
+                        ref.update("likedBy", FieldValue.arrayRemove(userUid), "likes", FieldValue.increment(-1))
+                    } else {
+                        ref.update("likedBy", FieldValue.arrayUnion(userUid), "likes", FieldValue.increment(1))
+                    }
+                }
+            }
+            onResult?.invoke(true)
+        } catch (e: Exception) {
+            onResult?.invoke(false)
+        }
     }
 
-    /**
-     * Like a post.
-     */
-    fun likePost(postId: String) {
-        val post = globalFeed.find { it.id == postId }
-        if (post != null) {
-            post.likes++
+    fun addComment(postId: String, username: String, text: String, onResult: ((Boolean) -> Unit)? = null) {
+        try {
+            val ref = db.collection("postComments").document()
+            val comment = Comment(
+                id = ref.id,
+                postId = postId,
+                username = username,
+                text = text
+            )
+
+            val list = localComments.getOrPut(postId) { mutableListOf() }
+            list.add(comment)
+
+            val idx = localFeed.indexOfFirst { it.id == postId }
+            if (idx >= 0) {
+                val p = localFeed[idx]
+                localFeed[idx] = p.copy(commentsCount = p.commentsCount + 1)
+            }
+
+            if (auth.currentUser != null) {
+                ref.set(comment)
+                if (postId.isNotEmpty()) {
+                    db.collection("globalPosts").document(postId)
+                        .update("commentsCount", FieldValue.increment(1))
+                }
+            }
+            onResult?.invoke(true)
+        } catch (e: Exception) {
+            onResult?.invoke(false)
+        }
+    }
+
+    fun getComments(postId: String, onResult: (List<Comment>) -> Unit) {
+        try {
+            db.collection("postComments")
+                .whereEqualTo("postId", postId)
+                .get()
+                .addOnSuccessListener { result ->
+                    val list = result.toObjects(Comment::class.java)
+                    localComments[postId] = list.toMutableList()
+                    onResult(list)
+                }
+                .addOnFailureListener {
+                    onResult(localComments[postId] ?: emptyList())
+                }
+        } catch (e: Exception) {
+            onResult(localComments[postId] ?: emptyList())
         }
     }
 }

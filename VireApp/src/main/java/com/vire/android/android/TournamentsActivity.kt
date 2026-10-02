@@ -3,13 +3,13 @@ package com.vire.android.android
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
-import android.util.Patterns
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.auth.FirebaseAuth
 import com.vire.android.R
 
 class TournamentsActivity : BaseActivity() {
@@ -22,17 +22,23 @@ class TournamentsActivity : BaseActivity() {
 
     private val games = listOf(
         "Magic: The Gathering",
-        "Pokemon TCG",
+        "Pokémon TCG",
         "Yu-Gi-Oh!",
-        "Cardfight Vanguard (CFV)",
         "Lorcana",
-        "Force of Will (FOW)",
-        "Battle Spirits Saga (BSS)"
+        "Warhammer",
+        "D&D",
+        "Board Games",
+        "Other"
     )
 
-    private val playerOptions = listOf(8, 16, 32)
+    private val formats = listOf(
+        "Swiss",
+        "Single Elimination",
+        "Double Elimination",
+        "Casual / Open Play"
+    )
 
-    private val currentUser = "demoUser"
+    private var allTournaments = listOf<Tournament>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,193 +51,159 @@ class TournamentsActivity : BaseActivity() {
         emptyText = findViewById(R.id.emptyTextTournaments)
         recycler = findViewById(R.id.recyclerTournaments)
 
+        val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: "demo_user"
+
         recycler.layoutManager = LinearLayoutManager(this)
-        adapter = TournamentAdapter(TournamentManager.getTournaments()) { item, action ->
-            when (action) {
-                TournamentAdapter.Action.VIEW -> showTournamentDetails(item)
-                TournamentAdapter.Action.EDIT -> confirmEdit(item)
-                TournamentAdapter.Action.DELETE -> confirmDelete(item)
+        adapter = TournamentAdapter(
+            initial = emptyList(),
+            currentUid = currentUid,
+            onTournamentClick = { tournament ->
+                val intent = Intent(this, TournamentDetailsActivity::class.java)
+                intent.putExtra("tournament", tournament)
+                startActivity(intent)
+            },
+            onRegisterClick = { tournament ->
+                handleRegisterToggle(tournament)
             }
-        }
+        )
         recycler.adapter = adapter
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean { filterAndSearch(); return true }
-            override fun onQueryTextChange(newText: String?): Boolean { filterAndSearch(); return true }
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                filterTournaments()
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                filterTournaments()
+                return true
+            }
         })
 
-        fabCreate.setOnClickListener { openCreateDialog() }
+        fabCreate.setOnClickListener {
+            openCreateTournamentDialog()
+        }
 
-        refreshList()
+        loadTournaments()
     }
 
-    private fun refreshList() {
-        val list = TournamentManager.getTournaments()
-        adapter.submitList(list)
-        emptyText.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
+    override fun onResume() {
+        super.onResume()
+        loadTournaments()
     }
 
-    private fun filterAndSearch() {
-        val q = searchView.query?.toString() ?: ""
-        val filtered = TournamentManager.search(q)
+    private fun loadTournaments() {
+        TournamentManager.getTournaments { list ->
+            allTournaments = list
+            filterTournaments()
+        }
+    }
+
+    private fun filterTournaments() {
+        val query = searchView.query?.toString() ?: ""
+        val filtered = TournamentManager.searchTournaments(query, allTournaments)
         adapter.submitList(filtered)
         emptyText.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
     }
 
-    private fun showTournamentDetails(item: TournamentRequest) {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(item.name)
-        val view = LayoutInflater.from(this).inflate(R.layout.dialog_tournament_details, null)
+    private fun handleRegisterToggle(tournament: Tournament) {
+        val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: "demo_user"
+        val isRegistered = tournament.participants.contains(currentUid)
 
-        val tvName = view.findViewById<TextView>(R.id.detailTournamentName)
-        val tvGame = view.findViewById<TextView>(R.id.detailTournamentGame)
-        val tvPlayers = view.findViewById<TextView>(R.id.detailTournamentPlayers)
-        val tvBracket = view.findViewById<TextView>(R.id.detailTournamentBracket)
-        val tvPrizes = view.findViewById<TextView>(R.id.detailTournamentPrizes)
-        val tvOrganizer = view.findViewById<TextView>(R.id.detailTournamentOrganizer)
-        val tvCreated = view.findViewById<TextView>(R.id.detailTournamentCreated)
-
-        tvName.text = item.name
-        tvGame.text = item.game
-        tvPlayers.text = "Min players: ${item.minPlayers} (max 32)"
-        tvBracket.text = item.bracketLink
-        tvPrizes.text = item.prizesDescription ?: "No prizes listed"
-        tvOrganizer.text = "Organizer: ${item.organizer}"
-        tvCreated.text = item.prettyCreatedAt()
-
-        builder.setView(view)
-        builder.setPositiveButton("Close", null)
-        builder.show()
-    }
-
-    private fun confirmDelete(item: TournamentRequest) {
-        if (!item.organizer.equals(currentUser, ignoreCase = true)) {
-            Toast.makeText(this, "Only the organizer can delete this tournament.", Toast.LENGTH_SHORT).show()
-            return
-        }
-        AlertDialog.Builder(this)
-            .setTitle("Delete Tournament")
-            .setMessage("Delete tournament '${item.name}'?")
-            .setPositiveButton("Delete") { _, _ ->
-                TournamentManager.deleteTournament(item.id)
-                filterAndSearch()
-                Toast.makeText(this, "Tournament deleted.", Toast.LENGTH_SHORT).show()
+        if (isRegistered) {
+            TournamentManager.unregisterPlayer(tournament.id, currentUid) { success ->
+                if (success) {
+                    Toast.makeText(this, "Unregistered from tournament", Toast.LENGTH_SHORT).show()
+                    loadTournaments()
+                }
             }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
+        } else {
+            if (tournament.participants.size >= tournament.maxParticipants) {
+                Toast.makeText(this, "Tournament is full!", Toast.LENGTH_SHORT).show()
+                return
+            }
 
-    private fun confirmEdit(item: TournamentRequest) {
-        if (!item.organizer.equals(currentUser, ignoreCase = true)) {
-            Toast.makeText(this, "Only the organizer can edit this tournament.", Toast.LENGTH_SHORT).show()
-            return
+            TournamentManager.registerPlayer(tournament.id, currentUid) { success ->
+                if (success) {
+                    Toast.makeText(this, "Successfully registered for tournament!", Toast.LENGTH_SHORT).show()
+                    loadTournaments()
+                }
+            }
         }
-        openEditDialog(item)
     }
 
-    private fun openEditDialog(item: TournamentRequest) {
+    private fun openCreateTournamentDialog() {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_create_tournament, null)
-        val spPlayers = view.findViewById<Spinner>(R.id.createTournamentPlayers)
-        val spGame = view.findViewById<Spinner>(R.id.createTournamentGame)
-        val etName = view.findViewById<EditText>(R.id.createTournamentName)
-        val etBracket = view.findViewById<EditText>(R.id.createTournamentBracket)
-        val etPrizes = view.findViewById<EditText>(R.id.createTournamentPrizes)
 
-        spPlayers.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, playerOptions).apply {
-            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        }
+        val etTitle = view.findViewById<EditText>(R.id.editTournamentTitle)
+        val spGame = view.findViewById<Spinner>(R.id.spinnerTournamentGame)
+        val spFormat = view.findViewById<Spinner>(R.id.spinnerTournamentFormat)
+        val etDate = view.findViewById<EditText>(R.id.editTournamentDate)
+        val etTime = view.findViewById<EditText>(R.id.editTournamentTime)
+        val etLocation = view.findViewById<EditText>(R.id.editTournamentLocation)
+        val etFee = view.findViewById<EditText>(R.id.editTournamentFee)
+        val etMaxPlayers = view.findViewById<EditText>(R.id.editTournamentMaxPlayers)
+        val etRules = view.findViewById<EditText>(R.id.editTournamentRules)
+        val etPrizes = view.findViewById<EditText>(R.id.editTournamentPrizes)
+
         spGame.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, games).apply {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
-
-        etName.setText(item.name)
-        etBracket.setText(item.bracketLink)
-        etPrizes.setText(item.prizesDescription ?: "")
-
-        val playerPos = playerOptions.indexOf(item.minPlayers).coerceAtLeast(0)
-        spPlayers.setSelection(playerPos)
-        val gamePos = games.indexOf(item.game).coerceAtLeast(0)
-        spGame.setSelection(gamePos)
-
-        val builder = AlertDialog.Builder(this)
-            .setTitle("Edit Tournament")
-            .setView(view)
-            .setPositiveButton("Save") { _, _ ->
-                val name = etName.text.toString().trim()
-                val players = spPlayers.selectedItem as Int
-                val game = spGame.selectedItem as String
-                val bracket = etBracket.text.toString().trim()
-                val prizes = etPrizes.text.toString().trim().ifEmpty { null }
-
-                if (name.isEmpty()) { Toast.makeText(this, "Tournament name required", Toast.LENGTH_SHORT).show(); return@setPositiveButton }
-                if (bracket.isEmpty() || !Patterns.WEB_URL.matcher(bracket).matches()) {
-                    Toast.makeText(this, "A valid bracket link is required", Toast.LENGTH_SHORT).show(); return@setPositiveButton
-                }
-
-                val updated = item.copy(
-                    name = name,
-                    game = game,
-                    minPlayers = players,
-                    bracketLink = bracket,
-                    prizesDescription = prizes
-                )
-
-                val ok = TournamentManager.updateTournament(updated)
-                if (ok) {
-                    filterAndSearch()
-                    Toast.makeText(this, "Tournament updated.", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "Failed to update tournament.", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton("Cancel", null)
-        builder.show()
-    }
-
-    private fun openCreateDialog() {
-        val view = LayoutInflater.from(this).inflate(R.layout.dialog_create_tournament, null)
-        val spPlayers = view.findViewById<Spinner>(R.id.createTournamentPlayers)
-        val spGame = view.findViewById<Spinner>(R.id.createTournamentGame)
-        val etName = view.findViewById<EditText>(R.id.createTournamentName)
-        val etBracket = view.findViewById<EditText>(R.id.createTournamentBracket)
-        val etPrizes = view.findViewById<EditText>(R.id.createTournamentPrizes)
-
-        spPlayers.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, playerOptions).apply {
-            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        }
-        spGame.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, games).apply {
+        spFormat.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, formats).apply {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
 
         val builder = AlertDialog.Builder(this)
-            .setTitle("Create Tournament")
+            .setTitle("Create Tournament & Event")
             .setView(view)
-            .setPositiveButton("Create") { _, _ ->
-                val name = etName.text.toString().trim()
-                val players = spPlayers.selectedItem as Int
-                val game = spGame.selectedItem as String
-                val bracket = etBracket.text.toString().trim()
-                val prizes = etPrizes.text.toString().trim().ifEmpty { null }
-
-                if (name.isEmpty()) { Toast.makeText(this, "Tournament name is required", Toast.LENGTH_SHORT).show(); return@setPositiveButton }
-                if (bracket.isEmpty() || !Patterns.WEB_URL.matcher(bracket).matches()) {
-                    Toast.makeText(this, "A valid bracket link is required", Toast.LENGTH_SHORT).show(); return@setPositiveButton
+            .setPositiveButton("Create Event") { _, _ ->
+                val title = etTitle.text.toString().trim()
+                if (title.isEmpty()) {
+                    Toast.makeText(this, "Event title is required", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
                 }
 
-                val t = TournamentRequest(
-                    id = TournamentManager.nextId(),
-                    name = name,
-                    game = game,
-                    minPlayers = players,
-                    bracketLink = bracket,
+                val game = spGame.selectedItem?.toString() ?: "Magic: The Gathering"
+                val format = spFormat.selectedItem?.toString() ?: "Swiss"
+                val date = etDate.text.toString().trim()
+                val time = etTime.text.toString().trim()
+                val location = etLocation.text.toString().trim()
+                val fee = etFee.text.toString().trim().ifBlank { "Free" }
+                val maxPlayers = etMaxPlayers.text.toString().toIntOrNull() ?: 16
+                val rules = etRules.text.toString().trim()
+                val prizes = etPrizes.text.toString().trim()
+
+                val username = getSharedPreferences("user_prefs", MODE_PRIVATE)
+                    .getString("username", "Host") ?: "Host"
+                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "demo_host"
+
+                val tournament = Tournament(
+                    name = title,
+                    gameSystem = game,
+                    format = format,
+                    date = date,
+                    time = time,
+                    location = location,
+                    entryFee = fee,
+                    maxParticipants = maxPlayers,
+                    rules = rules,
                     prizesDescription = prizes,
-                    organizer = currentUser
+                    organizer = username,
+                    hostUid = uid,
+                    status = "Upcoming"
                 )
-                TournamentManager.addTournament(t)
-                filterAndSearch()
-                Toast.makeText(this, "Tournament created.", Toast.LENGTH_SHORT).show()
+
+                TournamentManager.createTournament(tournament) { success, _ ->
+                    if (success) {
+                        Toast.makeText(this, "Tournament created successfully!", Toast.LENGTH_SHORT).show()
+                        loadTournaments()
+                    } else {
+                        Toast.makeText(this, "Failed to create tournament", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
             .setNegativeButton("Cancel", null)
+
         builder.show()
     }
 }
