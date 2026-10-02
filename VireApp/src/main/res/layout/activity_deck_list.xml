@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/deck_list_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="12dp"
+    tools:context=".DeckListActivity">
+
+    <!-- Header Row -->
+    <LinearLayout
+        android:id="@+id/deckHeaderRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp">
+
+        <TextView
+            android:id="@+id/deckListTitleText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Deck Builder"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/deckCountText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 decks"
+            android:textColor="#666666"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <!-- Scope Toggle (My Decks vs Public Decks) -->
+    <RadioGroup
+        android:id="@+id/rgDeckScope"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/deckHeaderRow"
+        android:layout_marginTop="4dp"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/rbMyDecks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="My Decks" />
+
+        <RadioButton
+            android:id="@+id/rbPublicDecks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="Community Decks" />
+    </RadioGroup>
+
+    <!-- Game Filter Row -->
+    <LinearLayout
+        android:id="@+id/rowDeckGameFilter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/rgDeckScope"
+        android:layout_marginTop="6dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TCG System:"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinnerDeckGameFilter"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp" />
+    </LinearLayout>
+
+    <!-- Empty text -->
+    <TextView
+        android:id="@+id/emptyDecksText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:padding="16dp"
+        android:text="No decks found.\nTap + to build your first TCG deck list!"
+        android:textAlignment="center"
+        android:textColor="#888888"
+        android:textSize="15sp"
+        android:visibility="gone" />
+
+    <!-- Decks RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerDecks"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/fabCreateDeck"
+        android:layout_below="@id/rowDeckGameFilter"
+        android:layout_marginTop="8dp"
+        android:clipToPadding="false"
+        android:paddingBottom="12dp" />
+
+    <!-- Create Deck FAB -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabCreateDeck"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
+        android:contentDescription="Create Deck"
+        android:src="@drawable/ic_add" />
+
+    <!-- Hamburger Menu Button -->
+    <ImageButton
+        android:id="@+id/hamburgerButton"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="16dp"
+        android:background="@drawable/circle_bg"
+        android:contentDescription="Menu"
+        android:src="@drawable/ic_menu_hamburger"
+        app:tint="@android:color/white" />
+
+</RelativeLayout>

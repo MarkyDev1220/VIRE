@@ -26,6 +26,7 @@ open class BaseActivity : AppCompatActivity() {
         val menuItems = listOf(
             "Home",
             "Profile",
+            "Deck Builder",
             "My Collection",
             "Gaming Locations",
             "Gaming Communities",
@@ -46,6 +47,7 @@ open class BaseActivity : AppCompatActivity() {
             when (item.title.toString()) {
                 "Home" -> startActivity(Intent(this, HomeActivity::class.java))
                 "Profile" -> startActivity(Intent(this, ProfileActivity::class.java))
+                "Deck Builder" -> startActivity(Intent(this, DeckListActivity::class.java))
                 "My Collection" -> startActivity(Intent(this, CollectionActivity::class.java))
                 "Gaming Locations" -> startActivity(Intent(this, LocationListActivity::class.java))
                 "Gaming Communities" -> startActivity(Intent(this, CommunityListActivity::class.java))

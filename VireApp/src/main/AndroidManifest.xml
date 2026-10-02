@@ -61,6 +61,8 @@
                 <activity android:name=".android.TournamentDetailsActivity" />
                 <activity android:name=".android.CommunityListActivity" />
                 <activity android:name=".android.CommunityDetailsActivity" />
+                <activity android:name=".android.DeckListActivity" />
+                <activity android:name=".android.DeckDetailsActivity" />
 
                 <!-- Launcher Activity (Login / Auth Screen) -->
                 <activity
