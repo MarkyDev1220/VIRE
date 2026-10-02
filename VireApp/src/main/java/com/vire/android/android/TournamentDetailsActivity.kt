@@ -126,9 +126,9 @@ class TournamentDetailsActivity : BaseActivity() {
             .joinToString(" • ")
         tvDateTimeLoc.text = "📅 ${dateLocStr.ifBlank { "Schedule TBD" }}"
 
-        tvFeePrizes.text = "💵 Fee: ${t.entryFee.ifBlank { "Free" }} • Host: ${t.organizer} • Players: ${t.participants.size}/${t.maxParticipants}"
+        tvFeePrizes.text = "💵 Fee: ${t.entryFee.ifBlank { "Free" }} • Host: ${t.organizer} • Players: ${t.participants.size}/${t.maxParticipants} • Spectators: ${t.spectators.size}"
 
-        var rulesText = ""
+        var rulesText = "Tier: ${t.tier}\n"
         if (t.rules.isNotBlank()) rulesText += "Rules:\n${t.rules}\n\n"
         if (t.prizesDescription.isNotBlank()) rulesText += "Prizes:\n${t.prizesDescription}"
         tvRules.text = rulesText.ifBlank { "No special rules or prizes description provided." }
@@ -141,6 +141,19 @@ class TournamentDetailsActivity : BaseActivity() {
         } else {
             btnRegister.text = "Register for Event"
             btnRegister.setBackgroundColor(Color.parseColor("#1565C0")) // Blue
+        }
+
+        // Spectator button state
+        val btnSpectate = findViewById<Button>(R.id.btnSpectateTournament)
+        val isSpectating = t.spectators.contains(currentUid)
+        if (isSpectating) {
+            btnSpectate.text = "👁️ Spectating ✓"
+        } else {
+            btnSpectate.text = "👁️ Spectate"
+        }
+
+        btnSpectate.setOnClickListener {
+            handleSpectateAction()
         }
 
         // Host controls
@@ -185,6 +198,32 @@ class TournamentDetailsActivity : BaseActivity() {
                     Toast.makeText(this, "Successfully registered!", Toast.LENGTH_SHORT).show()
                     val newParticipants = t.participants + currentUid
                     currentTournament = t.copy(participants = newParticipants)
+                    bindTournamentDetails()
+                }
+            }
+        }
+    }
+
+    private fun handleSpectateAction() {
+        val t = currentTournament ?: return
+        val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: "demo_user"
+
+        val isSpectating = t.spectators.contains(currentUid)
+        if (isSpectating) {
+            TournamentManager.unregisterSpectator(t.id, currentUid) { success ->
+                if (success) {
+                    Toast.makeText(this, "Stopped spectating", Toast.LENGTH_SHORT).show()
+                    val newSpectators = t.spectators.filter { it != currentUid }
+                    currentTournament = t.copy(spectators = newSpectators)
+                    bindTournamentDetails()
+                }
+            }
+        } else {
+            TournamentManager.registerSpectator(t.id, currentUid) { success ->
+                if (success) {
+                    Toast.makeText(this, "Registered as spectator!", Toast.LENGTH_SHORT).show()
+                    val newSpectators = t.spectators + currentUid
+                    currentTournament = t.copy(spectators = newSpectators)
                     bindTournamentDetails()
                 }
             }

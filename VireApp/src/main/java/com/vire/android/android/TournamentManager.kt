@@ -100,6 +100,52 @@ object TournamentManager {
         }
     }
 
+    fun registerSpectator(tournamentId: String, userUid: String, onResult: (Boolean) -> Unit) {
+        try {
+            val index = localTournaments.indexOfFirst { it.id == tournamentId }
+            if (index >= 0) {
+                val t = localTournaments[index]
+                if (!t.spectators.contains(userUid)) {
+                    val updated = t.copy(spectators = t.spectators + userUid)
+                    localTournaments[index] = updated
+                }
+            }
+
+            if (auth.currentUser != null && tournamentId.isNotEmpty()) {
+                db.collection("tournaments").document(tournamentId)
+                    .update("spectators", FieldValue.arrayUnion(userUid))
+                    .addOnSuccessListener { onResult(true) }
+                    .addOnFailureListener { onResult(true) }
+            } else {
+                onResult(true)
+            }
+        } catch (e: Exception) {
+            onResult(false)
+        }
+    }
+
+    fun unregisterSpectator(tournamentId: String, userUid: String, onResult: (Boolean) -> Unit) {
+        try {
+            val index = localTournaments.indexOfFirst { it.id == tournamentId }
+            if (index >= 0) {
+                val t = localTournaments[index]
+                val updated = t.copy(spectators = t.spectators.filter { it != userUid })
+                localTournaments[index] = updated
+            }
+
+            if (auth.currentUser != null && tournamentId.isNotEmpty()) {
+                db.collection("tournaments").document(tournamentId)
+                    .update("spectators", FieldValue.arrayRemove(userUid))
+                    .addOnSuccessListener { onResult(true) }
+                    .addOnFailureListener { onResult(true) }
+            } else {
+                onResult(true)
+            }
+        } catch (e: Exception) {
+            onResult(false)
+        }
+    }
+
     fun generateBrackets(
         tournament: Tournament,
         playerNames: Map<String, String>,

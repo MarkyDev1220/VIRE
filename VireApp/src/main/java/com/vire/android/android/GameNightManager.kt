@@ -73,4 +73,28 @@ object GameNightManager {
             onResult(false)
         }
     }
+
+    fun joinSpectator(gameNightId: String, onResult: (Boolean) -> Unit) {
+        try {
+            val uid = auth.currentUser?.uid ?: return onResult(false)
+            db.collection("gameNights").document(gameNightId)
+                .update("spectators", FieldValue.arrayUnion(uid))
+                .addOnSuccessListener { onResult(true) }
+                .addOnFailureListener { onResult(false) }
+        } catch (e: Exception) {
+            onResult(false)
+        }
+    }
+
+    fun leaveSpectator(gameNightId: String, onResult: (Boolean) -> Unit) {
+        try {
+            val uid = auth.currentUser?.uid ?: return onResult(false)
+            db.collection("gameNights").document(gameNightId)
+                .update("spectators", FieldValue.arrayRemove(uid))
+                .addOnSuccessListener { onResult(true) }
+                .addOnFailureListener { onResult(false) }
+        } catch (e: Exception) {
+            onResult(false)
+        }
+    }
 }

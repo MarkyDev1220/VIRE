@@ -7,6 +7,7 @@ data class Tournament(
     val name: String = "",
     val gameSystem: String = "Magic: The Gathering",
     val format: String = "Swiss", // "Swiss", "Single Elimination", "Double Elimination", "Casual"
+    val tier: String = "Casual Tier", // "Casual Tier", "Competitive Tier", "Pro Tier"
     val date: String = "",
     val time: String = "",
     val location: String = "",
@@ -20,5 +21,7 @@ data class Tournament(
     val discordUrl: String = "",
     val externalBracketUrl: String = "",
     val participants: List<String> = emptyList(), // UIDs of registered players
+    val maxSpectators: Int = 20,
+    val spectators: List<String> = emptyList(), // UIDs of registered spectators
     val createdAt: Long = System.currentTimeMillis()
 ) : Serializable
