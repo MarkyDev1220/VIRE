@@ -20,6 +20,7 @@ data class Deck(
     val createdAt: Long = System.currentTimeMillis()
 ) : Serializable
 
+
 data class DeckCard(
     val cardName: String = "",
     val gameSystem: String = "Magic: The Gathering",
