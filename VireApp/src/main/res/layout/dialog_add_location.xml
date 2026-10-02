@@ -9,52 +9,53 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Title -->
+        <!-- Name -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Tournament Title *"
+            android:text="Store / Venue Name *"
             android:textSize="14sp"
             android:textStyle="bold" />
 
         <EditText
-            android:id="@+id/editTournamentTitle"
+            android:id="@+id/editLocationName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="e.g. Weekly MTG Commander Clash"
+            android:hint="e.g. Dragon's Lair Games"
             android:inputType="textCapWords" />
 
-        <!-- Game System -->
+        <!-- Type -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Game System"
+            android:text="Venue Type"
             android:textSize="14sp"
             android:textStyle="bold" />
 
         <Spinner
-            android:id="@+id/spinnerTournamentGame"
+            android:id="@+id/spinnerLocationType"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp" />
 
-        <!-- Format -->
+        <!-- Address -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Tournament Format"
+            android:text="Street Address"
             android:textSize="14sp"
             android:textStyle="bold" />
 
-        <Spinner
-            android:id="@+id/spinnerTournamentFormat"
+        <EditText
+            android:id="@+id/editLocationAddress"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp" />
+            android:hint="123 Gaming Way"
+            android:inputType="textPostalAddress" />
 
-        <!-- Date & Time -->
+        <!-- City & State Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -64,22 +65,22 @@
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:layout_weight="2"
                 android:orientation="vertical">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Date"
+                    android:text="City"
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
                 <EditText
-                    android:id="@+id/editTournamentDate"
+                    android:id="@+id/editLocationCity"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="YYYY-MM-DD"
-                    android:inputType="date" />
+                    android:hint="Austin"
+                    android:inputType="textCapWords" />
             </LinearLayout>
 
             <LinearLayout
@@ -92,153 +93,114 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Time"
+                    android:text="State"
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
                 <EditText
-                    android:id="@+id/editTournamentTime"
+                    android:id="@+id/editLocationState"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="6:30 PM"
-                    android:inputType="time" />
+                    android:hint="TX"
+                    android:inputType="textCapCharacters" />
             </LinearLayout>
 
         </LinearLayout>
 
-        <!-- Location -->
+        <!-- Phone & Website -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Location / Venue"
+            android:text="Phone Number"
             android:textSize="14sp"
             android:textStyle="bold" />
 
         <EditText
-            android:id="@+id/editTournamentLocation"
+            android:id="@+id/editLocationPhone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="e.g. Dragon's Lair Games or Table 4"
-            android:inputType="textCapWords" />
+            android:hint="(512) 555-0199"
+            android:inputType="phone" />
 
-        <!-- Entry Fee & Max Players -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Website / Social Link"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/editLocationWebsite"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="https://dragonslair.com"
+            android:inputType="textUri" />
+
+        <!-- Supported Games -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Supported Games (comma-separated)"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/editLocationSupportedGames"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="e.g. MTG, Pokémon, D&amp;D, Warhammer, Board Games" />
+
+        <!-- Description -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Store Description"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/editLocationDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Tell players about table space, weekly events, food, parking..."
+            android:inputType="textMultiLine"
+            android:lines="3" />
+
+        <!-- Photo Selection -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Store Cover Photo"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="6dp"
+            android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <LinearLayout
-                android:layout_width="0dp"
+            <ImageView
+                android:id="@+id/locationImagePreview"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_placeholder"
+                android:contentDescription="Photo Preview" />
+
+            <Button
+                android:id="@+id/btnPickLocationPhoto"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Entry Fee"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <EditText
-                    android:id="@+id/editTournamentFee"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Free or $10.00"
-                    android:inputType="text" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Player Limit"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <EditText
-                    android:id="@+id/editTournamentMaxPlayers"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="16"
-                    android:inputType="number" />
-            </LinearLayout>
-
+                android:layout_marginStart="16dp"
+                android:text="Choose Photo" />
         </LinearLayout>
-
-        <!-- Rules -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Tournament Rules"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/editTournamentRules"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="3 rounds of 50-minute Swiss, decklists required..."
-            android:inputType="textMultiLine"
-            android:lines="2" />
-
-        <!-- Prizes -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Prizes &amp; Rewards"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/editTournamentPrizes"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Pack per win + promo cards for top 4"
-            android:inputType="textMultiLine"
-            android:lines="2" />
-
-        <!-- Discord & Remote Match Link (Optional) -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Discord / Video Match Room URL (Optional)"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/editTournamentDiscord"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="https://discord.gg/yourserver"
-            android:inputType="textUri" />
-
-        <!-- External Bracket Link (Optional) -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="External Bracket Link (e.g. Challonge) (Optional)"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/editTournamentBracketLink"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="https://challonge.com/yourbracket"
-            android:inputType="textUri" />
 
     </LinearLayout>
 </ScrollView>

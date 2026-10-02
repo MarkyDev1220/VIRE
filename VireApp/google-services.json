@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "94519094565",
+    "project_id": "vire-7b583",
+    "storage_bucket": "vire-7b583.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:94519094565:android:0abb673f447f61151d7ecc",
+        "android_client_info": {
+          "package_name": "com.vire.android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAt231sel7zqzbtBgMgdf3Whz9Z5H7NO0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

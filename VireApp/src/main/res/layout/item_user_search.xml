@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="6dp"
+    android:layout_marginVertical="4dp"
+    app:cardCornerRadius="10dp"
+    app:cardElevation="2dp"
+    android:foreground="?android:attr/selectableItemBackground">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp">
+
+        <!-- User Avatar -->
+        <ImageView
+            android:id="@+id/userSearchAvatar"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/avatar_circle_bg"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_profile_placeholder"
+            android:contentDescription="User Avatar" />
+
+        <!-- User Name -->
+        <TextView
+            android:id="@+id/userSearchName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/userSearchAvatar"
+            android:layout_toStartOf="@+id/userSearchActionButton"
+            android:layout_marginStart="12dp"
+            android:text="Username"
+            android:textColor="#212121"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <!-- Local Area -->
+        <TextView
+            android:id="@+id/userSearchArea"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/userSearchName"
+            android:layout_toEndOf="@id/userSearchAvatar"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="2dp"
+            android:text="Local Area"
+            android:textColor="#666666"
+            android:textSize="12sp" />
+
+        <!-- Skill Level Badge -->
+        <TextView
+            android:id="@+id/userSearchSkill"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/userSearchArea"
+            android:layout_toEndOf="@id/userSearchAvatar"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/circle_background"
+            android:backgroundTint="#E0E0E0"
+            android:paddingStart="6dp"
+            android:paddingTop="1dp"
+            android:paddingEnd="6dp"
+            android:paddingBottom="1dp"
+            android:text="Casual"
+            android:textColor="#424242"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <!-- Gamer Bio or Favorite Games -->
+        <TextView
+            android:id="@+id/userSearchBio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/userSearchAvatar"
+            android:layout_marginTop="8dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Gamer bio or favorite games..."
+            android:textColor="#757575"
+            android:textSize="12sp" />
+
+        <!-- Friend Action Button -->
+        <Button
+            android:id="@+id/userSearchActionButton"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignTop="@id/userSearchName"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="Add Friend"
+            android:textSize="12sp" />
+
+    </RelativeLayout>
+
+</androidx.cardview.widget.CardView>

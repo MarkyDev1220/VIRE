@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/darker_gray"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/detailTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Game Title"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/detailHost"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Hosted by:"
+        android:textColor="@color/light_gray"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/dark_gray"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:id="@+id/detailDateTime"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Date &amp; Time"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/detailLocation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Location"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:id="@+id/detailParticipants"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Participants: 1/4"
+        android:textColor="@color/light_gray"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:id="@+id/detailDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Description goes here..."
+        android:textColor="@android:color/white"
+        android:textSize="16sp"
+        android:layout_marginBottom="32dp"/>
+
+    <Button
+        android:id="@+id/btnJoinLeave"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Join Game Night"
+        android:backgroundTint="@color/purple_500"
+        android:layout_marginBottom="12dp"/>
+
+    <Button
+        android:id="@+id/btnDelete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cancel Game Night"
+        android:backgroundTint="#D32F2F"
+        android:visibility="gone"/>
+
+</LinearLayout>

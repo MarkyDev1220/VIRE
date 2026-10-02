@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/darker_gray"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create Game Night"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="24dp"
+            android:layout_gravity="center_horizontal"/>
+
+        <EditText
+            android:id="@+id/editGameTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Game Title (e.g. Magic: The Gathering)"
+            android:textColor="@android:color/white"
+            android:textColorHint="@color/light_gray"
+            android:layout_marginBottom="12dp"/>
+
+        <EditText
+            android:id="@+id/editDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Date"
+            android:focusable="false"
+            android:textColor="@android:color/white"
+            android:textColorHint="@color/light_gray"
+            android:layout_marginBottom="12dp"/>
+
+        <EditText
+            android:id="@+id/editTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Time"
+            android:focusable="false"
+            android:textColor="@android:color/white"
+            android:textColorHint="@color/light_gray"
+            android:layout_marginBottom="12dp"/>
+
+        <EditText
+            android:id="@+id/editLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Location (City / Store)"
+            android:textColor="@android:color/white"
+            android:textColorHint="@color/light_gray"
+            android:layout_marginBottom="12dp"/>
+
+        <EditText
+            android:id="@+id/editMaxParticipants"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Max Participants"
+            android:inputType="number"
+            android:textColor="@android:color/white"
+            android:textColorHint="@color/light_gray"
+            android:layout_marginBottom="12dp"/>
+
+        <EditText
+            android:id="@+id/editDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description / Notes"
+            android:inputType="textMultiLine"
+            android:minLines="3"
+            android:textColor="@android:color/white"
+            android:textColorHint="@color/light_gray"
+            android:layout_marginBottom="24dp"/>
+
+        <Button
+            android:id="@+id/btnCreate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Host Game Night"
+            android:backgroundTint="@color/purple_500"/>
+
+        <Button
+            android:id="@+id/btnCancel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            android:backgroundTint="@android:color/transparent"
+            android:textColor="@android:color/white"
+            android:layout_marginTop="8dp"/>
+
+    </LinearLayout>
+</ScrollView>

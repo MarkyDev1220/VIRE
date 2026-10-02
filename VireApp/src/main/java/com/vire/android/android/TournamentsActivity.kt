@@ -145,6 +145,8 @@ class TournamentsActivity : BaseActivity() {
         val etMaxPlayers = view.findViewById<EditText>(R.id.editTournamentMaxPlayers)
         val etRules = view.findViewById<EditText>(R.id.editTournamentRules)
         val etPrizes = view.findViewById<EditText>(R.id.editTournamentPrizes)
+        val etDiscord = view.findViewById<EditText>(R.id.editTournamentDiscord)
+        val etBracket = view.findViewById<EditText>(R.id.editTournamentBracketLink)
 
         spGame.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, games).apply {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -172,6 +174,8 @@ class TournamentsActivity : BaseActivity() {
                 val maxPlayers = etMaxPlayers.text.toString().toIntOrNull() ?: 16
                 val rules = etRules.text.toString().trim()
                 val prizes = etPrizes.text.toString().trim()
+                val discordUrl = etDiscord.text.toString().trim()
+                val bracketUrl = etBracket.text.toString().trim()
 
                 val username = getSharedPreferences("user_prefs", MODE_PRIVATE)
                     .getString("username", "Host") ?: "Host"
@@ -188,6 +192,8 @@ class TournamentsActivity : BaseActivity() {
                     maxParticipants = maxPlayers,
                     rules = rules,
                     prizesDescription = prizes,
+                    discordUrl = discordUrl,
+                    externalBracketUrl = bracketUrl,
                     organizer = username,
                     hostUid = uid,
                     status = "Upcoming"
