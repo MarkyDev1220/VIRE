@@ -233,44 +233,59 @@ class ProfileActivity : BaseActivity() {
 
         db.collection("users").document(uid).get()
             .addOnSuccessListener { doc ->
-                if (!doc.exists()) {
-                    Toast.makeText(this, "Profile not found.", Toast.LENGTH_SHORT).show()
-                    return@addOnSuccessListener
+                if (doc.exists()) {
+                    val username = doc.getString("username") ?: "Unknown"
+                    val email = doc.getString("email") ?: "Unknown"
+                    usernameText.text = "Username: $username"
+                    emailText.text = "Email: $email"
+                    genderText.text = "Gender: ${doc.getString("gender") ?: "Not set"}"
+                    aboutMeText.text = "About Me: ${doc.getString("aboutMe") ?: "No bio yet"}"
+
+                    val games = (doc.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                    gamesText.text = "Games: ${if (games.isNotEmpty()) games.joinToString(", ") else "None added yet"}"
+
+                    // ⭐ NEW GAMER PROFILE FIELDS
+                    val genres = (doc.get("favoriteGenres") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                    genresText.text = "Favorite Genres: ${if (genres.isNotEmpty()) genres.joinToString(", ") else "None"}"
+
+                    val skillLevel = doc.getString("skillLevel") ?: ""
+                    skillLevelText.text = "Skill Level: ${if (skillLevel.isNotEmpty()) skillLevel else "Not set"}"
+
+                    val localArea = doc.getString("localArea") ?: ""
+                    localAreaText.text = "Local Gaming Area: ${if (localArea.isNotEmpty()) localArea else "Not set"}"
+
+                    val gamerBio = doc.getString("gamerBio") ?: ""
+                    gamerBioText.text = "Gamer Bio: ${if (gamerBio.isNotEmpty()) gamerBio else "None"}"
+
+                    val profileUrl = doc.getString("profileImageUrl")
+                    val coverUrl = doc.getString("coverImageUrl")
+
+                    if (!profileUrl.isNullOrEmpty()) remoteSafeLoad(profileUrl, profileImage)
+                    if (!coverUrl.isNullOrEmpty()) remoteSafeLoad(coverUrl, coverPhoto)
+                } else {
+                    loadFromLocalUserPrefs()
                 }
-
-                usernameText.text = "Username: ${doc.getString("username") ?: "Unknown"}"
-                emailText.text = "Email: ${doc.getString("email") ?: "Unknown"}"
-                genderText.text = "Gender: ${doc.getString("gender") ?: "Not set"}"
-                aboutMeText.text = "About Me: ${doc.getString("aboutMe") ?: "No bio yet"}"
-
-                val games = (doc.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
-                gamesText.text = "Games: ${if (games.isNotEmpty()) games.joinToString(", ") else "None added yet"}"
-
-                // ⭐ NEW GAMER PROFILE FIELDS
-                val genres = (doc.get("favoriteGenres") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
-                genresText.text = "Favorite Genres: ${if (genres.isNotEmpty()) genres.joinToString(", ") else "None"}"
-
-                val skillLevel = doc.getString("skillLevel") ?: ""
-                skillLevelText.text = "Skill Level: ${if (skillLevel.isNotEmpty()) skillLevel else "Not set"}"
-
-                val localArea = doc.getString("localArea") ?: ""
-                localAreaText.text = "Local Gaming Area: ${if (localArea.isNotEmpty()) localArea else "Not set"}"
-
-                val gamerBio = doc.getString("gamerBio") ?: ""
-                gamerBioText.text = "Gamer Bio: ${if (gamerBio.isNotEmpty()) gamerBio else "None"}"
-
-                val profileUrl = doc.getString("profileImageUrl")
-                val coverUrl = doc.getString("coverImageUrl")
-
-                if (!profileUrl.isNullOrEmpty()) remoteSafeLoad(profileUrl, profileImage)
-                if (!coverUrl.isNullOrEmpty()) remoteSafeLoad(coverUrl, coverPhoto)
 
                 // Load Game Nights for this user
                 loadHostedGameNights(uid)
             }
             .addOnFailureListener {
-                Toast.makeText(this, "Failed to load profile", Toast.LENGTH_SHORT).show()
+                loadFromLocalUserPrefs()
+                loadHostedGameNights(uid)
             }
+    }
+
+    private fun loadFromLocalUserPrefs() {
+        val u = loadUser(this) ?: return
+        usernameText.text = "Username: ${u.username}"
+        emailText.text = "Email: ${u.email}"
+        genderText.text = "Gender: ${u.gender.ifBlank { "Not set" }}"
+        aboutMeText.text = "About Me: No bio yet"
+        gamesText.text = "Games: ${if (u.favoriteGames.isNotEmpty()) u.favoriteGames.joinToString(", ") else "None added yet"}"
+        genresText.text = "Favorite Genres: ${if (u.favoriteGenres.isNotEmpty()) u.favoriteGenres.joinToString(", ") else "None"}"
+        skillLevelText.text = "Skill Level: ${u.skillLevel.ifBlank { "Not set" }}"
+        localAreaText.text = "Local Gaming Area: ${u.localArea.ifBlank { "Not set" }}"
+        gamerBioText.text = "Gamer Bio: ${u.gamerBio.ifBlank { "None" }}"
     }
 
     private fun loadHostedGameNights(uid: String) {
@@ -374,6 +389,7 @@ class ProfileActivity : BaseActivity() {
 
         val data = hashMapOf(
             "username" to user.username,
+            "usernameLowercase" to user.username.lowercase(),
             "email" to user.email,
             "gender" to user.gender,
             "dateOfBirth" to user.dateOfBirth,
@@ -385,12 +401,12 @@ class ProfileActivity : BaseActivity() {
         )
 
         db.collection("users").document(uid)
-            .update(data as Map<String, Any>)
+            .set(data as Map<String, Any>, com.google.firebase.firestore.SetOptions.merge())
             .addOnSuccessListener {
-                Toast.makeText(this, "Firestore updated!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Profile updated successfully!", Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener {
-                Toast.makeText(this, "Failed to update Firestore", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Profile updated locally", Toast.LENGTH_SHORT).show()
             }
     }
 
@@ -412,7 +428,7 @@ class ProfileActivity : BaseActivity() {
                             FirebaseFirestore.getInstance()
                                 .collection("users")
                                 .document(uid)
-                                .update(fieldName, downloadUrl.toString())
+                                .set(mapOf(fieldName to downloadUrl.toString()), com.google.firebase.firestore.SetOptions.merge())
                         } catch (_: IllegalStateException) {}
                     }
                 }
