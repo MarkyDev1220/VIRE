@@ -4,11 +4,13 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Switch
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.vire.android.R
 
 class SettingsActivity : BaseActivity() {
@@ -30,22 +32,17 @@ class SettingsActivity : BaseActivity() {
         }
 
         findViewById<LinearLayout>(R.id.logoutOption).setOnClickListener {
-            sharedPref.edit().clear().apply()
-            startActivity(Intent(this, MainActivity::class.java))
-            finishAffinity()
+            performLogout()
         }
 
         findViewById<LinearLayout>(R.id.deleteProfileOption).setOnClickListener {
             AlertDialog.Builder(this)
-                .setTitle("Delete Profile")
-                .setMessage("Are you sure you want to delete your profile?")
-                .setPositiveButton("Yes") { _, _ ->
-                    deleteUser(this)
-                    val intent = Intent(this, SignupActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    startActivity(intent)
+                .setTitle("Delete Account")
+                .setMessage("Are you sure you want to permanently delete your account? This action cannot be undone.")
+                .setPositiveButton("Yes, Delete") { _, _ ->
+                    performAccountDeletion()
                 }
-                .setNegativeButton("No", null)
+                .setNegativeButton("Cancel", null)
                 .show()
         }
 
@@ -123,7 +120,65 @@ class SettingsActivity : BaseActivity() {
         }
     }
 
-    private fun deleteUser(context: Context) {
+    private fun performLogout() {
+        clearLocalSession(this)
+
+        try {
+            FirebaseAuth.getInstance().signOut()
+        } catch (e: Exception) {
+            // Ignore signout error
+        }
+
+        Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
+
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+
+    private fun performAccountDeletion() {
+        val auth = FirebaseAuth.getInstance()
+        val user = auth.currentUser
+        val uid = user?.uid ?: getSharedPreferences("user_prefs", MODE_PRIVATE).getString("uid", null)
+
+        if (!uid.isNullOrEmpty()) {
+            // Delete Firestore user document
+            try {
+                FirebaseFirestore.getInstance().collection("users").document(uid).delete()
+            } catch (e: Exception) {
+                // Ignore Firestore delete error
+            }
+        }
+
+        // Delete Firebase Auth User
+        if (user != null) {
+            user.delete().addOnCompleteListener {
+                finishDeletionAndRedirect()
+            }
+        } else {
+            finishDeletionAndRedirect()
+        }
+    }
+
+    private fun finishDeletionAndRedirect() {
+        clearLocalSession(this)
+
+        try {
+            FirebaseAuth.getInstance().signOut()
+        } catch (e: Exception) {
+            // Ignore signout error
+        }
+
+        Toast.makeText(this, "Account deleted successfully", Toast.LENGTH_SHORT).show()
+
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+
+    private fun clearLocalSession(context: Context) {
         val prefs = context.getSharedPreferences("user_prefs", MODE_PRIVATE)
         prefs.edit().clear().apply()
 
