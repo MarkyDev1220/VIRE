@@ -11,7 +11,7 @@ android {
         applicationId = "com.vire.android"
         minSdk = 30
         targetSdk = 36
-        versionCode = 5
+        versionCode = 6
         versionName = "5.1"
     }
     buildFeatures {
