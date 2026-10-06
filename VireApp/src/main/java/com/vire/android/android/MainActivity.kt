@@ -46,27 +46,23 @@ class MainActivity : AppCompatActivity() {
             if (emailOrUsername.contains("@")) {
                 performFirebaseLogin(emailOrUsername, password)
             } else {
-                // Lookup email by username in Firestore
-                db.collection("users")
-                    .whereEqualTo("username", emailOrUsername)
-                    .get()
+                // Lookup email by case-insensitive username in Firestore
+                db.collection("users").get()
                     .addOnSuccessListener { result ->
-                        if (!result.isEmpty) {
-                            val email = result.documents.firstOrNull()?.getString("email")
-                            if (!email.isNullOrEmpty()) {
-                                performFirebaseLogin(email, password)
-                            } else {
-                                Toast.makeText(this, "Email not found for username", Toast.LENGTH_SHORT).show()
-                            }
+                        val matchedDoc = result.documents.find { doc ->
+                            val u = doc.getString("username")
+                            u != null && u.equals(emailOrUsername, ignoreCase = true)
+                        }
+
+                        val email = matchedDoc?.getString("email")
+                        if (!email.isNullOrEmpty()) {
+                            performFirebaseLogin(email, password)
                         } else {
                             Toast.makeText(this, "Username not found", Toast.LENGTH_SHORT).show()
                         }
                     }
-                    .addOnFailureListener {
-                        // Fallback: proceed to Home as demo user
-                        saveLocalSession("demo_uid", emailOrUsername)
-                        startActivity(Intent(this, HomeActivity::class.java))
-                        finish()
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
             }
         }

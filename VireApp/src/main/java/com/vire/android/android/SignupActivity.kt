@@ -1,4 +1,3 @@
-// SignupActivity.kt
 package com.vire.android.android
 
 import android.app.DatePickerDialog
@@ -15,7 +14,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.vire.android.databinding.ActivitySignupBinding
 import java.util.*
-
 
 class SignupActivity : AppCompatActivity() {
 
@@ -115,21 +113,39 @@ class SignupActivity : AppCompatActivity() {
                 .addOnSuccessListener { authResult ->
                     val uid = authResult.user?.uid ?: return@addOnSuccessListener
 
-                    // Save user data to Firestore
-                    val user = hashMapOf(
+                    // Save user data to Firestore with username and usernameLowercase
+                    val userMap = hashMapOf(
                         "uid" to uid,
                         "username" to username,
+                        "usernameLowercase" to username.lowercase(),
                         "email" to email,
                         "gender" to gender,
                         "dateOfBirth" to dobText,
                         "favoriteGames" to selectedGames,
+                        "favoriteGenres" to emptyList<String>(),
+                        "skillLevel" to "",
+                        "localArea" to "",
+                        "gamerBio" to "",
                         "is13Plus" to is13Plus,
                         "profileImageUrl" to "",
                         "coverImageUrl" to "",
                         "aboutMe" to ""
                     )
 
-                    db.collection("users").document(uid).set(user)
+                    val userObj = User(
+                        id = uid,
+                        username = username,
+                        email = email,
+                        gender = gender,
+                        dateOfBirth = dobText,
+                        favoriteGames = selectedGames,
+                        is13Plus = is13Plus
+                    )
+
+                    // Save session to SharedPreferences
+                    saveUser(userObj, this)
+
+                    db.collection("users").document(uid).set(userMap)
                         .addOnSuccessListener {
                             Toast.makeText(this, "Signup successful!", Toast.LENGTH_SHORT).show()
 
