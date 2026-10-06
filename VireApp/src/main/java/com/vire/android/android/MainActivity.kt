@@ -20,12 +20,14 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val isLogout = intent.getBooleanExtra("is_logout", false)
+
         // Check if user is already logged in
         val currentUser = auth.currentUser
         val prefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         val savedUid = prefs.getString("uid", null)
 
-        if (currentUser != null || savedUid != null) {
+        if (!isLogout && (currentUser != null || savedUid != null)) {
             startActivity(Intent(this, HomeActivity::class.java))
             finish()
             return

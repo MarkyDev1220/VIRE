@@ -20,8 +20,16 @@ fun saveUser(user: User, context: Context) {
         putString("profileUri", user.profileImageUri?.toString())
         putString("coverUri", user.coverImageUri?.toString())
         putBoolean("is13Plus", user.is13Plus)
-        apply()
+        commit()
     }
+}
+
+fun clearUserSession(context: Context) {
+    val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+    prefs.edit().clear().commit()
+
+    val virePrefs = context.getSharedPreferences("VirePrefs", Context.MODE_PRIVATE)
+    virePrefs.edit().clear().commit()
 }
 
 fun loadUser(context: Context): User? {

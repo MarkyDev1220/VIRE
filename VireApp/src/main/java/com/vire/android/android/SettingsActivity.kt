@@ -121,7 +121,7 @@ class SettingsActivity : BaseActivity() {
     }
 
     private fun performLogout() {
-        clearLocalSession(this)
+        clearUserSession(this)
 
         try {
             FirebaseAuth.getInstance().signOut()
@@ -132,6 +132,7 @@ class SettingsActivity : BaseActivity() {
         Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
 
         val intent = Intent(this, MainActivity::class.java)
+        intent.putExtra("is_logout", true)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
@@ -162,7 +163,7 @@ class SettingsActivity : BaseActivity() {
     }
 
     private fun finishDeletionAndRedirect() {
-        clearLocalSession(this)
+        clearUserSession(this)
 
         try {
             FirebaseAuth.getInstance().signOut()
@@ -173,16 +174,9 @@ class SettingsActivity : BaseActivity() {
         Toast.makeText(this, "Account deleted successfully", Toast.LENGTH_SHORT).show()
 
         val intent = Intent(this, MainActivity::class.java)
+        intent.putExtra("is_logout", true)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
-    }
-
-    private fun clearLocalSession(context: Context) {
-        val prefs = context.getSharedPreferences("user_prefs", MODE_PRIVATE)
-        prefs.edit().clear().apply()
-
-        val virePrefs = context.getSharedPreferences("VirePrefs", MODE_PRIVATE)
-        virePrefs.edit().clear().apply()
     }
 }
