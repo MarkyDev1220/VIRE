@@ -149,9 +149,12 @@ class ProfileActivity : BaseActivity() {
         }
         val explicitUid = intent.getStringExtra("uid")
         val authUser = auth.currentUser
-        val uid = explicitUid ?: authUser?.uid
+        val prefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val savedUid = prefs.getString("uid", null)
 
-        if (uid == null) {
+        val uid = explicitUid ?: authUser?.uid ?: savedUid
+
+        if (uid.isNullOrEmpty()) {
             Toast.makeText(this, "User not logged in. Please sign in again.", Toast.LENGTH_SHORT).show()
             finish()
             return

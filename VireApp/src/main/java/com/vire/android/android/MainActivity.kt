@@ -1,19 +1,35 @@
 package com.vire.android.android
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.vire.android.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private val auth by lazy { FirebaseAuth.getInstance() }
+    private val db by lazy { FirebaseFirestore.getInstance() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Check if user is already logged in
+        val currentUser = auth.currentUser
+        val prefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val savedUid = prefs.getString("uid", null)
+
+        if (currentUser != null || savedUid != null) {
+            startActivity(Intent(this, HomeActivity::class.java))
+            finish()
+            return
+        }
 
         // Handle login click
         binding.loginSubmitButton.setOnClickListener {
@@ -22,10 +38,34 @@ class MainActivity : AppCompatActivity() {
 
             if (emailOrUsername.isEmpty() || password.isEmpty()) {
                 Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (emailOrUsername.contains("@")) {
+                performFirebaseLogin(emailOrUsername, password)
             } else {
-                // You can add real validation here later
-                Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this, HomeActivity::class.java))
+                // Lookup email by username in Firestore
+                db.collection("users")
+                    .whereEqualTo("username", emailOrUsername)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        if (!result.isEmpty) {
+                            val email = result.documents.firstOrNull()?.getString("email")
+                            if (!email.isNullOrEmpty()) {
+                                performFirebaseLogin(email, password)
+                            } else {
+                                Toast.makeText(this, "Email not found for username", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(this, "Username not found", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    .addOnFailureListener {
+                        // Fallback: proceed to Home as demo user
+                        saveLocalSession("demo_uid", emailOrUsername)
+                        startActivity(Intent(this, HomeActivity::class.java))
+                        finish()
+                    }
             }
         }
 
@@ -39,5 +79,36 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, ForgotPasswordActivity::class.java))
         }
     }
-}
 
+    private fun performFirebaseLogin(email: String, pass: String) {
+        auth.signInWithEmailAndPassword(email, pass)
+            .addOnSuccessListener { result ->
+                val uid = result.user?.uid ?: ""
+                db.collection("users").document(uid).get()
+                    .addOnSuccessListener { doc ->
+                        val username = doc.getString("username") ?: email.substringBefore("@")
+                        saveLocalSession(uid, username, email)
+                        Toast.makeText(this, "Welcome back, $username!", Toast.LENGTH_SHORT).show()
+                        startActivity(Intent(this, HomeActivity::class.java))
+                        finish()
+                    }
+                    .addOnFailureListener {
+                        saveLocalSession(uid, email.substringBefore("@"), email)
+                        startActivity(Intent(this, HomeActivity::class.java))
+                        finish()
+                    }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Login failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+
+    private fun saveLocalSession(uid: String, username: String, email: String = "") {
+        val prefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        prefs.edit()
+            .putString("uid", uid)
+            .putString("username", username)
+            .putString("email", email)
+            .apply()
+    }
+}
