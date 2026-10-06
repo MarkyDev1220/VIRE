@@ -12,7 +12,7 @@ android {
         minSdk = 30
         targetSdk = 36
         versionCode = 5
-        versionName = "2.2"
+        versionName = "5.1"
     }
     buildFeatures {
         viewBinding = true
