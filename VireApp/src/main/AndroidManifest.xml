@@ -24,10 +24,25 @@
     <!-- If your app uses camera for profile pictures -->
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!-- Package visibility queries for Google Play Services on Android 11+ (targetSdk >= 30) -->
+    <queries>
+        <package android:name="com.google.android.gms" />
+        <package android:name="com.android.vending" />
+        <intent>
+            <action android:name="com.google.android.gms.settings.GMS_SETTINGS" />
+        </intent>
+    </queries>
+
     <application
+        android:name=".VireApplication"
         android:allowBackup="false"
         android:supportsRtl="true"
         android:theme="@style/Theme.VIRE">
+
+        <!-- Google Play Services metadata -->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
 
         <!-- Signup/Login/Profile/Home Activities -->
         <activity android:name=".android.ProfileActivity" />
