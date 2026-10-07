@@ -103,7 +103,13 @@ class MainActivity : AppCompatActivity() {
                     }
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Login failed: ${e.message}", Toast.LENGTH_LONG).show()
+                val errorMsg = if (e.message?.contains("network", ignoreCase = true) == true ||
+                    e.message?.contains("unreachable host", ignoreCase = true) == true) {
+                    "Network error: Unable to reach Firebase servers. Please check your internet or emulator network connection."
+                } else {
+                    "Login failed: ${e.message}"
+                }
+                Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
             }
     }
 
