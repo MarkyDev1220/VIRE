@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:fillViewport="true"
     android:fitsSystemWindows="true"
-    android:background="#FAFAFA">
+    android:background="@color/profile_bg_light">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -14,7 +14,6 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Cover Photo Area -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="180dp">
@@ -40,7 +39,6 @@
                 android:contentDescription="Change Cover" />
         </FrameLayout>
 
-        <!-- Profile Image Area -->
         <FrameLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -68,7 +66,6 @@
                 android:contentDescription="Change Profile Pic" />
         </FrameLayout>
 
-        <!-- Header Info -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -81,7 +78,7 @@
                 android:text="Username:"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="#212121" />
+                android:textColor="@color/text_primary" />
 
             <ImageButton
                 android:id="@+id/editPenButton"
@@ -100,8 +97,9 @@
             android:layout_height="wrap_content"
             android:text="Email:"
             android:textSize="16sp"
-            android:textColor="#666666"
-            android:layout_marginTop="4dp" />
+            android:textColor="@color/text_secondary"
+            android:layout_marginTop="4dp"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/profileGender"
@@ -109,7 +107,7 @@
             android:layout_height="wrap_content"
             android:text="Gender: Not set"
             android:textSize="16sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_primary"
             android:layout_marginTop="8dp" />
 
         <View
@@ -119,14 +117,13 @@
             android:layout_marginTop="16dp"
             android:layout_marginBottom="16dp"/>
 
-        <!-- Bio Sections -->
         <TextView
             android:id="@+id/profileAboutMe"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="About Me:"
             android:textSize="16sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_primary"
             android:layout_marginTop="8dp" />
 
         <TextView
@@ -135,7 +132,7 @@
             android:layout_height="wrap_content"
             android:text="Gamer Bio:"
             android:textSize="16sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_primary"
             android:layout_marginTop="8dp" />
 
         <View
@@ -145,14 +142,13 @@
             android:layout_marginTop="16dp"
             android:layout_marginBottom="16dp"/>
 
-        <!-- Gamer Stats -->
         <TextView
             android:id="@+id/profileGames"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Games:"
             android:textSize="16sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_primary"
             android:layout_marginTop="8dp" />
 
         <TextView
@@ -161,7 +157,7 @@
             android:layout_height="wrap_content"
             android:text="Favorite Genres:"
             android:textSize="16sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_primary"
             android:layout_marginTop="8dp" />
 
         <TextView
@@ -170,7 +166,7 @@
             android:layout_height="wrap_content"
             android:text="Skill Level:"
             android:textSize="16sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_primary"
             android:layout_marginTop="8dp" />
 
         <TextView
@@ -179,10 +175,9 @@
             android:layout_height="wrap_content"
             android:text="Local Gaming Area:"
             android:textSize="16sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_primary"
             android:layout_marginTop="8dp" />
 
-        <!-- Social Buttons -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -270,7 +265,6 @@
                 android:text="My Collection" />
         </LinearLayout>
 
-        <!-- Hosted Game Nights -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -287,7 +281,6 @@
             android:divider="#EEEEEE"
             android:dividerHeight="1dp" />
 
-        <!-- Profile Feed -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -304,7 +297,6 @@
             android:divider="#EEEEEE"
             android:dividerHeight="1dp" />
 
-        <!-- Menu Button -->
         <ImageButton
             android:id="@+id/hamburgerButton"
             android:layout_width="56dp"

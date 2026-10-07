@@ -32,7 +32,6 @@ class ProfileActivity : BaseActivity() {
     private lateinit var gamesText: TextView
     private lateinit var genderText: TextView
 
-    // ⭐ NEW GAMER PROFILE FIELDS
     private lateinit var genresText: TextView
     private lateinit var skillLevelText: TextView
     private lateinit var localAreaText: TextView
@@ -56,7 +55,6 @@ class ProfileActivity : BaseActivity() {
     private var selectedProfileUri: Uri? = null
     private var selectedCoverUri: Uri? = null
     private var changingCoverPhoto = false
-
     private var currentUid: String? = null
 
     private val pickImageLauncher = registerForActivityResult(
@@ -107,7 +105,6 @@ class ProfileActivity : BaseActivity() {
         gamesText = findViewById(R.id.profileGames)
         genderText = findViewById(R.id.profileGender)
 
-        // ⭐ NEW GAMER PROFILE FIELDS
         genresText = findViewById(R.id.profileGenres)
         skillLevelText = findViewById(R.id.profileSkillLevel)
         localAreaText = findViewById(R.id.profileLocalArea)
@@ -120,8 +117,7 @@ class ProfileActivity : BaseActivity() {
         editPenButton = findViewById(R.id.editPenButton)
 
         profileFeedListView = findViewById(R.id.profileFeedListView)
-        profileFeedAdapter =
-            ArrayAdapter(this, android.R.layout.simple_list_item_1, profileFeedPosts)
+        profileFeedAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, profileFeedPosts)
         profileFeedListView.adapter = profileFeedAdapter
 
         hostedGameNightsListView = findViewById(R.id.hostedGameNightsListView)
@@ -139,6 +135,7 @@ class ProfileActivity : BaseActivity() {
         }
 
         setupHamburgerMenu()
+        emailText.visibility = View.GONE
 
         val auth = try {
             FirebaseAuth.getInstance()
@@ -147,11 +144,11 @@ class ProfileActivity : BaseActivity() {
             finish()
             return
         }
+
         val explicitUid = intent.getStringExtra("uid")
         val authUser = auth.currentUser
         val prefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         val savedUid = prefs.getString("uid", null)
-
         val uid = explicitUid ?: authUser?.uid ?: savedUid
 
         if (uid.isNullOrEmpty()) {
@@ -197,11 +194,6 @@ class ProfileActivity : BaseActivity() {
             }
 
             FriendManager.isFriend(profileUid) { isFriend ->
-                val db = try {
-                    FirebaseFirestore.getInstance()
-                } catch (e: IllegalStateException) {
-                    return@isFriend
-                }
                 if (isFriend) {
                     Toast.makeText(this, "Already friends.", Toast.LENGTH_SHORT).show()
                 } else {
@@ -215,7 +207,6 @@ class ProfileActivity : BaseActivity() {
                 }
             }
         }
-
     }
 
     override fun onResume() {
@@ -238,13 +229,13 @@ class ProfileActivity : BaseActivity() {
                     val email = doc.getString("email") ?: "Unknown"
                     usernameText.text = "Username: $username"
                     emailText.text = "Email: $email"
+                    emailText.visibility = View.GONE
                     genderText.text = "Gender: ${doc.getString("gender") ?: "Not set"}"
                     aboutMeText.text = "About Me: ${doc.getString("aboutMe") ?: "No bio yet"}"
 
                     val games = (doc.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
                     gamesText.text = "Games: ${if (games.isNotEmpty()) games.joinToString(", ") else "None added yet"}"
 
-                    // ⭐ NEW GAMER PROFILE FIELDS
                     val genres = (doc.get("favoriteGenres") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
                     genresText.text = "Favorite Genres: ${if (genres.isNotEmpty()) genres.joinToString(", ") else "None"}"
 
@@ -266,7 +257,12 @@ class ProfileActivity : BaseActivity() {
                     loadFromLocalUserPrefs()
                 }
 
-                // Load Game Nights for this user
+                if (uid == FirebaseAuth.getInstance().currentUser?.uid) {
+                    addFriendButton.visibility = View.GONE
+                } else {
+                    addFriendButton.visibility = View.VISIBLE
+                }
+
                 loadHostedGameNights(uid)
             }
             .addOnFailureListener {
@@ -279,6 +275,7 @@ class ProfileActivity : BaseActivity() {
         val u = loadUser(this) ?: return
         usernameText.text = "Username: ${u.username}"
         emailText.text = "Email: ${u.email}"
+        emailText.visibility = View.GONE
         genderText.text = "Gender: ${u.gender.ifBlank { "Not set" }}"
         aboutMeText.text = "About Me: No bio yet"
         gamesText.text = "Games: ${if (u.favoriteGames.isNotEmpty()) u.favoriteGames.joinToString(", ") else "None added yet"}"
@@ -418,8 +415,7 @@ class ProfileActivity : BaseActivity() {
                 Toast.makeText(this, "Firebase Storage not available", Toast.LENGTH_SHORT).show()
                 return
             }
-            val storageRef = storage.reference
-                .child("profileImages/$uid/$fieldName.jpg")
+            val storageRef = storage.reference.child("profileImages/$uid/$fieldName.jpg")
 
             storageRef.putFile(uri)
                 .addOnSuccessListener {

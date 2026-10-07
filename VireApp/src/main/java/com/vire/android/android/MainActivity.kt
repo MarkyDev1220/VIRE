@@ -3,6 +3,7 @@ package com.vire.android.android
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Patterns
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
@@ -22,7 +23,6 @@ class MainActivity : AppCompatActivity() {
 
         val isLogout = intent.getBooleanExtra("is_logout", false)
 
-        // Check if user is already logged in
         val currentUser = auth.currentUser
         val prefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         val savedUid = prefs.getString("uid", null)
@@ -33,7 +33,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Handle login click
         binding.loginSubmitButton.setOnClickListener {
             val emailOrUsername = binding.emailOrUsernameEditText.text.toString().trim()
             val password = binding.loginPasswordEditText.text.toString().trim()
@@ -44,9 +43,12 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (emailOrUsername.contains("@")) {
+                if (!Patterns.EMAIL_ADDRESS.matcher(emailOrUsername).matches()) {
+                    binding.emailOrUsernameEditText.error = "Enter a valid email"
+                    return@setOnClickListener
+                }
                 performFirebaseLogin(emailOrUsername, password)
             } else {
-                // Lookup email by case-insensitive username in Firestore
                 db.collection("users").get()
                     .addOnSuccessListener { result ->
                         val matchedDoc = result.documents.find { doc ->
@@ -67,12 +69,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Sign up button
         binding.signUpButton.setOnClickListener {
             startActivity(Intent(this, SignupActivity::class.java))
         }
 
-        // Forgot password text
         binding.forgotPasswordText.setOnClickListener {
             startActivity(Intent(this, ForgotPasswordActivity::class.java))
         }
@@ -84,6 +84,12 @@ class MainActivity : AppCompatActivity() {
                 val uid = result.user?.uid ?: ""
                 db.collection("users").document(uid).get()
                     .addOnSuccessListener { doc ->
+                        if (!doc.exists()) {
+                            auth.signOut()
+                            Toast.makeText(this, "Account not found or deleted.", Toast.LENGTH_LONG).show()
+                            return@addOnSuccessListener
+                        }
+
                         val username = doc.getString("username") ?: email.substringBefore("@")
                         saveLocalSession(uid, username, email)
                         Toast.makeText(this, "Welcome back, $username!", Toast.LENGTH_SHORT).show()

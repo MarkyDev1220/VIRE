@@ -1,28 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="profile_bg_light">#111827</color>
+    <color name="profile_bg_dark">#111827</color>
 
-    <color name="profile_bg_light">#121212</color>
-    <color name="profile_bg_dark">#121212</color>
+    <color name="text_primary">#F9FAFB</color>
+    <color name="text_primary_dark">#F9FAFB</color>
+    <color name="text_secondary">#D1D5DB</color>
+    <color name="text_secondary_dark">#D1D5DB</color>
 
-    <color name="text_primary">#FFFFFF</color>
-    <color name="text_primary_dark">#FFFFFF</color>
-
-    <color name="text_secondary">#DDDDDD</color>
-    <color name="text_secondary_dark">#DDDDDD</color>
-
-    <!-- Keep your existing dark colors -->
     <color name="purple_500">#6200EE</color>
     <color name="white">#FFFFFF</color>
-    <color name="blue_200">#BBDEFB</color>
-    <color name="green_200">#C8E6C9</color>
-    <color name="purple_200">#E1BEE7</color>
-    <color name="purple_700">#3700B3</color>
+    <color name="blue_200">#DDEBFF</color>
+    <color name="green_200">#DDF7E8</color>
+    <color name="purple_200">#F1E5FF</color>
+    <color name="purple_700">#4B2E83</color>
     <color name="light_gray">#EDEDED</color>
-    <color name="dark_gray">#2C2C2C</color>
-    <color name="darker_gray">#1E1E1E</color>
-    <color name="dark_blue">#00008B</color>
-    <color name="navy_blue">#000080</color>
-    <color name="midnight_blue">#191970</color>
+    <color name="dark_gray">#1F2937</color>
+    <color name="darker_gray">#111827</color>
+    <color name="dark_blue">#0A2E6F</color>
+    <color name="navy_blue">#001A4D</color>
+    <color name="midnight_blue">#0F172A</color>
     <color name="black">#000000</color>
-
 </resources>

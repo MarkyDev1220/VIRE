@@ -12,6 +12,7 @@ import com.vire.android.R
 class NewPostActivity : AppCompatActivity() {
 
     private var selectedImageUri: Uri? = null
+    private var isSubmitting = false
 
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -39,11 +40,8 @@ class NewPostActivity : AppCompatActivity() {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
 
-        // ✅ Always load username from SharedPreferences
         val prefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
         val username = prefs.getString("username", "Unknown") ?: "Unknown"
-
-        // ✅ Update the UI with the actual username
         userNameText.text = username
 
         closeButton.setOnClickListener { finish() }
@@ -57,6 +55,8 @@ class NewPostActivity : AppCompatActivity() {
         }
 
         postButton.setOnClickListener {
+            if (isSubmitting) return@setOnClickListener
+
             val content = postEditText.text.toString().trim()
             val postType = spType.selectedItem?.toString() ?: "General"
 
@@ -65,15 +65,19 @@ class NewPostActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // ✅ Add post with correct username and postType
+            isSubmitting = true
+            postButton.isEnabled = false
+
             FeedManager.addPost(
                 username = username,
                 content = content,
                 imageUri = selectedImageUri?.toString(),
                 postType = postType
             ) {
+                isSubmitting = false
+                postButton.isEnabled = true
                 Toast.makeText(this, "Post created!", Toast.LENGTH_SHORT).show()
-                setResult(RESULT_OK)
+                setResult(Activity.RESULT_OK)
                 finish()
             }
         }

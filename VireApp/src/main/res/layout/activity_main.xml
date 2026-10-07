@@ -2,7 +2,8 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="@color/profile_bg_light"
+    android:fillViewport="true">
 
     <LinearLayout
         android:id="@+id/main_layout"
@@ -12,7 +13,6 @@
         android:gravity="center_horizontal"
         android:padding="24dp">
 
-        <!-- Welcome Section -->
         <TextView
             android:id="@+id/welcomeTitle"
             android:layout_width="wrap_content"
@@ -20,7 +20,7 @@
             android:text="Welcome to VIRE"
             android:textSize="26sp"
             android:textStyle="bold"
-            android:textColor="#000000"
+            android:textColor="@color/text_primary"
             android:layout_marginBottom="8dp" />
 
         <TextView
@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:text="Virtual Interface for Remote Ranked Engagement"
             android:textSize="16sp"
-            android:textColor="#555555"
+            android:textColor="@color/text_secondary"
             android:layout_marginBottom="24dp"
             android:gravity="center"
             android:textAlignment="center" />
@@ -40,79 +40,84 @@
             android:layout_height="wrap_content"
             android:text="Please log in below or sign up if you’re new."
             android:textSize="16sp"
-            android:textColor="#444444"
+            android:textColor="@color/text_secondary"
             android:gravity="center"
             android:textAlignment="center"
             android:layout_marginBottom="28dp" />
 
-        <!-- Login Section -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Login"
             android:textSize="22sp"
             android:textStyle="bold"
+            android:textColor="@color/text_primary"
             android:layout_marginBottom="16dp" />
 
-        <!-- Email / Username -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Email or Username"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:textColor="@color/text_primary" />
+
         <EditText
             android:id="@+id/emailOrUsernameEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textEmailAddress"
             android:hint="Enter your email or username"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary"
+            android:backgroundTint="@color/primary_blue"
             android:layout_marginBottom="16dp" />
 
-        <!-- Password -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Password"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:textColor="@color/text_primary" />
+
         <EditText
             android:id="@+id/loginPasswordEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textPassword"
             android:hint="Enter your password"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary"
+            android:backgroundTint="@color/primary_blue"
             android:layout_marginBottom="12dp" />
 
-        <!-- Forgot Password -->
         <TextView
             android:id="@+id/forgotPasswordText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Forgot Password?"
-            android:textColor="#1E88E5"
+            android:textColor="@color/link_color"
             android:textStyle="bold"
             android:clickable="true"
             android:focusable="true"
             android:layout_marginBottom="24dp" />
 
-        <!-- Login Button -->
         <Button
             android:id="@+id/loginSubmitButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Login"
-            android:backgroundTint="#2196F3"
-            android:textColor="#FFFFFF"
+            android:backgroundTint="@color/button_primary"
+            android:textColor="@color/button_primary_text"
             android:textSize="18sp"
             android:layout_marginBottom="20dp" />
 
-        <!-- Sign Up Button -->
         <Button
             android:id="@+id/signUpButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Sign Up"
-            android:backgroundTint="#4CAF50"
-            android:textColor="#FFFFFF"
+            android:backgroundTint="@color/button_secondary"
+            android:textColor="@color/button_secondary_text"
             android:textSize="18sp" />
 
     </LinearLayout>

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
+import android.util.Patterns
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -43,15 +44,12 @@ class SignupActivity : AppCompatActivity() {
         binding = ActivitySignupBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Gender spinner
         val genderAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, genderOptions)
         genderAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.genderSpinner.adapter = genderAdapter
 
-        // Profile image picker
         binding.profileImageView.setOnClickListener { pickImageLauncher.launch("image/*") }
 
-        // DOB picker
         binding.editDOB.inputType = InputType.TYPE_NULL
         binding.editDOB.setOnClickListener {
             val cal = Calendar.getInstance()
@@ -60,22 +58,20 @@ class SignupActivity : AppCompatActivity() {
             ).show()
         }
 
-        // Games multi-select
         binding.gamesSelect.setOnClickListener {
             val checkedItems = BooleanArray(tcgGames.size) { selectedGames.contains(tcgGames[it]) }
             AlertDialog.Builder(this)
                 .setTitle("Select TCG Games")
                 .setMultiChoiceItems(tcgGames, checkedItems) { _, which, isChecked ->
-                    if(isChecked) selectedGames.add(tcgGames[which]) else selectedGames.remove(tcgGames[which])
+                    if (isChecked) selectedGames.add(tcgGames[which]) else selectedGames.remove(tcgGames[which])
                 }
-                .setPositiveButton("OK"){_,_ ->
-                    binding.gamesSelect.setText(if(selectedGames.isNotEmpty()) selectedGames.joinToString(", ") else "Select Games")
+                .setPositiveButton("OK") { _, _ ->
+                    binding.gamesSelect.setText(if (selectedGames.isNotEmpty()) selectedGames.joinToString(", ") else "Select Games")
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
         }
 
-        // Return button
         binding.returnText.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -83,7 +79,6 @@ class SignupActivity : AppCompatActivity() {
             finish()
         }
 
-        // Sign-up button
         binding.signupButton.setOnClickListener {
             val email = binding.emailEditText.text.toString().trim()
             val username = binding.usernameEditText.text.toString().trim()
@@ -93,12 +88,28 @@ class SignupActivity : AppCompatActivity() {
             val dobText = binding.editDOB.text.toString()
             val is13Plus = binding.check13Plus.isChecked
 
-            if (email.isEmpty() || username.isEmpty() || createPassword.isEmpty()) {
-                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
+            if (email.isEmpty() || username.isEmpty() || createPassword.isEmpty() || confirmPassword.isEmpty()) {
+                Toast.makeText(this, "Please fill in all required fields", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                binding.emailEditText.error = "Enter a valid email"
+                return@setOnClickListener
+            }
+
+            if (username.length < 3) {
+                binding.usernameEditText.error = "Username must be at least 3 characters"
+                return@setOnClickListener
+            }
+
+            if (createPassword.length < 8) {
+                binding.createpasswordEditText.error = "Password must be at least 8 characters"
                 return@setOnClickListener
             }
 
             if (createPassword != confirmPassword) {
+                binding.confirmPasswordEditText.error = "Passwords do not match"
                 Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -108,12 +119,10 @@ class SignupActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Create Firebase user
             auth.createUserWithEmailAndPassword(email, createPassword)
                 .addOnSuccessListener { authResult ->
                     val uid = authResult.user?.uid ?: return@addOnSuccessListener
 
-                    // Save user data to Firestore with username and usernameLowercase
                     val userMap = hashMapOf(
                         "uid" to uid,
                         "username" to username,
@@ -142,7 +151,6 @@ class SignupActivity : AppCompatActivity() {
                         is13Plus = is13Plus
                     )
 
-                    // Save session to SharedPreferences
                     saveUser(userObj, this)
 
                     db.collection("users").document(uid).set(userMap)
