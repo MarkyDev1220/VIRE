@@ -11,8 +11,8 @@ android {
         applicationId = "com.vire.android"
         minSdk = 30
         targetSdk = 36
-        versionCode = 7
-        versionName = "1"
+        versionCode = 8
+        versionName = "0.2.0-Alpha"
     }
     buildFeatures {
         viewBinding = true
