@@ -1,25 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="primary_green">#2E7D32</color>
+    <color name="primary_blue">#1565C0</color>
+    <color name="primary_purple">#512DA8</color>
+
     <color name="purple_500">#6200EE</color>
     <color name="white">#FFFFFF</color>
     <color name="blue_200">#BBDEFB</color>
     <color name="green_200">#C8E6C9</color>
     <color name="purple_200">#E1BEE7</color>
-    <color name="purple_700">#3700B3</color>
+    <color name="purple_700">#512DA8</color>
+
     <color name="light_gray">#EDEDED</color>
     <color name="dark_gray">#2C2C2C</color>
     <color name="darker_gray">#1E1E1E</color>
-    <color name="dark_blue">#00008B</color>
-    <color name="navy_blue">#000080</color>
-    <color name="midnight_blue">#191970</color>
     <color name="black">#000000</color>
+
+    <color name="dark_blue">#003DA5</color>
+    <color name="navy_blue">#001A4D</color>
+    <color name="midnight_blue">#000D26</color>
+    <color name="error_red">#D32F2F</color>
+    <color name="success_green">#388E3C</color>
+    <color name="warning_orange">#F57C00</color>
+
     <color name="profile_bg_light">#FAFAFA</color>
     <color name="profile_bg_dark">#FAFAFA</color>
 
     <color name="text_primary">#212121</color>
     <color name="text_primary_dark">#212121</color>
-
     <color name="text_secondary">#333333</color>
     <color name="text_secondary_dark">#333333</color>
 
+    <color name="button_primary">#1565C0</color>
+    <color name="button_primary_text">#FFFFFF</color>
+    <color name="button_secondary">#2E7D32</color>
+    <color name="button_secondary_text">#FFFFFF</color>
+
+    <color name="link_color">#1565C0</color>
+    <color name="link_visited">#6A1B9A</color>
 </resources>
