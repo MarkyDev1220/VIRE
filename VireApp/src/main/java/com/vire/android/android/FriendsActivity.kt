@@ -117,10 +117,14 @@ class FriendsActivity : BaseActivity() {
             displayedRequests.clear()
             displayedRequests.addAll(requests)
 
+            val emptyReqText = findViewById<TextView>(R.id.emptyRequestsText)
             if (requests.isEmpty()) {
                 requestsAdapter.clear()
                 requestsAdapter.notifyDataSetChanged()
+                emptyReqText?.visibility = View.VISIBLE
                 return@getPendingRequests
+            } else {
+                emptyReqText?.visibility = View.GONE
             }
 
             val fromUids = requests.map { it.second }
@@ -182,6 +186,9 @@ class FriendsActivity : BaseActivity() {
         friendsAdapter.clear()
         friendsAdapter.addAll(names)
         friendsAdapter.notifyDataSetChanged()
+
+        val emptyText = findViewById<TextView>(R.id.emptyFriendsText)
+        emptyText?.visibility = if (friends.isEmpty()) View.VISIBLE else View.GONE
     }
 
     private fun filterFriends(query: String) {

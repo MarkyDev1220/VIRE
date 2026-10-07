@@ -11,8 +11,8 @@ android {
         applicationId = "com.vire.android"
         minSdk = 30
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.2.0-Alpha"
+        versionCode = 7
+        versionName = "1"
     }
     buildFeatures {
         viewBinding = true
@@ -33,6 +33,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
 }
 
 dependencies {
@@ -42,9 +43,10 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.foundation.layout.android)
-    implementation("com.google.android.material:material:1.12.0")
+    implementation("com.google.android.material:material:1.9.0")
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("com.google.android.material:material:1.12.0")
 
     // Firebase & Picasso
     implementation(platform(libs.firebase.bom))

@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="10dp"
+    android:padding="8dp"
     android:background="?android:attr/selectableItemBackground">
 
     <TextView
@@ -16,13 +16,17 @@
 
     <TextView
         android:id="@+id/menuTitle"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
+        android:minHeight="30dp"
         android:text="Home"
         android:textColor="#212121"
-        android:textSize="12sp"
+        android:textSize="11sp"
         android:textStyle="bold"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:gravity="center"
         android:textAlignment="center" />
 
 </LinearLayout>

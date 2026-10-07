@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
@@ -54,6 +55,10 @@ class HomeActivity : BaseActivity() {
         feedListView = findViewById(R.id.feedListView)
         feedAdapter = PostAdapter(this, FeedManager.getGlobalFeed().toMutableList())
         feedListView.adapter = feedAdapter
+
+        findViewById<ImageView>(R.id.userAvatar)?.setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
+        }
 
         createPostPrompt = findViewById(R.id.createPostPrompt)
 

@@ -84,17 +84,17 @@ class MainActivity : AppCompatActivity() {
                 val uid = result.user?.uid ?: ""
                 db.collection("users").document(uid).get()
                     .addOnSuccessListener { doc ->
-                        if (!doc.exists()) {
+                        if (doc.exists()) {
+                            val username = doc.getString("username") ?: email.substringBefore("@")
+                            saveLocalSession(uid, username, email)
+                            Toast.makeText(this, "Welcome back, $username!", Toast.LENGTH_SHORT).show()
+                            startActivity(Intent(this, HomeActivity::class.java))
+                            finish()
+                        } else {
+                            // Document does not exist - account was deleted
                             auth.signOut()
-                            Toast.makeText(this, "Account not found or deleted.", Toast.LENGTH_LONG).show()
-                            return@addOnSuccessListener
+                            Toast.makeText(this, "This account has been deleted.", Toast.LENGTH_LONG).show()
                         }
-
-                        val username = doc.getString("username") ?: email.substringBefore("@")
-                        saveLocalSession(uid, username, email)
-                        Toast.makeText(this, "Welcome back, $username!", Toast.LENGTH_SHORT).show()
-                        startActivity(Intent(this, HomeActivity::class.java))
-                        finish()
                     }
                     .addOnFailureListener {
                         saveLocalSession(uid, email.substringBefore("@"), email)

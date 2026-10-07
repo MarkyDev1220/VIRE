@@ -1,7 +1,6 @@
 package com.vire.android.android
 
 import android.app.Activity
-import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.widget.*
@@ -73,12 +72,16 @@ class NewPostActivity : AppCompatActivity() {
                 content = content,
                 imageUri = selectedImageUri?.toString(),
                 postType = postType
-            ) {
+            ) { success ->
                 isSubmitting = false
                 postButton.isEnabled = true
-                Toast.makeText(this, "Post created!", Toast.LENGTH_SHORT).show()
-                setResult(Activity.RESULT_OK)
-                finish()
+                if (success) {
+                    Toast.makeText(this, "Post created!", Toast.LENGTH_SHORT).show()
+                    setResult(Activity.RESULT_OK)
+                    finish()
+                } else {
+                    Toast.makeText(this, "Failed to create post. Please try again.", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }

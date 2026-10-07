@@ -103,8 +103,9 @@ class SignupActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            if (createPassword.length < 8) {
-                binding.createpasswordEditText.error = "Password must be at least 8 characters"
+            if (createPassword.length < 6) {
+                binding.createpasswordEditText.error = "Password must be at least 6 characters"
+                Toast.makeText(this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -115,7 +116,7 @@ class SignupActivity : AppCompatActivity() {
             }
 
             if (!is13Plus) {
-                Toast.makeText(this, "You must be 13 or older", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "You must be 13 or older to sign up", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 

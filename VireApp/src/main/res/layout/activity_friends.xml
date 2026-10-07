@@ -22,9 +22,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Search friends"
+        android:textColor="#111111"
+        android:textColorHint="#777777"
+        android:background="@drawable/edit_text_bg"
         android:layout_below="@id/friendsHeader"
         android:inputType="text"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="12dp"/>
 
     <!-- Friends List -->
     <ListView
@@ -36,6 +39,19 @@
         android:divider="@android:color/darker_gray"
         android:dividerHeight="1dp"
         android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/emptyFriendsText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/searchInputFriends"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="24dp"
+        android:text="No friends added yet. Tap 'Find Players' or 'Search' in the menu to connect!"
+        android:textColor="#666666"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:visibility="gone" />
 
     <!-- Pending Requests Header -->
     <TextView
@@ -52,11 +68,23 @@
     <ListView
         android:id="@+id/requestsListView"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
+        android:layout_height="140dp"
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="80dp"
         android:divider="@android:color/darker_gray"
         android:dividerHeight="1dp"/>
+
+    <TextView
+        android:id="@+id/emptyRequestsText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@id/requestsListView"
+        android:layout_marginTop="16dp"
+        android:text="No pending friend requests."
+        android:textColor="#777777"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:visibility="gone" />
 
     <!-- Hamburger menu fixed bottom-right -->
     <ImageButton

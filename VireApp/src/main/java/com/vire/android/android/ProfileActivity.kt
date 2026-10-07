@@ -149,7 +149,9 @@ class ProfileActivity : BaseActivity() {
         val authUser = auth.currentUser
         val prefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         val savedUid = prefs.getString("uid", null)
-        val uid = explicitUid ?: authUser?.uid ?: savedUid
+
+        val loggedInUid = authUser?.uid ?: savedUid
+        val uid = explicitUid ?: loggedInUid
 
         if (uid.isNullOrEmpty()) {
             Toast.makeText(this, "User not logged in. Please sign in again.", Toast.LENGTH_SHORT).show()
@@ -158,6 +160,24 @@ class ProfileActivity : BaseActivity() {
         }
 
         currentUid = uid
+
+        // Always hide email on profile display per privacy rules
+        emailText.visibility = View.GONE
+
+        // Configure UI depending on whether user is viewing own profile or someone else's
+        val isSelf = (uid == loggedInUid)
+        if (isSelf) {
+            addFriendButton.visibility = View.GONE
+            editPenButton.visibility = View.VISIBLE
+            changeProfilePicButton.visibility = View.VISIBLE
+            changeCoverButton.visibility = View.VISIBLE
+        } else {
+            addFriendButton.visibility = View.VISIBLE
+            editPenButton.visibility = View.GONE
+            changeProfilePicButton.visibility = View.GONE
+            changeCoverButton.visibility = View.GONE
+        }
+
         loadUserProfile(uid)
 
         changeProfilePicButton.setOnClickListener {
@@ -226,27 +246,28 @@ class ProfileActivity : BaseActivity() {
             .addOnSuccessListener { doc ->
                 if (doc.exists()) {
                     val username = doc.getString("username") ?: "Unknown"
-                    val email = doc.getString("email") ?: "Unknown"
-                    usernameText.text = "Username: $username"
-                    emailText.text = "Email: $email"
-                    emailText.visibility = View.GONE
-                    genderText.text = "Gender: ${doc.getString("gender") ?: "Not set"}"
-                    aboutMeText.text = "About Me: ${doc.getString("aboutMe") ?: "No bio yet"}"
+                    usernameText.text = username
+
+                    val gender = doc.getString("gender") ?: ""
+                    genderText.text = if (gender.isNotBlank() && gender != "Not set") "Gender: $gender" else "Gender: Not specified"
+
+                    val aboutMe = doc.getString("aboutMe") ?: ""
+                    aboutMeText.text = if (aboutMe.isNotBlank() && aboutMe != "No bio yet") "About Me: $aboutMe" else "About Me: No bio added yet"
 
                     val games = (doc.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
-                    gamesText.text = "Games: ${if (games.isNotEmpty()) games.joinToString(", ") else "None added yet"}"
+                    gamesText.text = "Games: ${if (games.isNotEmpty()) games.joinToString(", ") else "No favorite games added yet"}"
 
                     val genres = (doc.get("favoriteGenres") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
-                    genresText.text = "Favorite Genres: ${if (genres.isNotEmpty()) genres.joinToString(", ") else "None"}"
+                    genresText.text = "Favorite Genres: ${if (genres.isNotEmpty()) genres.joinToString(", ") else "No favorite genres added yet"}"
 
                     val skillLevel = doc.getString("skillLevel") ?: ""
-                    skillLevelText.text = "Skill Level: ${if (skillLevel.isNotEmpty()) skillLevel else "Not set"}"
+                    skillLevelText.text = "Skill Level: ${if (skillLevel.isNotBlank() && skillLevel != "Not set") skillLevel else "Not specified"}"
 
                     val localArea = doc.getString("localArea") ?: ""
-                    localAreaText.text = "Local Gaming Area: ${if (localArea.isNotEmpty()) localArea else "Not set"}"
+                    localAreaText.text = "Local Gaming Area: ${if (localArea.isNotBlank() && localArea != "Not set") localArea else "Not specified"}"
 
                     val gamerBio = doc.getString("gamerBio") ?: ""
-                    gamerBioText.text = "Gamer Bio: ${if (gamerBio.isNotEmpty()) gamerBio else "None"}"
+                    gamerBioText.text = "Gamer Bio: ${if (gamerBio.isNotBlank() && gamerBio != "None") gamerBio else "No gamer bio added yet"}"
 
                     val profileUrl = doc.getString("profileImageUrl")
                     val coverUrl = doc.getString("coverImageUrl")
@@ -273,16 +294,16 @@ class ProfileActivity : BaseActivity() {
 
     private fun loadFromLocalUserPrefs() {
         val u = loadUser(this) ?: return
-        usernameText.text = "Username: ${u.username}"
+        usernameText.text = u.username
         emailText.text = "Email: ${u.email}"
         emailText.visibility = View.GONE
-        genderText.text = "Gender: ${u.gender.ifBlank { "Not set" }}"
-        aboutMeText.text = "About Me: No bio yet"
-        gamesText.text = "Games: ${if (u.favoriteGames.isNotEmpty()) u.favoriteGames.joinToString(", ") else "None added yet"}"
-        genresText.text = "Favorite Genres: ${if (u.favoriteGenres.isNotEmpty()) u.favoriteGenres.joinToString(", ") else "None"}"
-        skillLevelText.text = "Skill Level: ${u.skillLevel.ifBlank { "Not set" }}"
-        localAreaText.text = "Local Gaming Area: ${u.localArea.ifBlank { "Not set" }}"
-        gamerBioText.text = "Gamer Bio: ${u.gamerBio.ifBlank { "None" }}"
+        genderText.text = "Gender: ${u.gender.ifBlank { "Not specified" }}"
+        aboutMeText.text = "About Me: No bio added yet"
+        gamesText.text = "Games: ${if (u.favoriteGames.isNotEmpty()) u.favoriteGames.joinToString(", ") else "No favorite games added yet"}"
+        genresText.text = "Favorite Genres: ${if (u.favoriteGenres.isNotEmpty()) u.favoriteGenres.joinToString(", ") else "No favorite genres added yet"}"
+        skillLevelText.text = "Skill Level: ${u.skillLevel.ifBlank { "Not specified" }}"
+        localAreaText.text = "Local Gaming Area: ${u.localArea.ifBlank { "Not specified" }}"
+        gamerBioText.text = "Gamer Bio: ${u.gamerBio.ifBlank { "No gamer bio added yet" }}"
     }
 
     private fun loadHostedGameNights(uid: String) {

@@ -44,6 +44,7 @@ open class BaseActivity : AppCompatActivity() {
 
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_hamburger_menu, null)
         val gridView = dialogView.findViewById<GridView>(R.id.menuGridView)
+        val closeBtn = dialogView.findViewById<ImageButton>(R.id.closeMenuButton)
 
         val gridAdapter = object : ArrayAdapter<Pair<String, String>>(this, R.layout.item_menu_grid, items) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
@@ -59,8 +60,11 @@ open class BaseActivity : AppCompatActivity() {
 
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
-            .setNegativeButton("Close", null)
             .create()
+
+        closeBtn?.setOnClickListener {
+            dialog.dismiss()
+        }
 
         gridView.setOnItemClickListener { _, _, position, _ ->
             val title = items[position].second

@@ -141,24 +141,30 @@ class SettingsActivity : BaseActivity() {
     private fun performAccountDeletion() {
         val auth = FirebaseAuth.getInstance()
         val user = auth.currentUser
-        val uid = user?.uid ?: getSharedPreferences("user_prefs", MODE_PRIVATE).getString("uid", null)
 
-        if (!uid.isNullOrEmpty()) {
+        if (user == null) {
+            clearUserSession(this)
+            Toast.makeText(this, "Session cleared", Toast.LENGTH_SHORT).show()
+            finishDeletionAndRedirect()
+            return
+        }
+
+        val uid = user.uid
+
+        // Try deleting Firebase Auth user
+        user.delete().addOnSuccessListener {
             // Delete Firestore user document
             try {
                 FirebaseFirestore.getInstance().collection("users").document(uid).delete()
-            } catch (e: Exception) {
-                // Ignore Firestore delete error
-            }
-        }
+            } catch (_: Exception) {}
 
-        // Delete Firebase Auth User
-        if (user != null) {
-            user.delete().addOnCompleteListener {
-                finishDeletionAndRedirect()
-            }
-        } else {
             finishDeletionAndRedirect()
+        }.addOnFailureListener { e ->
+            Toast.makeText(
+                this,
+                "Account deletion failed: ${e.message}. Please log out, log back in, and try again.",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
