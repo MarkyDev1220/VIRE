@@ -5,9 +5,9 @@ compose = "1.12.0"
 compose-material3 = "1.4.0"
 androidx-activityCompose = "1.13.0"
 foundationLayoutAndroid = "1.12.0"
-firebase-bom = "33.10.0"
+firebase-bom = "35.0.0"
 picasso = "2.8"
-googleServices = "4.4.2"
+googleServices = "4.5.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

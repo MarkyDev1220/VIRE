@@ -19,6 +19,7 @@ data class Post(
 data class Comment(
     val id: String = "",
     val postId: String = "",
+    val authorUid: String = "",
     val username: String = "Gamer",
     val text: String = "",
     val timestamp: Long = System.currentTimeMillis()

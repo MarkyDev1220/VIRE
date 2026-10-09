@@ -98,9 +98,11 @@ object FeedManager {
     fun addComment(postId: String, username: String, text: String, onResult: ((Boolean) -> Unit)? = null) {
         try {
             val ref = db.collection("postComments").document()
+            val uid = auth.currentUser?.uid ?: "demo_user"
             val comment = Comment(
                 id = ref.id,
                 postId = postId,
+                authorUid = uid,
                 username = username,
                 text = text
             )
@@ -111,11 +113,21 @@ object FeedManager {
             val idx = localFeed.indexOfFirst { it.id == postId }
             if (idx >= 0) {
                 val p = localFeed[idx]
-                localFeed[idx] = p.copy(commentsCount = p.commentsCount + 1)
+                localFeed[idx] = p.copy(commentsCount = list.size)
             }
 
             if (auth.currentUser != null) {
-                ref.set(comment)
+                val commentMap = hashMapOf(
+                    "id" to ref.id,
+                    "postId" to postId,
+                    "authorUid" to uid,
+                    "username" to username,
+                    "authorName" to username,
+                    "text" to text,
+                    "comment" to text,
+                    "timestamp" to System.currentTimeMillis()
+                )
+                ref.set(commentMap)
                 if (postId.isNotEmpty()) {
                     db.collection("globalPosts").document(postId)
                         .update("commentsCount", FieldValue.increment(1))
@@ -127,14 +139,63 @@ object FeedManager {
         }
     }
 
+    fun deleteComment(postId: String, commentId: String, onResult: ((Boolean) -> Unit)? = null) {
+        try {
+            // Remove from local comments list
+            val list = localComments[postId]
+            list?.removeAll { it.id == commentId }
+            val newCount = list?.size ?: 0
+
+            // Decrement comments count locally
+            val idx = localFeed.indexOfFirst { it.id == postId }
+            if (idx >= 0) {
+                val p = localFeed[idx]
+                localFeed[idx] = p.copy(commentsCount = newCount)
+            }
+
+            // Remove from Firestore
+            if (auth.currentUser != null && commentId.isNotEmpty()) {
+                db.collection("postComments").document(commentId).delete()
+                if (postId.isNotEmpty()) {
+                    db.collection("globalPosts").document(postId)
+                        .update("commentsCount", FieldValue.increment(-1))
+                }
+            }
+            onResult?.invoke(true)
+        } catch (e: Exception) {
+            onResult?.invoke(false)
+        }
+    }
+
     fun getComments(postId: String, onResult: (List<Comment>) -> Unit) {
+        if (postId.isEmpty()) {
+            onResult(emptyList())
+            return
+        }
+        val cached = localComments[postId]
+        if (!cached.isNullOrEmpty()) {
+            onResult(cached)
+            return
+        }
         try {
             db.collection("postComments")
                 .whereEqualTo("postId", postId)
                 .get()
                 .addOnSuccessListener { result ->
-                    val list = result.toObjects(Comment::class.java)
-                    localComments[postId] = list.toMutableList()
+                    val list = mutableListOf<Comment>()
+                    for (doc in result.documents) {
+                        val c = doc.toObject(Comment::class.java)
+                        val u = doc.getString("username") ?: doc.getString("authorName") ?: c?.username ?: "Gamer"
+                        val t = doc.getString("text") ?: doc.getString("comment") ?: c?.text ?: ""
+                        val aUid = doc.getString("authorUid") ?: c?.authorUid ?: ""
+                        val commentId = doc.id
+                        if (c != null) {
+                            list.add(c.copy(id = commentId, authorUid = aUid, username = u, text = t))
+                        } else if (t.isNotEmpty()) {
+                            list.add(Comment(id = commentId, postId = postId, authorUid = aUid, username = u, text = t))
+                        }
+                    }
+                    localComments[postId] = list
                     onResult(list)
                 }
                 .addOnFailureListener {

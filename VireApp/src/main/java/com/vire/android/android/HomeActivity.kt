@@ -10,7 +10,6 @@ import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.vire.android.R
@@ -39,12 +38,6 @@ class HomeActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
-
-        try {
-            FirebaseApp.initializeApp(this)
-        } catch (e: Exception) {
-            Toast.makeText(this, "Firebase initialization failed", Toast.LENGTH_SHORT).show()
-        }
 
         // Load username immediately from SharedPreferences
         loadUsernameFromSharedPrefs()
