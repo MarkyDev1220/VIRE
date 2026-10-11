@@ -13,6 +13,7 @@ android {
         targetSdk = 36
         versionCode = 8
         versionName = "1.0.1"
+
     }
     buildFeatures {
         viewBinding = true
