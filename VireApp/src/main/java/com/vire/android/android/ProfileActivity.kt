@@ -274,6 +274,24 @@ class ProfileActivity : BaseActivity() {
 
                     if (!profileUrl.isNullOrEmpty()) remoteSafeLoad(profileUrl, profileImage)
                     if (!coverUrl.isNullOrEmpty()) remoteSafeLoad(coverUrl, coverPhoto)
+
+                    val loggedInUid = FirebaseAuth.getInstance().currentUser?.uid
+                    if (uid == loggedInUid) {
+                        val currentLocalUser = User(
+                            id = uid,
+                            username = username,
+                            email = doc.getString("email") ?: "",
+                            gender = gender,
+                            dateOfBirth = doc.getString("dateOfBirth") ?: "",
+                            favoriteGames = games,
+                            favoriteGenres = genres,
+                            skillLevel = skillLevel,
+                            localArea = localArea,
+                            gamerBio = gamerBio,
+                            aboutMe = aboutMe
+                        )
+                        com.vire.android.android.saveUser(currentLocalUser, this)
+                    }
                 } else {
                     loadFromLocalUserPrefs()
                 }
@@ -293,12 +311,12 @@ class ProfileActivity : BaseActivity() {
     }
 
     private fun loadFromLocalUserPrefs() {
-        val u = loadUser(this) ?: return
+        val u = com.vire.android.android.loadUser(this) ?: return
         usernameText.text = u.username
         emailText.text = "Email: ${u.email}"
         emailText.visibility = View.GONE
         genderText.text = "Gender: ${u.gender.ifBlank { "Not specified" }}"
-        aboutMeText.text = "About Me: No bio added yet"
+        aboutMeText.text = "About Me: ${u.aboutMe.ifBlank { "No bio added yet" }}"
         gamesText.text = "Games: ${if (u.favoriteGames.isNotEmpty()) u.favoriteGames.joinToString(", ") else "No favorite games added yet"}"
         genresText.text = "Favorite Genres: ${if (u.favoriteGenres.isNotEmpty()) u.favoriteGenres.joinToString(", ") else "No favorite genres added yet"}"
         skillLevelText.text = "Skill Level: ${u.skillLevel.ifBlank { "Not specified" }}"
@@ -335,18 +353,22 @@ class ProfileActivity : BaseActivity() {
             val genderSpinner = dialogView.findViewById<Spinner>(R.id.editGender)
             val themeBtn = dialogView.findViewById<Button>(R.id.editThemeButtonDialog)
 
-            val user = loadUser(this)
+            val user = com.vire.android.android.loadUser(this)
 
             user?.let {
                 usernameInput.setText(it.username)
                 emailInput.setText(it.email)
-                aboutMeInput.setText(aboutMeText.text.toString().replace("About Me: ", ""))
+                aboutMeInput.setText(it.aboutMe)
                 gamesInput.setText(it.favoriteGames.joinToString(", "))
                 genresInput.setText(it.favoriteGenres.joinToString(", "))
                 skillInput.setText(it.skillLevel)
                 areaInput.setText(it.localArea)
                 gamerBioInput.setText(it.gamerBio)
                 dobInput.setText(it.dateOfBirth)
+
+                val genders = arrayOf("Not specified", "Male", "Female", "Non-binary", "Other")
+                val genderIdx = genders.indexOfFirst { g -> g.equals(it.gender, ignoreCase = true) }
+                if (genderIdx >= 0) genderSpinner.setSelection(genderIdx)
             }
 
             dobInput.inputType = InputType.TYPE_NULL
@@ -371,20 +393,21 @@ class ProfileActivity : BaseActivity() {
                 .setPositiveButton("Save") { _, _ ->
                     val updatedUser = User(
                         id = currentUid ?: "",
-                        username = usernameInput.text.toString(),
-                        email = emailInput.text.toString(),
+                        username = usernameInput.text.toString().trim(),
+                        email = emailInput.text.toString().trim(),
                         gender = genderSpinner.selectedItem?.toString() ?: "",
-                        dateOfBirth = dobInput.text.toString(),
+                        dateOfBirth = dobInput.text.toString().trim(),
                         favoriteGames = gamesInput.text.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() },
                         favoriteGenres = genresInput.text.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() },
-                        skillLevel = skillInput.text.toString(),
-                        localArea = areaInput.text.toString(),
-                        gamerBio = gamerBioInput.text.toString(),
+                        skillLevel = skillInput.text.toString().trim(),
+                        localArea = areaInput.text.toString().trim(),
+                        gamerBio = gamerBioInput.text.toString().trim(),
+                        aboutMe = aboutMeInput.text.toString().trim(),
                         profileImageUri = user?.profileImageUri,
                         coverImageUri = user?.coverImageUri,
                         is13Plus = user?.is13Plus ?: true
                     )
-                    saveUser(updatedUser, this)
+                    com.vire.android.android.saveUser(updatedUser, this)
                     saveUserToFirestore(updatedUser)
 
                     Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show()
@@ -415,7 +438,8 @@ class ProfileActivity : BaseActivity() {
             "favoriteGenres" to user.favoriteGenres,
             "skillLevel" to user.skillLevel,
             "localArea" to user.localArea,
-            "gamerBio" to user.gamerBio
+            "gamerBio" to user.gamerBio,
+            "aboutMe" to user.aboutMe
         )
 
         db.collection("users").document(uid)
@@ -501,63 +525,5 @@ class ProfileActivity : BaseActivity() {
         try {
             Picasso.get().load(url).fit().centerCrop().into(target)
         } catch (_: Exception) {}
-    }
-
-    private fun saveUser(user: User, context: Context) {
-        try {
-            val prefs = context.getSharedPreferences("user_prefs", MODE_PRIVATE)
-            prefs.edit().apply {
-                putString("username", user.username)
-                putString("email", user.email)
-                putString("gender", user.gender)
-                putString("dob", user.dateOfBirth)
-                putStringSet("games", user.favoriteGames.toSet())
-                putStringSet("genres", user.favoriteGenres.toSet())
-                putString("skillLevel", user.skillLevel)
-                putString("localArea", user.localArea)
-                putString("gamerBio", user.gamerBio)
-                putString("profileUri", user.profileImageUri?.toString())
-                putString("coverUri", user.coverImageUri?.toString())
-                putBoolean("is13Plus", user.is13Plus)
-                apply()
-            }
-        } catch (e: Exception) {
-            Toast.makeText(this, "Error saving user: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun loadUser(context: Context): User? {
-        return try {
-            val prefs = context.getSharedPreferences("user_prefs", MODE_PRIVATE)
-            val username = prefs.getString("username", null) ?: return null
-            val email = prefs.getString("email", "") ?: ""
-            val gender = prefs.getString("gender", "") ?: ""
-            val dob = prefs.getString("dob", "") ?: ""
-            val games = prefs.getStringSet("games", emptySet())?.toList() ?: emptyList()
-            val genres = prefs.getStringSet("genres", emptySet())?.toList() ?: emptyList()
-            val skillLevel = prefs.getString("skillLevel", "") ?: ""
-            val localArea = prefs.getString("localArea", "") ?: ""
-            val gamerBio = prefs.getString("gamerBio", "") ?: ""
-            val profileUri = prefs.getString("profileUri", null)?.let { Uri.parse(it) }
-            val coverUri = prefs.getString("coverUri", null)?.let { Uri.parse(it) }
-            val is13Plus = prefs.getBoolean("is13Plus", false)
-            User(
-                id = FirebaseAuth.getInstance().currentUser?.uid ?: "",
-                username = username,
-                email = email,
-                gender = gender,
-                dateOfBirth = dob,
-                favoriteGames = games,
-                favoriteGenres = genres,
-                skillLevel = skillLevel,
-                localArea = localArea,
-                gamerBio = gamerBio,
-                profileImageUri = profileUri,
-                coverImageUri = coverUri,
-                is13Plus = is13Plus
-            )
-        } catch (e: Exception) {
-            null
-        }
     }
 }

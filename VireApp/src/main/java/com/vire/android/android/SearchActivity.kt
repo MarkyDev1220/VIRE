@@ -87,9 +87,14 @@ class SearchActivity : BaseActivity() {
                     val uid = document.id
                     if (uid == currentUid) continue
 
+                    val name = document.getString("username")
+                        ?: document.getString("fullName")
+                        ?: document.getString("displayName")
+                        ?: "Gamer"
+
                     val user = User(
                         id = uid,
-                        username = document.getString("username") ?: "Unknown",
+                        username = name,
                         email = document.getString("email") ?: "",
                         gender = document.getString("gender") ?: "",
                         dateOfBirth = document.getString("dateOfBirth") ?: "",
@@ -140,19 +145,20 @@ class SearchActivity : BaseActivity() {
             val user = item.user
             if (query.isEmpty()) return@filter true
 
+            val matchesUsername = user.username.lowercase().contains(query)
+            val matchesEmail = user.email.lowercase().contains(query)
+            val matchesArea = user.localArea.lowercase().contains(query)
+            val matchesSkill = user.skillLevel.lowercase().contains(query)
+            val matchesGame = user.favoriteGames.any { it.lowercase().contains(query) }
+            val matchesGenre = user.favoriteGenres.any { it.lowercase().contains(query) }
+            val matchesBio = user.gamerBio.lowercase().contains(query)
+
             when (category) {
-                "Username" -> user.username.lowercase().contains(query)
-                "Favorite Game" -> user.favoriteGames.any { it.lowercase().contains(query) }
-                "Local Area" -> user.localArea.lowercase().contains(query)
-                "Skill Level" -> user.skillLevel.lowercase().contains(query)
-                else -> {
-                    user.username.lowercase().contains(query) ||
-                            user.localArea.lowercase().contains(query) ||
-                            user.skillLevel.lowercase().contains(query) ||
-                            user.favoriteGames.any { it.lowercase().contains(query) } ||
-                            user.favoriteGenres.any { it.lowercase().contains(query) } ||
-                            user.gamerBio.lowercase().contains(query)
-                }
+                "Username" -> matchesUsername || matchesEmail
+                "Favorite Game" -> matchesGame
+                "Local Area" -> matchesArea
+                "Skill Level" -> matchesSkill
+                else -> matchesUsername || matchesEmail || matchesArea || matchesSkill || matchesGame || matchesGenre || matchesBio
             }
         }
 

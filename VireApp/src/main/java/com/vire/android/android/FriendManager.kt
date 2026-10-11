@@ -47,6 +47,58 @@ object FriendManager {
         }
     }
 
+    /** Send a friend request by searching username or email */
+    fun sendRequestByUsername(usernameOrEmail: String, onResult: (Boolean, String) -> Unit) {
+        val queryStr = usernameOrEmail.trim()
+        if (queryStr.isEmpty()) {
+            onResult(false, "Please enter a username or email.")
+            return
+        }
+
+        val senderUid = currentUid()
+        if (senderUid == null) {
+            onResult(false, "You must be logged in to send friend requests.")
+            return
+        }
+
+        db.collection("users").get()
+            .addOnSuccessListener { result ->
+                val matchedDoc = result.documents.find { doc ->
+                    val u = doc.getString("username") ?: ""
+                    val e = doc.getString("email") ?: ""
+                    val fullName = doc.getString("fullName") ?: doc.getString("displayName") ?: ""
+                    u.equals(queryStr, ignoreCase = true) ||
+                            e.equals(queryStr, ignoreCase = true) ||
+                            fullName.equals(queryStr, ignoreCase = true) ||
+                            u.lowercase().contains(queryStr.lowercase())
+                }
+
+                if (matchedDoc == null) {
+                    onResult(false, "No user found matching '$queryStr'.")
+                    return@addOnSuccessListener
+                }
+
+                val targetUid = matchedDoc.id
+                val targetName = matchedDoc.getString("username") ?: queryStr
+
+                if (targetUid == senderUid) {
+                    onResult(false, "You cannot send a friend request to yourself.")
+                    return@addOnSuccessListener
+                }
+
+                sendRequest(targetUid) { success ->
+                    if (success) {
+                        onResult(true, "Friend request sent to $targetName!")
+                    } else {
+                        onResult(false, "Request already sent or user is already your friend.")
+                    }
+                }
+            }
+            .addOnFailureListener { e ->
+                onResult(false, "Error finding user: ${e.message}")
+            }
+    }
+
     /** Accept a friend request and create friendship */
     fun acceptRequest(requestId: String, onResult: (Boolean) -> Unit) {
         val reqRef = db.collection("friendRequests").document(requestId)

@@ -17,6 +17,7 @@ fun saveUser(user: User, context: Context) {
         putString("skillLevel", user.skillLevel)
         putString("localArea", user.localArea)
         putString("gamerBio", user.gamerBio)
+        putString("aboutMe", user.aboutMe)
         putString("profileUri", user.profileImageUri?.toString())
         putString("coverUri", user.coverImageUri?.toString())
         putBoolean("is13Plus", user.is13Plus)
@@ -44,6 +45,7 @@ fun loadUser(context: Context): User? {
     val skillLevel = prefs.getString("skillLevel", "") ?: ""
     val localArea = prefs.getString("localArea", "") ?: ""
     val gamerBio = prefs.getString("gamerBio", "") ?: ""
+    val aboutMe = prefs.getString("aboutMe", "") ?: ""
     val profileUri = prefs.getString("profileUri", null)?.let { Uri.parse(it) }
     val coverUri = prefs.getString("coverUri", null)?.let { Uri.parse(it) }
     val is13Plus = prefs.getBoolean("is13Plus", false)
@@ -58,6 +60,7 @@ fun loadUser(context: Context): User? {
         skillLevel = skillLevel,
         localArea = localArea,
         gamerBio = gamerBio,
+        aboutMe = aboutMe,
         profileImageUri = profileUri,
         coverImageUri = coverUri,
         is13Plus = is13Plus,

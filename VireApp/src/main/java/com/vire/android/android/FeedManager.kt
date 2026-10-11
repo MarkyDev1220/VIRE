@@ -52,10 +52,13 @@ object FeedManager {
             db.collection("globalPosts")
                 .get()
                 .addOnSuccessListener { result ->
-                    val list = result.toObjects(Post::class.java)
+                    val remoteList = result.toObjects(Post::class.java)
+                    val merged = (localFeed + remoteList)
+                        .distinctBy { it.id }
+                        .sortedByDescending { it.timestamp }
                     localFeed.clear()
-                    localFeed.addAll(list)
-                    onResult(list)
+                    localFeed.addAll(merged)
+                    onResult(localFeed.toList())
                 }
                 .addOnFailureListener {
                     onResult(localFeed.toList())
@@ -65,12 +68,12 @@ object FeedManager {
         }
     }
 
-    fun getGlobalFeed(): List<Post> = localFeed.toList()
+    fun getGlobalFeed(): List<Post> = localFeed.sortedByDescending { it.timestamp }
 
     fun getProfileFeed(username: String): List<Post> =
-        localFeed.filter { it.username.equals(username, ignoreCase = true) }
+        localFeed.filter { it.username.equals(username, ignoreCase = true) }.sortedByDescending { it.timestamp }
 
-    fun toggleLikePost(postId: String, userUid: String, onResult: ((Boolean) -> Unit)? = null) {
+    fun toggleLikePost(postId: String, userUid: String, onResult: ((Post?) -> Unit)? = null) {
         try {
             val idx = localFeed.indexOfFirst { it.id == postId }
             if (idx >= 0) {
@@ -78,7 +81,8 @@ object FeedManager {
                 val isLiked = p.likedBy.contains(userUid)
                 val newLikedBy = if (isLiked) p.likedBy - userUid else p.likedBy + userUid
                 val newLikes = newLikedBy.size
-                localFeed[idx] = p.copy(likedBy = newLikedBy, likes = newLikes)
+                val updatedPost = p.copy(likedBy = newLikedBy, likes = newLikes)
+                localFeed[idx] = updatedPost
 
                 if (auth.currentUser != null && postId.isNotEmpty()) {
                     val ref = db.collection("globalPosts").document(postId)
@@ -88,10 +92,12 @@ object FeedManager {
                         ref.update("likedBy", FieldValue.arrayUnion(userUid), "likes", FieldValue.increment(1))
                     }
                 }
+                onResult?.invoke(updatedPost)
+            } else {
+                onResult?.invoke(null)
             }
-            onResult?.invoke(true)
         } catch (e: Exception) {
-            onResult?.invoke(false)
+            onResult?.invoke(null)
         }
     }
 

@@ -62,7 +62,10 @@ class PostAdapter(
         val totalLikes = maxOf(post.likes, post.likedBy.size)
         likeButton.text = if (isLiked) "❤️ Liked ($totalLikes)" else "🤍 Like ($totalLikes)"
         likeButton.setOnClickListener {
-            FeedManager.toggleLikePost(post.id, currentUid) {
+            FeedManager.toggleLikePost(post.id, currentUid) { updatedPost ->
+                if (updatedPost != null) {
+                    posts[position] = updatedPost
+                }
                 notifyDataSetChanged()
             }
         }

@@ -19,6 +19,7 @@ data class User(
     val skillLevel: String = "",
     val localArea: String = "",
     val gamerBio: String = "",
+    val aboutMe: String = "",
 
     // ⭐ PROFILE IMAGES
     val profileImageUri: Uri? = null,

@@ -37,6 +37,10 @@ class FriendsActivity : BaseActivity() {
         requestsAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, mutableListOf())
         requestsListView.adapter = requestsAdapter
 
+        findViewById<Button>(R.id.addFriendHeaderButton)?.setOnClickListener {
+            startActivity(Intent(this, AddFriendActivity::class.java))
+        }
+
         loadFriends()
         loadFriendRequests()
 
@@ -181,8 +185,16 @@ class FriendsActivity : BaseActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        loadFriends()
+        loadFriendRequests()
+    }
+
     private fun updateFriendList(friends: List<User>) {
-        val names = friends.map { it.username }
+        val names = friends.map {
+            if (it.localArea.isNotBlank()) "${it.username} • ${it.localArea}" else it.username
+        }
         friendsAdapter.clear()
         friendsAdapter.addAll(names)
         friendsAdapter.notifyDataSetChanged()
@@ -192,7 +204,17 @@ class FriendsActivity : BaseActivity() {
     }
 
     private fun filterFriends(query: String) {
-        val filtered = displayedFriends.filter { it.username.contains(query, ignoreCase = true) }
+        val q = query.trim().lowercase()
+        if (q.isEmpty()) {
+            updateFriendList(displayedFriends)
+            return
+        }
+        val filtered = displayedFriends.filter { user ->
+            user.username.lowercase().contains(q) ||
+                    user.email.lowercase().contains(q) ||
+                    user.localArea.lowercase().contains(q) ||
+                    user.favoriteGames.any { it.lowercase().contains(q) }
+        }
         updateFriendList(filtered)
     }
 }
