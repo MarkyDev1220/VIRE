@@ -49,22 +49,33 @@ class MainActivity : AppCompatActivity() {
                 }
                 performFirebaseLogin(emailOrUsername, password)
             } else {
-                db.collection("users").get()
+                db.collection("users")
+                    .whereEqualTo("usernameLowercase", emailOrUsername.lowercase())
+                    .get()
                     .addOnSuccessListener { result ->
-                        val matchedDoc = result.documents.find { doc ->
-                            val u = doc.getString("username")
-                            u != null && u.equals(emailOrUsername, ignoreCase = true)
-                        }
-
+                        val matchedDoc = result.documents.firstOrNull()
                         val email = matchedDoc?.getString("email")
                         if (!email.isNullOrEmpty()) {
                             performFirebaseLogin(email, password)
                         } else {
-                            Toast.makeText(this, "Username not found", Toast.LENGTH_SHORT).show()
+                            db.collection("users")
+                                .whereEqualTo("username", emailOrUsername)
+                                .get()
+                                .addOnSuccessListener { res2 ->
+                                    val email2 = res2.documents.firstOrNull()?.getString("email")
+                                    if (!email2.isNullOrEmpty()) {
+                                        performFirebaseLogin(email2, password)
+                                    } else {
+                                        Toast.makeText(this, "Username not found", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(this, "Username not found", Toast.LENGTH_SHORT).show()
+                                }
                         }
                     }
                     .addOnFailureListener { e ->
-                        Toast.makeText(this, "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Login failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
                     }
             }
         }
@@ -103,7 +114,10 @@ class MainActivity : AppCompatActivity() {
                     }
             }
             .addOnFailureListener { e ->
-                val errorMsg = if (e.message?.contains("network", ignoreCase = true) == true ||
+                val errorMsg = if (e is SecurityException || e.message?.contains("SecurityException", ignoreCase = true) == true ||
+                    e.message?.contains("broker", ignoreCase = true) == true || e.message?.contains("Unknown calling package", ignoreCase = true) == true) {
+                    "Google Play Services error: ${e.localizedMessage}. Please ensure Google Play Services is updated on your device/emulator."
+                } else if (e.message?.contains("network", ignoreCase = true) == true ||
                     e.message?.contains("unreachable host", ignoreCase = true) == true) {
                     "Network error: Unable to reach Firebase servers. Please check your internet or emulator network connection."
                 } else {

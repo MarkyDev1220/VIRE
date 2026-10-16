@@ -24,6 +24,18 @@
     <!-- If your app uses camera for profile pictures -->
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!-- Package visibility queries for Google Play Services (Android 11+ / API 30+) -->
+    <queries>
+        <package android:name="com.google.android.gms" />
+        <package android:name="com.android.vending" />
+        <intent>
+            <action android:name="com.google.android.gms.metadata.MODULE_DESCRIPTOR" />
+        </intent>
+        <intent>
+            <action android:name="com.google.android.gms.auth.service.START" />
+        </intent>
+    </queries>
+
     <application
         android:name=".VireApplication"
         android:allowBackup="false"

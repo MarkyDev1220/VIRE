@@ -169,7 +169,10 @@ class SignupActivity : AppCompatActivity() {
                         }
                 }
                 .addOnFailureListener { e ->
-                    val errorMsg = if (e.message?.contains("network", ignoreCase = true) == true ||
+                    val errorMsg = if (e is SecurityException || e.message?.contains("SecurityException", ignoreCase = true) == true ||
+                        e.message?.contains("broker", ignoreCase = true) == true || e.message?.contains("Unknown calling package", ignoreCase = true) == true) {
+                        "Google Play Services error: ${e.localizedMessage}. Please ensure Google Play Services is updated on your device/emulator."
+                    } else if (e.message?.contains("network", ignoreCase = true) == true ||
                         e.message?.contains("unreachable host", ignoreCase = true) == true) {
                         "Network error: Unable to reach Firebase servers. Please check your internet or emulator network connection."
                     } else {

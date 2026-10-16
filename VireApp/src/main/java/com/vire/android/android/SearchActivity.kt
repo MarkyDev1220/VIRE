@@ -17,6 +17,7 @@ class SearchActivity : BaseActivity() {
     private lateinit var spinnerCategory: Spinner
     private lateinit var recyclerUsers: RecyclerView
     private lateinit var emptyText: TextView
+    private lateinit var progressBar: ProgressBar
     private lateinit var adapter: UserSearchAdapter
 
     private val categories = listOf("All", "Username", "Favorite Game", "Local Area", "Skill Level")
@@ -36,6 +37,7 @@ class SearchActivity : BaseActivity() {
         spinnerCategory = findViewById(R.id.spinnerSearchCategory)
         recyclerUsers = findViewById(R.id.recyclerUsers)
         emptyText = findViewById(R.id.emptySearchText)
+        progressBar = findViewById(R.id.searchProgressBar)
 
         recyclerUsers.layoutManager = LinearLayoutManager(this)
         adapter = UserSearchAdapter(
@@ -78,6 +80,9 @@ class SearchActivity : BaseActivity() {
 
     private fun loadAllUsers() {
         val currentUid = auth.currentUser?.uid
+        progressBar.visibility = View.VISIBLE
+        emptyText.visibility = View.GONE
+
         db.collection("users").get()
             .addOnSuccessListener { result ->
                 allSearchItems.clear()
@@ -109,6 +114,7 @@ class SearchActivity : BaseActivity() {
                 }
 
                 if (loadedUsers.isEmpty()) {
+                    progressBar.visibility = View.GONE
                     filterUsers()
                     return@addOnSuccessListener
                 }
@@ -126,15 +132,41 @@ class SearchActivity : BaseActivity() {
                         )
                         pendingChecks--
                         if (pendingChecks <= 0) {
+                            progressBar.visibility = View.GONE
                             filterUsers()
                         }
                     }
                 }
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Error loading users: ${e.message}", Toast.LENGTH_LONG).show()
-                Log.e("SearchActivity", "Firestore error", e)
+                progressBar.visibility = View.GONE
+                val isFirestoreNotConfigured = e.message?.contains("PERMISSION_DENIED", ignoreCase = true) == true ||
+                        e.message?.contains("NOT_FOUND", ignoreCase = true) == true ||
+                        e.message?.contains("disabled", ignoreCase = true) == true ||
+                        e.message?.contains("does not exist", ignoreCase = true) == true
+
+                val msg = if (isFirestoreNotConfigured) {
+                    "Cloud Firestore database is disabled or not created in Firebase Console for project 'vire-7b583'. Showing sample gamers."
+                } else {
+                    "Error loading users: ${e.message}"
+                }
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                Log.e("SearchActivity", "Firestore error: ${e.message}", e)
+                loadDemoUsers()
             }
+    }
+
+    private fun loadDemoUsers() {
+        allSearchItems.clear()
+        for (user in FriendManager.getDemoUsers()) {
+            allSearchItems.add(
+                UserSearchItem(
+                    user = user,
+                    friendshipState = FriendManager.FriendshipState.NONE
+                )
+            )
+        }
+        filterUsers()
     }
 
     private fun filterUsers() {
@@ -162,8 +194,26 @@ class SearchActivity : BaseActivity() {
             }
         }
 
-        adapter.submitList(filtered.toList())
-        emptyText.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+        if (filtered.isEmpty() && query.length >= 2) {
+            FriendManager.findUserByQuery(query) { matchedUser ->
+                if (matchedUser != null && matchedUser.id != auth.currentUser?.uid) {
+                    if (allSearchItems.none { it.user.id == matchedUser.id }) {
+                        FriendManager.getFriendshipState(matchedUser.id) { state, reqId ->
+                            val newItem = UserSearchItem(user = matchedUser, friendshipState = state, requestId = reqId)
+                            allSearchItems.add(newItem)
+                            adapter.submitList(listOf(newItem))
+                            emptyText.visibility = View.GONE
+                        }
+                        return@findUserByQuery
+                    }
+                }
+                adapter.submitList(emptyList())
+                emptyText.visibility = View.VISIBLE
+            }
+        } else {
+            adapter.submitList(filtered.toList())
+            emptyText.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+        }
     }
 
     private fun handleFriendAction(item: UserSearchItem) {

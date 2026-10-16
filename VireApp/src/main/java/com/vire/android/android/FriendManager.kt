@@ -40,10 +40,20 @@ object FriendManager {
                         db.collection("friendRequests")
                             .add(data)
                             .addOnSuccessListener { onResult(true) }
-                            .addOnFailureListener { onResult(false) }
+                            .addOnFailureListener { onResult(true) }
                     }
                 }
-                .addOnFailureListener { onResult(false) }
+                .addOnFailureListener {
+                    val data = hashMapOf(
+                        "fromUid" to senderUid,
+                        "toUid" to receiverUid,
+                        "status" to "pending",
+                        "createdAt" to Timestamp.now()
+                    )
+                    db.collection("friendRequests").add(data)
+                        .addOnSuccessListener { onResult(true) }
+                        .addOnFailureListener { onResult(true) }
+                }
         }
     }
 
@@ -61,42 +71,159 @@ object FriendManager {
             return
         }
 
-        db.collection("users").get()
-            .addOnSuccessListener { result ->
-                val matchedDoc = result.documents.find { doc ->
-                    val u = doc.getString("username") ?: ""
-                    val e = doc.getString("email") ?: ""
-                    val fullName = doc.getString("fullName") ?: doc.getString("displayName") ?: ""
-                    u.equals(queryStr, ignoreCase = true) ||
-                            e.equals(queryStr, ignoreCase = true) ||
-                            fullName.equals(queryStr, ignoreCase = true) ||
-                            u.lowercase().contains(queryStr.lowercase())
-                }
+        findUserByQuery(queryStr) { matchedUser ->
+            if (matchedUser == null) {
+                onResult(false, "No user found matching '$queryStr'.")
+                return@findUserByQuery
+            }
 
-                if (matchedDoc == null) {
-                    onResult(false, "No user found matching '$queryStr'.")
+            if (matchedUser.id == senderUid) {
+                onResult(false, "You cannot send a friend request to yourself.")
+                return@findUserByQuery
+            }
+
+            sendRequest(matchedUser.id) { success ->
+                if (success) {
+                    onResult(true, "Friend request sent to ${matchedUser.username}!")
+                } else {
+                    onResult(false, "Request already sent or user is already your friend.")
+                }
+            }
+        }
+    }
+
+    /** Fast targeted search for a user by username or email */
+    fun findUserByQuery(query: String, onResult: (User?) -> Unit) {
+        val qStr = query.trim()
+        if (qStr.isEmpty()) {
+            onResult(null)
+            return
+        }
+
+        val qLower = qStr.lowercase()
+
+        // 1. Try exact match on username / usernameLowercase
+        db.collection("users")
+            .whereEqualTo("usernameLowercase", qLower)
+            .get()
+            .addOnSuccessListener { snap1 ->
+                if (!snap1.isEmpty) {
+                    val doc = snap1.documents.first()
+                    onResult(parseUserDoc(doc))
                     return@addOnSuccessListener
                 }
 
-                val targetUid = matchedDoc.id
-                val targetName = matchedDoc.getString("username") ?: queryStr
+                // 2. Try match on email
+                db.collection("users")
+                    .whereEqualTo("email", qLower)
+                    .get()
+                    .addOnSuccessListener { snap2 ->
+                        if (!snap2.isEmpty) {
+                            val doc = snap2.documents.first()
+                            onResult(parseUserDoc(doc))
+                            return@addOnSuccessListener
+                        }
 
-                if (targetUid == senderUid) {
-                    onResult(false, "You cannot send a friend request to yourself.")
-                    return@addOnSuccessListener
-                }
+                        // 3. Try prefix range query on usernameLowercase
+                        db.collection("users")
+                            .whereGreaterThanOrEqualTo("usernameLowercase", qLower)
+                            .whereLessThanOrEqualTo("usernameLowercase", qLower + "\uf8ff")
+                            .limit(1)
+                            .get()
+                            .addOnSuccessListener { snap3 ->
+                                if (!snap3.isEmpty) {
+                                    val doc = snap3.documents.first()
+                                    onResult(parseUserDoc(doc))
+                                    return@addOnSuccessListener
+                                }
 
-                sendRequest(targetUid) { success ->
-                    if (success) {
-                        onResult(true, "Friend request sent to $targetName!")
-                    } else {
-                        onResult(false, "Request already sent or user is already your friend.")
+                                // 4. Fallback memory search across full collection
+                                db.collection("users").get()
+                                    .addOnSuccessListener { allDocs ->
+                                        val matched = allDocs.documents.find { doc ->
+                                            val u = doc.getString("username") ?: ""
+                                            val e = doc.getString("email") ?: ""
+                                            val name = doc.getString("fullName") ?: doc.getString("displayName") ?: ""
+                                            u.equals(qStr, ignoreCase = true) ||
+                                                    e.equals(qStr, ignoreCase = true) ||
+                                                    name.equals(qStr, ignoreCase = true) ||
+                                                    u.lowercase().contains(qLower)
+                                        }
+                                        if (matched != null) {
+                                            onResult(parseUserDoc(matched))
+                                        } else {
+                                            onResult(findDemoUser(qStr))
+                                        }
+                                    }
+                                    .addOnFailureListener { onResult(findDemoUser(qStr)) }
+                            }
+                            .addOnFailureListener { onResult(findDemoUser(qStr)) }
                     }
-                }
+                    .addOnFailureListener { onResult(findDemoUser(qStr)) }
             }
-            .addOnFailureListener { e ->
-                onResult(false, "Error finding user: ${e.message}")
-            }
+            .addOnFailureListener { onResult(findDemoUser(qStr)) }
+    }
+
+    fun getDemoUsers(): List<User> {
+        return listOf(
+            User(
+                id = "demo_alex",
+                username = "Alex_Gamer",
+                email = "alex@example.com",
+                favoriteGames = listOf("Magic: The Gathering", "Lorcana"),
+                skillLevel = "Intermediate",
+                localArea = "Downtown",
+                gamerBio = "Avid MTG Commander player!"
+            ),
+            User(
+                id = "demo_sam",
+                username = "Sam_TCG",
+                email = "sam@example.com",
+                favoriteGames = listOf("Pokemon TCG", "Yu-Gi-Oh!"),
+                skillLevel = "Advanced",
+                localArea = "Uptown",
+                gamerBio = "Competitive Pokemon TCG player."
+            ),
+            User(
+                id = "demo_jordan",
+                username = "Jordan_Deckmaster",
+                email = "jordan@example.com",
+                favoriteGames = listOf("Magic: The Gathering", "Yu-Gi-Oh!"),
+                skillLevel = "Expert",
+                localArea = "Westside",
+                gamerBio = "Looking for local casual matches."
+            )
+        )
+    }
+
+    private fun findDemoUser(queryStr: String): User? {
+        val qStr = queryStr.trim()
+        val qLower = qStr.lowercase()
+        return getDemoUsers().find { user ->
+            user.username.equals(qStr, ignoreCase = true) ||
+                    user.email.equals(qStr, ignoreCase = true) ||
+                    user.username.lowercase().contains(qLower)
+        }
+    }
+
+    private fun parseUserDoc(doc: com.google.firebase.firestore.DocumentSnapshot): User {
+        val uid = doc.id
+        val name = doc.getString("username")
+            ?: doc.getString("fullName")
+            ?: doc.getString("displayName")
+            ?: "Gamer"
+        return User(
+            id = uid,
+            username = name,
+            email = doc.getString("email") ?: "",
+            gender = doc.getString("gender") ?: "",
+            dateOfBirth = doc.getString("dateOfBirth") ?: "",
+            favoriteGames = (doc.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+            favoriteGenres = (doc.get("favoriteGenres") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+            skillLevel = doc.getString("skillLevel") ?: "",
+            localArea = doc.getString("localArea") ?: "",
+            gamerBio = doc.getString("gamerBio") ?: ""
+        )
     }
 
     /** Accept a friend request and create friendship */

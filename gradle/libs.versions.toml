@@ -8,6 +8,7 @@ foundationLayoutAndroid = "1.12.0"
 firebase-bom = "35.0.0"
 picasso = "2.8"
 googleServices = "4.5.0"
+playServicesBase = "18.11.1"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -22,6 +23,7 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 firebase-storage = { module = "com.google.firebase:firebase-storage" }
+playServicesBase = { module = "com.google.android.gms:play-services-base", version.ref = "playServicesBase" }
 picasso = { module = "com.squareup.picasso:picasso", version.ref = "picasso" }
 
 [plugins]

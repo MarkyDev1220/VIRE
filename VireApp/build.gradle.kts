@@ -11,7 +11,7 @@ android {
         applicationId = "com.vire.android"
         minSdk = 30
         targetSdk = 36
-        versionCode = 8
+        versionCode = 9
         versionName = "1.0.1"
 
     }
@@ -48,7 +48,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
 
-    // Firebase & Picasso
+    // Firebase & Google Play Services
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)

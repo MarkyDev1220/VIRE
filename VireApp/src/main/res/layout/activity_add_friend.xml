@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     android:padding="20dp"
     android:background="@color/light_gray">
 
@@ -13,7 +15,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:layout_marginTop="16dp">
 
         <!-- Add Friend Title -->
         <TextView
@@ -21,7 +24,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Add Friend"
+            android:text="Find &amp; Add Friend"
             android:textSize="22sp"
             android:textStyle="bold"
             android:textColor="@android:color/black"/>
@@ -33,7 +36,7 @@
             android:layout_height="36dp"
             android:background="@android:color/transparent"
             android:src="@drawable/ic_close"
-            android:tint="@android:color/black"
+            app:tint="@android:color/black"
             android:contentDescription="Close"/>
     </LinearLayout>
 
@@ -42,21 +45,116 @@
         android:id="@+id/friendUsernameInput"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:hint="Enter username"
+        android:hint="Search username, name, or email..."
+        android:imeOptions="actionSearch"
+        android:inputType="text"
         android:padding="12dp"
         android:background="@drawable/search_bar_bg"
         android:textColor="@android:color/black"
         android:textColorHint="@color/dark_gray"
         android:layout_marginTop="20dp"
-        android:layout_marginBottom="20dp"/>
+        android:layout_marginBottom="12dp"/>
 
-    <!-- Add Friend Button -->
+    <!-- Search Button -->
     <Button
         android:id="@+id/addFriendSubmit"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Send Friend Request"
+        android:text="Search User"
         android:textColor="@android:color/white"
         android:backgroundTint="@color/purple_500"
         android:padding="12dp"/>
+
+    <!-- Progress Indicator -->
+    <ProgressBar
+        android:id="@+id/addFriendProgress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="20dp"
+        android:visibility="gone"/>
+
+    <!-- Profile Preview Card -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/previewCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/previewAvatar"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:src="@drawable/ic_profile_placeholder"
+                    android:background="@drawable/circle_bg"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="User Avatar"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/previewUsername"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Username"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#111111"/>
+
+                    <TextView
+                        android:id="@+id/previewDetails"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Location &amp; Skill"
+                        android:textSize="13sp"
+                        android:textColor="#666666"
+                        android:layout_marginTop="2dp"/>
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/previewBio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Gamer bio snippet..."
+                android:textSize="13sp"
+                android:textColor="#555555"
+                android:layout_marginTop="10dp"
+                android:maxLines="2"
+                android:ellipsize="end"/>
+
+            <Button
+                android:id="@+id/previewSendBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Send Friend Request"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#388E3C"
+                android:layout_marginTop="14dp"/>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
 </LinearLayout>
