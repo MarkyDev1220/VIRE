@@ -119,24 +119,20 @@ class SearchActivity : BaseActivity() {
                     return@addOnSuccessListener
                 }
 
-                var pendingChecks = loadedUsers.size
+                allSearchItems.clear()
+
                 for ((user, profileImageUrl) in loadedUsers) {
-                    FriendManager.getFriendshipState(user.id) { state, reqId ->
-                        allSearchItems.add(
-                            UserSearchItem(
-                                user = user,
-                                profileImageUrl = profileImageUrl,
-                                friendshipState = state,
-                                requestId = reqId
-                            )
+                    allSearchItems.add(
+                        UserSearchItem(
+                            user = user,
+                            profileImageUrl = profileImageUrl,
+                            friendshipState = FriendManager.FriendshipState.NONE
                         )
-                        pendingChecks--
-                        if (pendingChecks <= 0) {
-                            progressBar.visibility = View.GONE
-                            filterUsers()
-                        }
-                    }
+                    )
                 }
+
+                progressBar.visibility = View.GONE
+                filterUsers()
             }
             .addOnFailureListener { e ->
                 progressBar.visibility = View.GONE
