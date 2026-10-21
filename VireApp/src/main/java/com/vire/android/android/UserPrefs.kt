@@ -10,6 +10,9 @@ fun saveUser(user: User, context: Context) {
         putString("uid", user.id)
         putString("username", user.username)
         putString("email", user.email)
+        putString("firstName", user.firstName)
+        putString("lastName", user.lastName)
+        putString("fullName", user.fullName)
         putString("gender", user.gender)
         putString("dob", user.dateOfBirth)
         putStringSet("games", user.favoriteGames.toSet())
@@ -38,6 +41,9 @@ fun loadUser(context: Context): User? {
     val username = prefs.getString("username", null) ?: return null
     val uid = prefs.getString("uid", FirebaseAuth.getInstance().currentUser?.uid ?: "") ?: ""
     val email = prefs.getString("email", "") ?: ""
+    val firstName = prefs.getString("firstName", "") ?: ""
+    val lastName = prefs.getString("lastName", "") ?: ""
+    val fullName = prefs.getString("fullName", "") ?: ""
     val gender = prefs.getString("gender", "") ?: ""
     val dob = prefs.getString("dob", "") ?: ""
     val games = prefs.getStringSet("games", emptySet())?.toList() ?: emptyList()
@@ -53,6 +59,9 @@ fun loadUser(context: Context): User? {
         id = uid,
         username = username,
         email = email,
+        firstName = firstName,
+        lastName = lastName,
+        fullName = fullName,
         gender = gender,
         dateOfBirth = dob,
         favoriteGames = games,

@@ -74,6 +74,7 @@
         <activity android:name=".android.CommunityDetailsActivity" />
         <activity android:name=".android.DeckListActivity" />
         <activity android:name=".android.DeckDetailsActivity" />
+        <activity android:name=".android.NotificationsActivity" />
 
         <!-- Launcher Activity (Login / Auth Screen) -->
         <activity

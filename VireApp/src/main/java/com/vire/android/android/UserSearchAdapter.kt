@@ -65,15 +65,35 @@ class UserSearchAdapter(
             }
             tvBio.text = bioText
 
-            // Avatar image
-            if (!item.profileImageUrl.isNullOrBlank()) {
-                Picasso.get()
-                    .load(item.profileImageUrl)
-                    .placeholder(R.drawable.ic_profile_placeholder)
-                    .error(R.drawable.ic_profile_placeholder)
-                    .into(ivAvatar)
+            val isMychaela = user.username.contains("Mychaela", ignoreCase = true) || user.username.contains("Thomas", ignoreCase = true)
+            val defaultAvatar = if (isMychaela) R.drawable.mychaela_avatar else R.drawable.ic_profile_placeholder
+
+            val url = item.profileImageUrl
+            if (!url.isNullOrBlank() && !url.startsWith("content://")) {
+                if (url.startsWith("data:image") || url.contains("base64")) {
+                    try {
+                        val pureBase64 = url.substringAfter("base64,")
+                        val decodedBytes = android.util.Base64.decode(pureBase64, android.util.Base64.DEFAULT)
+                        val bitmap = android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                        if (bitmap != null) {
+                            ivAvatar.setImageBitmap(bitmap)
+                        } else {
+                            ivAvatar.setImageResource(defaultAvatar)
+                        }
+                    } catch (_: Exception) {
+                        ivAvatar.setImageResource(defaultAvatar)
+                    }
+                } else if (url.startsWith("http")) {
+                    Picasso.get()
+                        .load(url)
+                        .placeholder(defaultAvatar)
+                        .error(defaultAvatar)
+                        .into(ivAvatar)
+                } else {
+                    ivAvatar.setImageResource(defaultAvatar)
+                }
             } else {
-                ivAvatar.setImageResource(R.drawable.ic_profile_placeholder)
+                ivAvatar.setImageResource(defaultAvatar)
             }
 
             // Friendship action button state

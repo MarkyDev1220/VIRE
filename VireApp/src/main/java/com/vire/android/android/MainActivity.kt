@@ -1,9 +1,15 @@
 package com.vire.android.android
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Patterns
+import android.view.MotionEvent
+import android.view.View
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
@@ -32,6 +38,9 @@ class MainActivity : AppCompatActivity() {
             finish()
             return
         }
+
+        setupTcgEntranceAnimation()
+        setupInteractiveCardTilt()
 
         binding.loginSubmitButton.setOnClickListener {
             val emailOrUsername = binding.emailOrUsernameEditText.text.toString().trim()
@@ -89,6 +98,139 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupTcgEntranceAnimation() {
+        val density = resources.displayMetrics.density
+        binding.loginCardContainer.cameraDistance = 10000 * density
+
+        // Initial state
+        binding.tcgLogoIcon.apply {
+            alpha = 0f
+            translationY = -150f
+            scaleX = 0.3f
+            scaleY = 0.3f
+        }
+
+        binding.welcomeTitle.apply {
+            alpha = 0f
+            translationY = -40f
+        }
+
+        binding.welcomeSubtitle.apply {
+            alpha = 0f
+            translationY = -30f
+        }
+
+        binding.instructionText.apply {
+            alpha = 0f
+        }
+
+        binding.loginCardContainer.apply {
+            alpha = 0f
+            translationY = 300f
+            rotationX = -35f
+            scaleX = 0.85f
+            scaleY = 0.85f
+        }
+
+        // 1. TCG Emblem Drop & Bounce
+        binding.tcgLogoIcon.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(700)
+            .setInterpolator(OvershootInterpolator(1.4f))
+            .setStartDelay(100)
+            .start()
+
+        // 2. Welcome Title & Subtitle Fade & Slide
+        binding.welcomeTitle.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .setDuration(500)
+            .setStartDelay(300)
+            .start()
+
+        binding.welcomeSubtitle.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .setDuration(500)
+            .setStartDelay(400)
+            .start()
+
+        binding.instructionText.animate()
+            .alpha(1f)
+            .setDuration(500)
+            .setStartDelay(500)
+            .start()
+
+        // 3. TCG 3D Card Deal & Flip onto Board
+        val cardAlpha = ObjectAnimator.ofFloat(binding.loginCardContainer, View.ALPHA, 0f, 1f)
+        val cardTransY = ObjectAnimator.ofFloat(binding.loginCardContainer, View.TRANSLATION_Y, 300f, 0f)
+        val cardRotX = ObjectAnimator.ofFloat(binding.loginCardContainer, View.ROTATION_X, -35f, 0f)
+        val cardScaleX = ObjectAnimator.ofFloat(binding.loginCardContainer, View.SCALE_X, 0.85f, 1f)
+        val cardScaleY = ObjectAnimator.ofFloat(binding.loginCardContainer, View.SCALE_Y, 0.85f, 1f)
+
+        AnimatorSet().apply {
+            playTogether(cardAlpha, cardTransY, cardRotX, cardScaleX, cardScaleY)
+            duration = 750
+            interpolator = DecelerateInterpolator(1.5f)
+            startDelay = 500
+            start()
+        }
+    }
+
+    private fun setupInteractiveCardTilt() {
+        val card = binding.loginCardContainer
+        card.setOnTouchListener { view, event ->
+            val width = view.width.toFloat()
+            val height = view.height.toFloat()
+
+            if (width <= 0 || height <= 0) return@setOnTouchListener false
+
+            when (event.action) {
+                MotionEvent.ACTION_MOVE, MotionEvent.ACTION_DOWN -> {
+                    val touchX = event.x.coerceIn(0f, width)
+                    val touchY = event.y.coerceIn(0f, height)
+
+                    // Calculate rotation angles (-10deg to +10deg) based on touch position relative to card center
+                    val rotY = ((touchX - (width / 2f)) / (width / 2f)) * 10f
+                    val rotX = -((touchY - (height / 2f)) / (height / 2f)) * 10f
+
+                    view.animate()
+                        .rotationX(rotX)
+                        .rotationY(rotY)
+                        .scaleX(1.02f)
+                        .scaleY(1.02f)
+                        .setDuration(100)
+                        .start()
+                }
+                MotionEvent.ACTION_UP -> {
+                    view.performClick()
+                    view.animate()
+                        .rotationX(0f)
+                        .rotationY(0f)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(300)
+                        .setInterpolator(DecelerateInterpolator())
+                        .start()
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    view.animate()
+                        .rotationX(0f)
+                        .rotationY(0f)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(300)
+                        .setInterpolator(DecelerateInterpolator())
+                        .start()
+                }
+            }
+            false
+        }
+    }
+
     private fun performFirebaseLogin(email: String, pass: String) {
         auth.signInWithEmailAndPassword(email, pass)
             .addOnSuccessListener { result ->
@@ -100,6 +242,7 @@ class MainActivity : AppCompatActivity() {
                             saveLocalSession(uid, username, email)
                             Toast.makeText(this, "Welcome back, $username!", Toast.LENGTH_SHORT).show()
                             startActivity(Intent(this, HomeActivity::class.java))
+                            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
                             finish()
                         } else {
                             // Document does not exist - account was deleted
@@ -110,6 +253,7 @@ class MainActivity : AppCompatActivity() {
                     .addOnFailureListener {
                         saveLocalSession(uid, email.substringBefore("@"), email)
                         startActivity(Intent(this, HomeActivity::class.java))
+                        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
                         finish()
                     }
             }

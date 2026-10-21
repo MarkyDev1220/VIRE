@@ -13,6 +13,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import com.vire.android.databinding.ActivitySignupBinding
 import java.util.*
 
@@ -82,6 +83,9 @@ class SignupActivity : AppCompatActivity() {
         binding.signupButton.setOnClickListener {
             val email = binding.emailEditText.text.toString().trim()
             val username = binding.usernameEditText.text.toString().trim()
+            val firstName = binding.firstNameEditText.text.toString().trim()
+            val lastName = binding.lastNameEditText.text.toString().trim()
+            val fullName = "$firstName $lastName".trim()
             val createPassword = binding.createpasswordEditText.text.toString()
             val confirmPassword = binding.confirmPasswordEditText.text.toString()
             val gender = binding.genderSpinner.selectedItem.toString()
@@ -129,6 +133,9 @@ class SignupActivity : AppCompatActivity() {
                         "username" to username,
                         "usernameLowercase" to username.lowercase(),
                         "email" to email,
+                        "firstName" to firstName,
+                        "lastName" to lastName,
+                        "fullName" to fullName,
                         "gender" to gender,
                         "dateOfBirth" to dobText,
                         "favoriteGames" to selectedGames,
@@ -146,6 +153,9 @@ class SignupActivity : AppCompatActivity() {
                         id = uid,
                         username = username,
                         email = email,
+                        firstName = firstName,
+                        lastName = lastName,
+                        fullName = fullName,
                         gender = gender,
                         dateOfBirth = dobText,
                         favoriteGames = selectedGames,
@@ -156,13 +166,20 @@ class SignupActivity : AppCompatActivity() {
 
                     db.collection("users").document(uid).set(userMap)
                         .addOnSuccessListener {
-                            Toast.makeText(this, "Signup successful!", Toast.LENGTH_SHORT).show()
-
-                            val intent = Intent(this, ProfileActivity::class.java)
-                            intent.putExtra("uid", uid)
-                            intent.putExtra("username", username)
-                            startActivity(intent)
-                            finish()
+                            if (profileImageUri != null) {
+                                uploadProfileImage(uid, profileImageUri!!) { profileUrl ->
+                                    db.collection("users").document(uid)
+                                        .update("profileImageUrl", profileUrl)
+                                        .addOnSuccessListener {
+                                            continueToProfile(uid, username)
+                                        }
+                                        .addOnFailureListener {
+                                            continueToProfile(uid, username)
+                                        }
+                                }
+                            } else {
+                                continueToProfile(uid, username)
+                            }
                         }
                         .addOnFailureListener { e ->
                             Toast.makeText(this, "Failed to save user data: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -181,5 +198,34 @@ class SignupActivity : AppCompatActivity() {
                     Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
                 }
         }
+    }
+
+    private fun continueToProfile(uid: String, username: String) {
+        Toast.makeText(this, "Signup successful!", Toast.LENGTH_SHORT).show()
+
+        val intent = Intent(this, ProfileActivity::class.java)
+        intent.putExtra("uid", uid)
+        intent.putExtra("username", username)
+        startActivity(intent)
+        finish()
+    }
+
+    private fun uploadProfileImage(uid: String, uri: Uri, onComplete: (String) -> Unit) {
+        val storageRef = FirebaseStorage.getInstance()
+            .reference
+            .child("profileImages/$uid/profileImageUrl.jpg")
+
+        storageRef.putFile(uri)
+            .continueWithTask { task ->
+                if (!task.isSuccessful) throw task.exception ?: Exception("Upload failed")
+                storageRef.downloadUrl
+            }
+            .addOnSuccessListener { downloadUrl ->
+                onComplete(downloadUrl.toString())
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Profile image upload failed. You can add it later.", Toast.LENGTH_SHORT).show()
+                onComplete("")
+            }
     }
 }

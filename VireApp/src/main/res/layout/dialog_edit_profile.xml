@@ -29,6 +29,47 @@
             android:textColorHint="#777777"
             android:background="@drawable/edit_text_bg"/>
 
+        <!-- First & Last Name 2-Box Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Name"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#222222"
+            android:layout_marginTop="12dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
+
+            <EditText
+                android:id="@+id/editFirstName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:hint="First Name"
+                android:inputType="textPersonName"
+                android:textColor="#111111"
+                android:textColorHint="#777777"
+                android:background="@drawable/edit_text_bg"/>
+
+            <EditText
+                android:id="@+id/editLastName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:hint="Last Name"
+                android:inputType="textPersonName"
+                android:textColor="#111111"
+                android:textColorHint="#777777"
+                android:background="@drawable/edit_text_bg"/>
+        </LinearLayout>
+
         <!-- Email -->
         <EditText
             android:id="@+id/editEmail"
@@ -136,20 +177,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/edit_text_bg"
-            android:layout_marginTop="4dp"
-            android:entries="@array/gender_options"/>
-
-        <!-- Social Links -->
-        <EditText
-            android:id="@+id/editSocials"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Socials (paste profile links)"
-            android:inputType="textUri"
-            android:textColor="#111111"
-            android:textColorHint="#777777"
-            android:background="@drawable/edit_text_bg"
-            android:layout_marginTop="10dp"/>
+            android:layout_marginTop="4dp"/>
 
         <!-- Theme Button -->
         <Button

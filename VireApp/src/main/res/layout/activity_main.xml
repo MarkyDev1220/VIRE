@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="#F5F7FA"
     android:fillViewport="true">
 
     <LinearLayout
@@ -13,6 +13,16 @@
         android:gravity="center_horizontal"
         android:padding="24dp">
 
+        <!-- TCG Animated Logo Emblem -->
+        <ImageView
+            android:id="@+id/tcgLogoIcon"
+            android:layout_width="90dp"
+            android:layout_height="90dp"
+            android:src="@drawable/ic_tcg_card"
+            android:contentDescription="VIRE TCG Emblem"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="8dp" />
+
         <!-- Welcome Header -->
         <TextView
             android:id="@+id/welcomeTitle"
@@ -22,8 +32,7 @@
             android:textSize="28sp"
             android:textStyle="bold"
             android:textColor="#111111"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="6dp" />
+            android:layout_marginBottom="4dp" />
 
         <TextView
             android:id="@+id/welcomeSubtitle"
@@ -32,7 +41,7 @@
             android:text="Virtual Interface for Remote Ranked Engagement"
             android:textSize="14sp"
             android:textColor="#555555"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="12dp"
             android:gravity="center"
             android:textAlignment="center" />
 
@@ -45,15 +54,17 @@
             android:textColor="#333333"
             android:gravity="center"
             android:textAlignment="center"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="20dp" />
 
         <!-- Login Card Section -->
         <LinearLayout
+            android:id="@+id/loginCardContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp"
-            android:background="@drawable/edit_text_bg">
+            android:padding="20dp"
+            android:elevation="6dp"
+            android:background="@drawable/tcg_login_card_bg">
 
             <TextView
                 android:layout_width="wrap_content"

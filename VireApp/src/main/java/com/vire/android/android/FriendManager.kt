@@ -39,7 +39,10 @@ object FriendManager {
 
                         db.collection("friendRequests")
                             .add(data)
-                            .addOnSuccessListener { onResult(true) }
+                            .addOnSuccessListener {
+                                dispatchFriendRequestNotification(senderUid, receiverUid)
+                                onResult(true)
+                            }
                             .addOnFailureListener { onResult(true) }
                     }
                 }
@@ -51,10 +54,42 @@ object FriendManager {
                         "createdAt" to Timestamp.now()
                     )
                     db.collection("friendRequests").add(data)
-                        .addOnSuccessListener { onResult(true) }
+                        .addOnSuccessListener {
+                            dispatchFriendRequestNotification(senderUid, receiverUid)
+                            onResult(true)
+                        }
                         .addOnFailureListener { onResult(true) }
                 }
         }
+    }
+
+    private fun dispatchFriendRequestNotification(senderUid: String, receiverUid: String) {
+        db.collection("users").document(senderUid).get()
+            .addOnSuccessListener { doc ->
+                val senderName = doc.getString("username")
+                    ?: doc.getString("fullName")
+                    ?: doc.getString("displayName")
+                    ?: "A gamer"
+
+                NotificationHelper.sendNotification(
+                    toUid = receiverUid,
+                    fromUid = senderUid,
+                    fromUsername = senderName,
+                    title = "New Friend Request",
+                    message = "$senderName sent you a friend request!",
+                    type = "FRIEND_REQUEST"
+                )
+            }
+            .addOnFailureListener {
+                NotificationHelper.sendNotification(
+                    toUid = receiverUid,
+                    fromUid = senderUid,
+                    fromUsername = "A gamer",
+                    title = "New Friend Request",
+                    message = "Someone sent you a friend request!",
+                    type = "FRIEND_REQUEST"
+                )
+            }
     }
 
     /** Send a friend request by searching username or email */

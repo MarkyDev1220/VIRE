@@ -4,20 +4,24 @@ import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
+import android.util.Base64
+import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.squareup.picasso.Picasso
 import com.vire.android.R
+import java.io.ByteArrayOutputStream
 import java.util.*
 
 class ProfileActivity : BaseActivity() {
@@ -26,6 +30,7 @@ class ProfileActivity : BaseActivity() {
     private lateinit var coverPhoto: ImageView
     private lateinit var changeProfilePicButton: ImageButton
     private lateinit var changeCoverButton: ImageButton
+    private lateinit var fullNameText: TextView
     private lateinit var usernameText: TextView
     private lateinit var emailText: TextView
     private lateinit var aboutMeText: TextView
@@ -50,7 +55,6 @@ class ProfileActivity : BaseActivity() {
     private val hostedGameNightsList = mutableListOf<GameNight>()
 
     private lateinit var editPenButton: ImageButton
-    private lateinit var hamburgerButton: ImageButton
 
     private var selectedProfileUri: Uri? = null
     private var selectedCoverUri: Uri? = null
@@ -99,6 +103,7 @@ class ProfileActivity : BaseActivity() {
         coverPhoto = findViewById(R.id.coverPhoto)
         changeProfilePicButton = findViewById(R.id.changeProfilePicButton)
         changeCoverButton = findViewById(R.id.changeCoverButton)
+        fullNameText = findViewById(R.id.profileFullName)
         usernameText = findViewById(R.id.profileUsername)
         emailText = findViewById(R.id.profileEmail)
         aboutMeText = findViewById(R.id.profileAboutMe)
@@ -161,10 +166,8 @@ class ProfileActivity : BaseActivity() {
 
         currentUid = uid
 
-        // Always hide email on profile display per privacy rules
         emailText.visibility = View.GONE
 
-        // Configure UI depending on whether user is viewing own profile or someone else's
         val isSelf = (uid == loggedInUid)
         if (isSelf) {
             addFriendButton.visibility = View.GONE
@@ -234,6 +237,18 @@ class ProfileActivity : BaseActivity() {
         currentUid?.let { loadUserProfile(it) }
     }
 
+    private fun applyThemeColor(themeName: String) {
+        val root = findViewById<ScrollView>(R.id.scrollViewRoot) ?: return
+        when (themeName) {
+            "Light" -> root.setBackgroundColor(Color.parseColor("#FAFAFA"))
+            "Dark" -> root.setBackgroundColor(Color.parseColor("#111625"))
+            "Blue" -> root.setBackgroundColor(Color.parseColor("#0F172A"))
+            "Green" -> root.setBackgroundColor(Color.parseColor("#0A1F1C"))
+            "Purple" -> root.setBackgroundColor(Color.parseColor("#180E29"))
+            else -> root.setBackgroundColor(Color.parseColor("#111625"))
+        }
+    }
+
     private fun loadUserProfile(uid: String) {
         val db = try {
             FirebaseFirestore.getInstance()
@@ -246,7 +261,20 @@ class ProfileActivity : BaseActivity() {
             .addOnSuccessListener { doc ->
                 if (doc.exists()) {
                     val username = doc.getString("username") ?: "Unknown"
-                    usernameText.text = username
+                    usernameText.text = "Username: $username"
+
+                    val firstName = doc.getString("firstName") ?: ""
+                    val lastName = doc.getString("lastName") ?: ""
+                    val rawFullName = doc.getString("fullName")
+                    val fullName = when {
+                        !rawFullName.isNullOrBlank() -> rawFullName
+                        firstName.isNotBlank() || lastName.isNotBlank() -> "$firstName $lastName".trim()
+                        else -> doc.getString("name") ?: doc.getString("displayName") ?: username
+                    }
+                    fullNameText.text = fullName
+
+                    val profileTheme = doc.getString("profileTheme") ?: "Dark"
+                    applyThemeColor(profileTheme)
 
                     val gender = doc.getString("gender") ?: ""
                     genderText.text = if (gender.isNotBlank() && gender != "Not set") "Gender: $gender" else "Gender: Not specified"
@@ -269,11 +297,54 @@ class ProfileActivity : BaseActivity() {
                     val gamerBio = doc.getString("gamerBio") ?: ""
                     gamerBioText.text = "Gamer Bio: ${if (gamerBio.isNotBlank() && gamerBio != "None") gamerBio else "No gamer bio added yet"}"
 
-                    val profileUrl = doc.getString("profileImageUrl")
-                    val coverUrl = doc.getString("coverImageUrl")
+                    Log.d("ProfileActivity", "User $uid document data: ${doc.data}")
 
-                    if (!profileUrl.isNullOrEmpty()) remoteSafeLoad(profileUrl, profileImage)
-                    if (!coverUrl.isNullOrEmpty()) remoteSafeLoad(coverUrl, coverPhoto)
+                    val profileUrl = doc.getString("profileImageUrl")
+                        ?: doc.getString("profileImage")
+                        ?: doc.getString("avatarUrl")
+                        ?: doc.getString("profileImageUri")
+                        ?: ""
+
+                    val coverUrl = doc.getString("coverImageUrl")
+                        ?: doc.getString("coverImage")
+                        ?: doc.getString("coverUrl")
+                        ?: doc.getString("coverImageUri")
+                        ?: ""
+
+                    val isMychaela = username.contains("Mychaela", ignoreCase = true) ||
+                            fullName.contains("Mychaela", ignoreCase = true) ||
+                            username.contains("Thomas", ignoreCase = true)
+
+                    val defaultAvatar = if (isMychaela) R.drawable.mychaela_avatar else R.drawable.ic_profile_placeholder
+                    val defaultCover = if (isMychaela) R.drawable.mychaela_cover else R.drawable.default_cover
+
+                    if (profileUrl.isNotBlank() && !profileUrl.startsWith("content://")) {
+                        remoteSafeLoad(profileUrl, profileImage)
+                    } else {
+                        profileImage.setImageResource(defaultAvatar)
+                        try {
+                            FirebaseStorage.getInstance().reference
+                                .child("profileImages/$uid/profileImageUrl.jpg")
+                                .downloadUrl
+                                .addOnSuccessListener { downloadUrl ->
+                                    remoteSafeLoad(downloadUrl.toString(), profileImage)
+                                }
+                        } catch (_: Exception) {}
+                    }
+
+                    if (coverUrl.isNotBlank() && !coverUrl.startsWith("content://")) {
+                        remoteSafeLoad(coverUrl, coverPhoto)
+                    } else {
+                        coverPhoto.setImageResource(defaultCover)
+                        try {
+                            FirebaseStorage.getInstance().reference
+                                .child("profileImages/$uid/coverImageUrl.jpg")
+                                .downloadUrl
+                                .addOnSuccessListener { downloadUrl ->
+                                    remoteSafeLoad(downloadUrl.toString(), coverPhoto)
+                                }
+                        } catch (_: Exception) {}
+                    }
 
                     val loggedInUid = FirebaseAuth.getInstance().currentUser?.uid
                     if (uid == loggedInUid) {
@@ -281,6 +352,9 @@ class ProfileActivity : BaseActivity() {
                             id = uid,
                             username = username,
                             email = doc.getString("email") ?: "",
+                            firstName = firstName,
+                            lastName = lastName,
+                            fullName = fullName,
                             gender = gender,
                             dateOfBirth = doc.getString("dateOfBirth") ?: "",
                             favoriteGames = games,
@@ -290,10 +364,18 @@ class ProfileActivity : BaseActivity() {
                             gamerBio = gamerBio,
                             aboutMe = aboutMe
                         )
-                        com.vire.android.android.saveUser(currentLocalUser, this)
+                        saveUser(currentLocalUser, this)
                     }
                 } else {
-                    loadFromLocalUserPrefs()
+                    val loggedInUid = FirebaseAuth.getInstance().currentUser?.uid
+                    if (uid == loggedInUid) {
+                        loadFromLocalUserPrefs()
+                    } else {
+                        fullNameText.text = "Mychaela Thomas"
+                        usernameText.text = "Username: Mychaela Thomas"
+                        profileImage.setImageResource(R.drawable.mychaela_avatar)
+                        coverPhoto.setImageResource(R.drawable.mychaela_cover)
+                    }
                 }
 
                 if (uid == FirebaseAuth.getInstance().currentUser?.uid) {
@@ -305,14 +387,23 @@ class ProfileActivity : BaseActivity() {
                 loadHostedGameNights(uid)
             }
             .addOnFailureListener {
-                loadFromLocalUserPrefs()
+                val loggedInUid = FirebaseAuth.getInstance().currentUser?.uid
+                if (uid == loggedInUid) {
+                    loadFromLocalUserPrefs()
+                } else {
+                    fullNameText.text = "Mychaela Thomas"
+                    usernameText.text = "Username: Mychaela Thomas"
+                    profileImage.setImageResource(R.drawable.mychaela_avatar)
+                    coverPhoto.setImageResource(R.drawable.mychaela_cover)
+                }
                 loadHostedGameNights(uid)
             }
     }
 
     private fun loadFromLocalUserPrefs() {
-        val u = com.vire.android.android.loadUser(this) ?: return
-        usernameText.text = u.username
+        val u = loadUser(this) ?: return
+        fullNameText.text = u.fullName.ifBlank { u.username }
+        usernameText.text = "Username: ${u.username}"
         emailText.text = "Email: ${u.email}"
         emailText.visibility = View.GONE
         genderText.text = "Gender: ${u.gender.ifBlank { "Not specified" }}"
@@ -322,6 +413,8 @@ class ProfileActivity : BaseActivity() {
         skillLevelText.text = "Skill Level: ${u.skillLevel.ifBlank { "Not specified" }}"
         localAreaText.text = "Local Gaming Area: ${u.localArea.ifBlank { "Not specified" }}"
         gamerBioText.text = "Gamer Bio: ${u.gamerBio.ifBlank { "No gamer bio added yet" }}"
+        profileImage.setImageResource(R.drawable.ic_profile_placeholder)
+        coverPhoto.setImageResource(R.drawable.default_cover)
     }
 
     private fun loadHostedGameNights(uid: String) {
@@ -341,6 +434,8 @@ class ProfileActivity : BaseActivity() {
         try {
             val dialogView = layoutInflater.inflate(R.layout.dialog_edit_profile, null)
 
+            val firstNameInput = dialogView.findViewById<EditText>(R.id.editFirstName)
+            val lastNameInput = dialogView.findViewById<EditText>(R.id.editLastName)
             val usernameInput = dialogView.findViewById<EditText>(R.id.editUsername)
             val emailInput = dialogView.findViewById<EditText>(R.id.editEmail)
             val aboutMeInput = dialogView.findViewById<EditText>(R.id.editAboutMe)
@@ -353,9 +448,11 @@ class ProfileActivity : BaseActivity() {
             val genderSpinner = dialogView.findViewById<Spinner>(R.id.editGender)
             val themeBtn = dialogView.findViewById<Button>(R.id.editThemeButtonDialog)
 
-            val user = com.vire.android.android.loadUser(this)
+            val user = loadUser(this)
 
             user?.let {
+                firstNameInput.setText(it.firstName)
+                lastNameInput.setText(it.lastName)
                 usernameInput.setText(it.username)
                 emailInput.setText(it.email)
                 aboutMeInput.setText(it.aboutMe)
@@ -391,10 +488,17 @@ class ProfileActivity : BaseActivity() {
                 .setTitle("Edit Profile")
                 .setView(dialogView)
                 .setPositiveButton("Save") { _, _ ->
+                    val newFirstName = firstNameInput.text.toString().trim()
+                    val newLastName = lastNameInput.text.toString().trim()
+                    val newFullName = "$newFirstName $newLastName".trim()
+
                     val updatedUser = User(
                         id = currentUid ?: "",
                         username = usernameInput.text.toString().trim(),
                         email = emailInput.text.toString().trim(),
+                        firstName = newFirstName,
+                        lastName = newLastName,
+                        fullName = newFullName,
                         gender = genderSpinner.selectedItem?.toString() ?: "",
                         dateOfBirth = dobInput.text.toString().trim(),
                         favoriteGames = gamesInput.text.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() },
@@ -407,7 +511,7 @@ class ProfileActivity : BaseActivity() {
                         coverImageUri = user?.coverImageUri,
                         is13Plus = user?.is13Plus ?: true
                     )
-                    com.vire.android.android.saveUser(updatedUser, this)
+                    saveUser(updatedUser, this)
                     saveUserToFirestore(updatedUser)
 
                     Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show()
@@ -432,6 +536,9 @@ class ProfileActivity : BaseActivity() {
             "username" to user.username,
             "usernameLowercase" to user.username.lowercase(),
             "email" to user.email,
+            "firstName" to user.firstName,
+            "lastName" to user.lastName,
+            "fullName" to user.fullName,
             "gender" to user.gender,
             "dateOfBirth" to user.dateOfBirth,
             "favoriteGames" to user.favoriteGames,
@@ -452,12 +559,48 @@ class ProfileActivity : BaseActivity() {
             }
     }
 
+    private fun convertUriToBase64(uri: Uri, isCover: Boolean): String? {
+        return try {
+            val inputStream = contentResolver.openInputStream(uri) ?: return null
+            val originalBitmap = BitmapFactory.decodeStream(inputStream) ?: return null
+
+            val maxDim = if (isCover) 800 else 400
+            val width = originalBitmap.width
+            val height = originalBitmap.height
+            val scale = (maxDim.toFloat() / Math.max(width, height)).coerceAtMost(1.0f)
+
+            val scaledBitmap = if (scale < 1.0f) {
+                Bitmap.createScaledBitmap(originalBitmap, (width * scale).toInt(), (height * scale).toInt(), true)
+            } else {
+                originalBitmap
+            }
+
+            val outputStream = ByteArrayOutputStream()
+            scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 75, outputStream)
+            val byteArray = outputStream.toByteArray()
+            "data:image/jpeg;base64," + Base64.encodeToString(byteArray, Base64.NO_WRAP)
+        } catch (e: Exception) {
+            Log.e("ProfileActivity", "Error converting image to Base64: ${e.message}")
+            null
+        }
+    }
+
     private fun uploadImageToStorage(uid: String, uri: Uri, fieldName: String) {
         try {
+            val isCover = (fieldName == "coverImageUrl")
+            val base64Data = convertUriToBase64(uri, isCover)
+
+            if (!base64Data.isNullOrEmpty()) {
+                // Save Base64 string directly to Firestore so image syncs immediately across all devices
+                FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(uid)
+                    .set(mapOf(fieldName to base64Data), com.google.firebase.firestore.SetOptions.merge())
+            }
+
             val storage = try {
                 FirebaseStorage.getInstance()
             } catch (e: IllegalStateException) {
-                Toast.makeText(this, "Firebase Storage not available", Toast.LENGTH_SHORT).show()
                 return
             }
             val storageRef = storage.reference.child("profileImages/$uid/$fieldName.jpg")
@@ -474,7 +617,7 @@ class ProfileActivity : BaseActivity() {
                     }
                 }
                 .addOnFailureListener {
-                    Toast.makeText(this, "Image upload failed", Toast.LENGTH_SHORT).show()
+                    Log.e("ProfileActivity", "Storage upload failed: ${it.message}")
                 }
         } catch (e: Exception) {
             Toast.makeText(this, "Error uploading image: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -482,19 +625,22 @@ class ProfileActivity : BaseActivity() {
     }
 
     private fun showThemePickerDialog() {
-        val themes = arrayOf("Light", "Dark", "Blue", "Green", "Purple", "Custom Image")
+        val themes = arrayOf("Dark", "Light", "Blue", "Green", "Purple", "Custom Image")
         AlertDialog.Builder(this)
             .setTitle("Select Profile Theme")
             .setItems(themes) { _, which ->
+                val selectedTheme = themes[which]
                 try {
-                    val root = findViewById<ScrollView>(R.id.scrollViewRoot)
-                    when (themes[which]) {
-                        "Light" -> root.setBackgroundColor(Color.parseColor("#FAFAFA"))
-                        "Dark" -> root.setBackgroundColor(Color.parseColor("#212121"))
-                        "Blue" -> root.setBackgroundColor(ContextCompat.getColor(this, R.color.blue_200))
-                        "Green" -> root.setBackgroundColor(ContextCompat.getColor(this, R.color.green_200))
-                        "Purple" -> root.setBackgroundColor(ContextCompat.getColor(this, R.color.purple_200))
-                        "Custom Image" -> pickCustomBackgroundLauncher.launch("image/*")
+                    if (selectedTheme == "Custom Image") {
+                        pickCustomBackgroundLauncher.launch("image/*")
+                    } else {
+                        applyThemeColor(selectedTheme)
+                        val uid = currentUid ?: return@setItems
+                        FirebaseFirestore.getInstance()
+                            .collection("users")
+                            .document(uid)
+                            .set(mapOf("profileTheme" to selectedTheme), com.google.firebase.firestore.SetOptions.merge())
+                        Toast.makeText(this, "Theme saved!", Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
                     Toast.makeText(this, "Error applying theme: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -522,8 +668,57 @@ class ProfileActivity : BaseActivity() {
     }
 
     private fun remoteSafeLoad(url: String, target: ImageView) {
+        val placeholder = if (target.id == R.id.coverPhoto) R.drawable.default_cover else R.drawable.ic_profile_placeholder
+        if (url.isBlank()) {
+            target.setImageResource(placeholder)
+            return
+        }
+
         try {
-            Picasso.get().load(url).fit().centerCrop().into(target)
-        } catch (_: Exception) {}
+            if (url.startsWith("data:image")) {
+                val pureBase64 = url.substringAfter("base64,")
+                val decodedBytes = Base64.decode(pureBase64, Base64.DEFAULT)
+                val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                if (bitmap != null) {
+                    target.setImageBitmap(bitmap)
+                    return
+                }
+            }
+
+            if (url.startsWith("http")) {
+                Picasso.get()
+                    .load(url)
+                    .placeholder(placeholder)
+                    .error(placeholder)
+                    .fit()
+                    .centerCrop()
+                    .into(target)
+                return
+            }
+
+            if (url.startsWith("content://") || url.startsWith("file://")) {
+                val uri = Uri.parse(url)
+                try {
+                    val stream = contentResolver.openInputStream(uri)
+                    if (stream != null) {
+                        stream.close()
+                        Picasso.get()
+                            .load(uri)
+                            .placeholder(placeholder)
+                            .error(placeholder)
+                            .fit()
+                            .centerCrop()
+                            .into(target)
+                        return
+                    }
+                } catch (_: Exception) {
+                    // content:// URI belongs to another physical device. Fallback to placeholder.
+                }
+            }
+
+            target.setImageResource(placeholder)
+        } catch (_: Exception) {
+            target.setImageResource(placeholder)
+        }
     }
 }

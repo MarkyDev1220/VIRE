@@ -55,6 +55,46 @@
             android:background="@drawable/edit_text_bg"
             android:layout_marginTop="12dp" />
 
+        <!-- First & Last Name 2-Box Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Name (First and Last Name)"
+            android:textStyle="bold"
+            android:textColor="#222222"
+            android:layout_marginTop="14dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
+
+            <EditText
+                android:id="@+id/firstNameEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:hint="* First Name"
+                android:inputType="textPersonName"
+                android:textColor="#111111"
+                android:textColorHint="#777777"
+                android:background="@drawable/edit_text_bg" />
+
+            <EditText
+                android:id="@+id/lastNameEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:hint="* Last Name"
+                android:inputType="textPersonName"
+                android:textColor="#111111"
+                android:textColorHint="#777777"
+                android:background="@drawable/edit_text_bg" />
+        </LinearLayout>
+
         <!-- Create Password -->
         <EditText
             android:id="@+id/createpasswordEditText"

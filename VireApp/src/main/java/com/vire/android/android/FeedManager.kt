@@ -136,6 +136,22 @@ object FeedManager {
                 ref.set(commentMap)
                 if (postId.isNotEmpty()) {
                     db.collection("globalPosts").document(postId)
+                        .get()
+                        .addOnSuccessListener { postDoc ->
+                            val postAuthorUid = postDoc.getString("authorUid") ?: postDoc.getString("uid")
+                            if (!postAuthorUid.isNullOrEmpty() && postAuthorUid != uid) {
+                                NotificationHelper.sendNotification(
+                                    toUid = postAuthorUid,
+                                    fromUid = uid,
+                                    fromUsername = username,
+                                    title = "New Comment on your post",
+                                    message = "$username commented: \"$text\"",
+                                    type = "COMMENT",
+                                    relatedId = postId
+                                )
+                            }
+                        }
+                    db.collection("globalPosts").document(postId)
                         .update("commentsCount", FieldValue.increment(1))
                 }
             }

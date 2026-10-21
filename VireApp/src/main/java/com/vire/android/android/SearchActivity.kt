@@ -90,17 +90,26 @@ class SearchActivity : BaseActivity() {
 
                 for (document in result) {
                     val uid = document.id
-                    if (uid == currentUid) continue
 
-                    val name = document.getString("username")
+                    val email = document.getString("email")
+                        ?: document.getString("emailAddress")
+                        ?: ""
+
+                    val rawName = document.getString("username")
                         ?: document.getString("fullName")
                         ?: document.getString("displayName")
-                        ?: "Gamer"
+                        ?: document.getString("name")
+
+                    val displayName = when {
+                        !rawName.isNullOrBlank() -> rawName
+                        email.isNotBlank() -> email.substringBefore("@")
+                        else -> "User (${uid.take(6)})"
+                    } + if (uid == currentUid) " (You)" else ""
 
                     val user = User(
                         id = uid,
-                        username = name,
-                        email = document.getString("email") ?: "",
+                        username = displayName,
+                        email = email,
                         gender = document.getString("gender") ?: "",
                         dateOfBirth = document.getString("dateOfBirth") ?: "",
                         favoriteGames = (document.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
@@ -110,6 +119,9 @@ class SearchActivity : BaseActivity() {
                         gamerBio = document.getString("gamerBio") ?: ""
                     )
                     val profileImageUrl = document.getString("profileImageUrl")
+                        ?: document.getString("profileImage")
+                        ?: document.getString("avatarUrl")
+                        ?: document.getString("profileImageUri")
                     loadedUsers.add(Pair(user, profileImageUrl))
                 }
 

@@ -8,12 +8,21 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.auth.FirebaseAuth
 import com.vire.android.R
 
 open class BaseActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (FirebaseAuth.getInstance().currentUser != null) {
+            NotificationHelper.ensureChannel(this)
+            NotificationHelper.listenForNotifications(this)
+        }
     }
 
     protected open fun setupHamburgerMenu() {
@@ -26,6 +35,7 @@ open class BaseActivity : AppCompatActivity() {
     fun showHamburgerMenu(anchor: View) {
         val items = listOf(
             Pair("🏠", "Home"),
+            Pair("🔔", "Notifications"),
             Pair("👤", "Profile"),
             Pair("🃏", "Deck Builder"),
             Pair("🎒", "Collection"),
@@ -71,6 +81,7 @@ open class BaseActivity : AppCompatActivity() {
             dialog.dismiss()
             when (title) {
                 "Home" -> startActivity(Intent(this, HomeActivity::class.java))
+                "Notifications" -> startActivity(Intent(this, NotificationsActivity::class.java))
                 "Profile" -> startActivity(Intent(this, ProfileActivity::class.java))
                 "Deck Builder" -> startActivity(Intent(this, DeckListActivity::class.java))
                 "Collection" -> startActivity(Intent(this, CollectionActivity::class.java))

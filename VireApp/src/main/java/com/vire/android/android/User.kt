@@ -8,6 +8,9 @@ data class User(
     // ⭐ REQUIRED FIELDS
     val username: String,
     val email: String,
+    val firstName: String = "",
+    val lastName: String = "",
+    val fullName: String = "",
 
     // ⭐ OPTIONAL PROFILE FIELDS
     val gender: String = "",
@@ -31,4 +34,3 @@ data class User(
     // ⭐ FRIEND SYSTEM (future)
     val friends: MutableList<String> = mutableListOf()
 )
-

@@ -10,7 +10,7 @@
         android:layout_height="match_parent"
         android:fillViewport="true"
         android:fitsSystemWindows="true"
-        android:background="@color/profile_bg_light">
+        android:background="#111625">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -18,6 +18,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Cover Photo Area -->
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="180dp">
@@ -28,7 +29,7 @@
                     android:layout_height="match_parent"
                     android:scaleType="centerCrop"
                     android:src="@drawable/default_cover"
-                    android:background="#333"
+                    android:background="#1A202C"
                     android:contentDescription="Cover Photo" />
 
                 <ImageButton
@@ -43,6 +44,7 @@
                     android:contentDescription="Change Cover" />
             </FrameLayout>
 
+            <!-- Profile Image Area -->
             <FrameLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -70,24 +72,42 @@
                     android:contentDescription="Change Profile Pic" />
             </FrameLayout>
 
+            <!-- Header Info: Full Name, Username, Edit Pen Button -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp">
 
-                <TextView
-                    android:id="@+id/profileUsername"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Username:"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary" />
+                    android:orientation="vertical"
+                    android:layout_alignParentStart="true"
+                    android:layout_toStartOf="@id/editPenButton">
+
+                    <TextView
+                        android:id="@+id/profileFullName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Name:"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF" />
+
+                    <TextView
+                        android:id="@+id/profileUsername"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Username:"
+                        android:textSize="15sp"
+                        android:textColor="#94A3B8"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
 
                 <ImageButton
                     android:id="@+id/editPenButton"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
                     android:layout_alignParentEnd="true"
                     android:src="@drawable/ic_pen"
                     android:background="@drawable/circle_bg"
@@ -100,8 +120,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Email:"
-                android:textSize="16sp"
-                android:textColor="@color/text_secondary"
+                android:textSize="15sp"
+                android:textColor="#94A3B8"
                 android:layout_marginTop="4dp"
                 android:visibility="gone" />
 
@@ -111,13 +131,13 @@
                 android:layout_height="wrap_content"
                 android:text="Gender: Not set"
                 android:textSize="16sp"
-                android:textColor="@color/text_primary"
-                android:layout_marginTop="8dp" />
+                android:textColor="#E2E8F0"
+                android:layout_marginTop="10dp" />
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="#DDDDDD"
+                android:background="#1E293B"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"/>
 
@@ -127,7 +147,7 @@
                 android:layout_height="wrap_content"
                 android:text="About Me:"
                 android:textSize="16sp"
-                android:textColor="@color/text_primary"
+                android:textColor="#E2E8F0"
                 android:layout_marginTop="8dp" />
 
             <TextView
@@ -136,13 +156,13 @@
                 android:layout_height="wrap_content"
                 android:text="Gamer Bio:"
                 android:textSize="16sp"
-                android:textColor="@color/text_primary"
+                android:textColor="#E2E8F0"
                 android:layout_marginTop="8dp" />
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="#DDDDDD"
+                android:background="#1E293B"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"/>
 
@@ -152,7 +172,7 @@
                 android:layout_height="wrap_content"
                 android:text="Games:"
                 android:textSize="16sp"
-                android:textColor="@color/text_primary"
+                android:textColor="#E2E8F0"
                 android:layout_marginTop="8dp" />
 
             <TextView
@@ -161,7 +181,7 @@
                 android:layout_height="wrap_content"
                 android:text="Favorite Genres:"
                 android:textSize="16sp"
-                android:textColor="@color/text_primary"
+                android:textColor="#E2E8F0"
                 android:layout_marginTop="8dp" />
 
             <TextView
@@ -170,7 +190,7 @@
                 android:layout_height="wrap_content"
                 android:text="Skill Level:"
                 android:textSize="16sp"
-                android:textColor="@color/text_primary"
+                android:textColor="#E2E8F0"
                 android:layout_marginTop="8dp" />
 
             <TextView
@@ -179,9 +199,10 @@
                 android:layout_height="wrap_content"
                 android:text="Local Gaming Area:"
                 android:textSize="16sp"
-                android:textColor="@color/text_primary"
+                android:textColor="#E2E8F0"
                 android:layout_marginTop="8dp" />
 
+            <!-- Social Links Row -->
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -198,7 +219,7 @@
                         android:layout_height="44dp"
                         android:src="@drawable/ic_discord"
                         android:background="@null"
-                        android:layout_marginEnd="8dp"
+                        android:layout_marginEnd="12dp"
                         android:contentDescription="Discord" />
 
                     <ImageButton
@@ -207,7 +228,7 @@
                         android:layout_height="44dp"
                         android:src="@drawable/ic_instagram"
                         android:background="@null"
-                        android:layout_marginEnd="8dp"
+                        android:layout_marginEnd="12dp"
                         android:contentDescription="Instagram" />
 
                     <ImageButton
@@ -216,7 +237,7 @@
                         android:layout_height="44dp"
                         android:src="@drawable/ic_tiktok"
                         android:background="@null"
-                        android:layout_marginEnd="8dp"
+                        android:layout_marginEnd="12dp"
                         android:contentDescription="Tiktok" />
 
                     <ImageButton
@@ -225,7 +246,7 @@
                         android:layout_height="44dp"
                         android:src="@drawable/ic_facebook"
                         android:background="@null"
-                        android:layout_marginEnd="8dp"
+                        android:layout_marginEnd="12dp"
                         android:contentDescription="Facebook" />
 
                     <ImageButton
@@ -234,7 +255,7 @@
                         android:layout_height="44dp"
                         android:src="@drawable/ic_twitch"
                         android:background="@null"
-                        android:layout_marginEnd="8dp"
+                        android:layout_marginEnd="12dp"
                         android:contentDescription="Twitch" />
 
                     <ImageButton
@@ -247,10 +268,11 @@
                 </LinearLayout>
             </HorizontalScrollView>
 
+            <!-- Action Buttons -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="20dp"
                 android:orientation="horizontal">
 
                 <Button
@@ -258,7 +280,10 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Add Friend" />
+                    android:text="Add Friend"
+                    android:backgroundTint="#7C3AED"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold" />
 
                 <Button
                     android:id="@+id/viewCollectionButton"
@@ -266,7 +291,10 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
-                    android:text="My Collection" />
+                    android:text="My Collection"
+                    android:backgroundTint="#6D28D9"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold" />
             </LinearLayout>
 
             <TextView
@@ -275,6 +303,7 @@
                 android:text="Hosted Game Nights"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                android:textColor="#FFFFFF"
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="8dp"/>
 
@@ -282,7 +311,7 @@
                 android:id="@+id/hostedGameNightsListView"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                android:divider="#EEEEEE"
+                android:divider="#1E293B"
                 android:dividerHeight="1dp" />
 
             <TextView
@@ -291,6 +320,7 @@
                 android:text="Profile Feed"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                android:textColor="#FFFFFF"
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="8dp"/>
 
@@ -298,13 +328,13 @@
                 android:id="@+id/profileFeedListView"
                 android:layout_width="match_parent"
                 android:layout_height="400dp"
-                android:divider="#EEEEEE"
+                android:divider="#1E293B"
                 android:dividerHeight="1dp" />
 
         </LinearLayout>
     </ScrollView>
 
-    <!-- Fixed Floating Menu Button at bottom-right of viewport -->
+    <!-- Floating Hamburger Button -->
     <ImageButton
         android:id="@+id/hamburgerButton"
         android:layout_width="56dp"
