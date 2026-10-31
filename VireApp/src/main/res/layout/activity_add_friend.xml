@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     android:padding="20dp"
-    android:background="@color/light_gray">
+    android:background="@color/circuit_bg">
 
     <!-- TOP BAR: Add Friend (left) + X (right) -->
     <LinearLayout
@@ -27,7 +27,7 @@
             android:text="Find &amp; Add Friend"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="@android:color/black"/>
+            android:textColor="@color/circuit_text_primary"/>
 
         <!-- Close (X) Button -->
         <ImageButton
@@ -36,7 +36,7 @@
             android:layout_height="36dp"
             android:background="@android:color/transparent"
             android:src="@drawable/ic_close"
-            app:tint="@android:color/black"
+            app:tint="@color/circuit_text_primary"
             android:contentDescription="Close"/>
     </LinearLayout>
 
@@ -50,8 +50,8 @@
         android:inputType="text"
         android:padding="12dp"
         android:background="@drawable/search_bar_bg"
-        android:textColor="@android:color/black"
-        android:textColorHint="@color/dark_gray"
+        android:textColor="@color/circuit_text_primary"
+        android:textColorHint="@color/circuit_text_muted"
         android:layout_marginTop="20dp"
         android:layout_marginBottom="12dp"/>
 
@@ -61,8 +61,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Search User"
-        android:textColor="@android:color/white"
-        android:backgroundTint="@color/purple_500"
+        android:textColor="@color/circuit_black"
+        android:textStyle="bold"
+        android:backgroundTint="@color/circuit_lime"
         android:padding="12dp"/>
 
     <!-- Progress Indicator -->
@@ -81,7 +82,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         app:cardCornerRadius="12dp"
-        app:cardElevation="4dp"
+        app:cardElevation="2dp"
+        app:cardBackgroundColor="@color/circuit_card"
         android:visibility="gone">
 
         <LinearLayout
@@ -119,7 +121,7 @@
                         android:text="Username"
                         android:textSize="18sp"
                         android:textStyle="bold"
-                        android:textColor="#111111"/>
+                        android:textColor="@color/circuit_text_primary"/>
 
                     <TextView
                         android:id="@+id/previewDetails"
@@ -127,7 +129,7 @@
                         android:layout_height="wrap_content"
                         android:text="Location &amp; Skill"
                         android:textSize="13sp"
-                        android:textColor="#666666"
+                        android:textColor="@color/circuit_text_secondary"
                         android:layout_marginTop="2dp"/>
                 </LinearLayout>
 
@@ -139,7 +141,7 @@
                 android:layout_height="wrap_content"
                 android:text="Gamer bio snippet..."
                 android:textSize="13sp"
-                android:textColor="#555555"
+                android:textColor="@color/circuit_text_secondary"
                 android:layout_marginTop="10dp"
                 android:maxLines="2"
                 android:ellipsize="end"/>
@@ -149,8 +151,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Send Friend Request"
-                android:textColor="@android:color/white"
-                android:backgroundTint="#388E3C"
+                android:textColor="@color/circuit_black"
+                android:textStyle="bold"
+                android:backgroundTint="@color/circuit_lime"
                 android:layout_marginTop="14dp"/>
 
         </LinearLayout>

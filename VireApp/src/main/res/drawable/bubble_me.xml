@@ -2,7 +2,8 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
 
-    <solid android:color="#4A90E2" /> <!-- Blue bubble -->
+    <!-- Outgoing message bubble: signature neon lime -->
+    <solid android:color="@color/circuit_lime" />
 
     <corners
         android:topLeftRadius="18dp"

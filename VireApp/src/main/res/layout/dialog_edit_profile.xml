@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#FFFFFF">
+    android:background="@color/circuit_card">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,7 +16,7 @@
             android:text="Edit Profile"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:textColor="#111111"
+            android:textColor="@color/circuit_text_primary"
             android:layout_marginBottom="16dp"/>
 
         <!-- Username -->
@@ -25,8 +25,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Username"
-            android:textColor="#111111"
-            android:textColorHint="#777777"
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
             android:background="@drawable/edit_text_bg"/>
 
         <!-- First & Last Name 2-Box Section -->
@@ -36,7 +36,7 @@
             android:text="Name"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#222222"
+            android:textColor="@color/circuit_text_secondary"
             android:layout_marginTop="12dp"/>
 
         <LinearLayout
@@ -50,11 +50,10 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginEnd="4dp"
+                android:layout_marginEnd="6dp"
                 android:hint="First Name"
-                android:inputType="textPersonName"
-                android:textColor="#111111"
-                android:textColorHint="#777777"
+                android:textColor="@color/circuit_text_primary"
+                android:textColorHint="@color/circuit_text_muted"
                 android:background="@drawable/edit_text_bg"/>
 
             <EditText
@@ -62,11 +61,10 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="4dp"
+                android:layout_marginStart="6dp"
                 android:hint="Last Name"
-                android:inputType="textPersonName"
-                android:textColor="#111111"
-                android:textColorHint="#777777"
+                android:textColor="@color/circuit_text_primary"
+                android:textColorHint="@color/circuit_text_muted"
                 android:background="@drawable/edit_text_bg"/>
         </LinearLayout>
 
@@ -77,78 +75,130 @@
             android:layout_height="wrap_content"
             android:hint="Email"
             android:inputType="textEmailAddress"
-            android:textColor="#111111"
-            android:textColorHint="#777777"
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
             android:background="@drawable/edit_text_bg"
             android:layout_marginTop="10dp"/>
 
         <!-- About Me -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="About Me"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/circuit_text_secondary"
+            android:layout_marginTop="12dp"/>
+
         <EditText
             android:id="@+id/editAboutMe"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="About Me"
-            android:inputType="textMultiLine"
-            android:textColor="#111111"
-            android:textColorHint="#777777"
+            android:hint="Tell other players about yourself..."
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
             android:background="@drawable/edit_text_bg"
-            android:layout_marginTop="10dp"/>
-
-        <!-- Favorite Games -->
-        <EditText
-            android:id="@+id/editGames"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Favorite Games (comma separated)"
-            android:textColor="#111111"
-            android:textColorHint="#777777"
-            android:background="@drawable/edit_text_bg"
-            android:layout_marginTop="10dp"/>
-
-        <!-- Favorite Genres -->
-        <EditText
-            android:id="@+id/editGenres"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Favorite Genres (comma separated)"
-            android:textColor="#111111"
-            android:textColorHint="#777777"
-            android:background="@drawable/edit_text_bg"
-            android:layout_marginTop="10dp"/>
-
-        <!-- Skill Level -->
-        <EditText
-            android:id="@+id/editSkillLevel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Skill Level (Beginner / Intermediate / Advanced)"
-            android:textColor="#111111"
-            android:textColorHint="#777777"
-            android:background="@drawable/edit_text_bg"
-            android:layout_marginTop="10dp"/>
-
-        <!-- Local Gaming Area -->
-        <EditText
-            android:id="@+id/editLocalArea"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Local Gaming Area (City / Store)"
-            android:textColor="#111111"
-            android:textColorHint="#777777"
-            android:background="@drawable/edit_text_bg"
-            android:layout_marginTop="10dp"/>
+            android:layout_marginTop="4dp"/>
 
         <!-- Gamer Bio -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Gamer Bio"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/circuit_text_secondary"
+            android:layout_marginTop="12dp"/>
+
         <EditText
             android:id="@+id/editGamerBio"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Gamer Bio"
-            android:inputType="textMultiLine"
-            android:textColor="#111111"
-            android:textColorHint="#777777"
+            android:hint="Competitive history, achievements..."
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
             android:background="@drawable/edit_text_bg"
-            android:layout_marginTop="10dp"/>
+            android:layout_marginTop="4dp"/>
+
+        <!-- Games -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Games Played"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/circuit_text_secondary"
+            android:layout_marginTop="12dp"/>
+
+        <EditText
+            android:id="@+id/editGames"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="MTG, Pokemon, Yu-Gi-Oh, Lorcana..."
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
+            android:background="@drawable/edit_text_bg"
+            android:layout_marginTop="4dp"/>
+
+        <!-- Genres -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Favorite Genres"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/circuit_text_secondary"
+            android:layout_marginTop="12dp"/>
+
+        <EditText
+            android:id="@+id/editGenres"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="TCG, Strategy, Deck Building..."
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
+            android:background="@drawable/edit_text_bg"
+            android:layout_marginTop="4dp"/>
+
+        <!-- Skill Level -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Skill Level"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/circuit_text_secondary"
+            android:layout_marginTop="12dp"/>
+
+        <EditText
+            android:id="@+id/editSkillLevel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Casual, Competitive, Pro..."
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
+            android:background="@drawable/edit_text_bg"
+            android:layout_marginTop="4dp"/>
+
+        <!-- Local Gaming Area -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Local Gaming Area"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/circuit_text_secondary"
+            android:layout_marginTop="12dp"/>
+
+        <EditText
+            android:id="@+id/editLocalArea"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="City, State / Region"
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
+            android:background="@drawable/edit_text_bg"
+            android:layout_marginTop="4dp"/>
 
         <!-- Date of Birth -->
         <EditText
@@ -157,10 +207,81 @@
             android:layout_height="wrap_content"
             android:hint="Date of Birth"
             android:focusable="false"
-            android:textColor="#111111"
-            android:textColorHint="#777777"
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
             android:background="@drawable/edit_text_bg"
             android:layout_marginTop="10dp"/>
+
+        <!-- Social Media Links Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Social Media Links"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="@color/circuit_text_primary"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/editDiscord"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Discord username / link"
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
+            android:background="@drawable/edit_text_bg"
+            android:layout_marginTop="6dp"/>
+
+        <EditText
+            android:id="@+id/editInstagram"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Instagram handle"
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
+            android:background="@drawable/edit_text_bg"
+            android:layout_marginTop="6dp"/>
+
+        <EditText
+            android:id="@+id/editTiktok"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="TikTok handle"
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
+            android:background="@drawable/edit_text_bg"
+            android:layout_marginTop="6dp"/>
+
+        <EditText
+            android:id="@+id/editFacebook"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Facebook profile link"
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
+            android:background="@drawable/edit_text_bg"
+            android:layout_marginTop="6dp"/>
+
+        <EditText
+            android:id="@+id/editTwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Twitch channel"
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
+            android:background="@drawable/edit_text_bg"
+            android:layout_marginTop="6dp"/>
+
+        <EditText
+            android:id="@+id/editKick"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Kick channel"
+            android:textColor="@color/circuit_text_primary"
+            android:textColorHint="@color/circuit_text_muted"
+            android:background="@drawable/edit_text_bg"
+            android:layout_marginTop="6dp"/>
 
         <!-- Gender -->
         <TextView
@@ -169,7 +290,7 @@
             android:text="Gender"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#222222"
+            android:textColor="@color/circuit_text_secondary"
             android:layout_marginTop="14dp"/>
 
         <Spinner
@@ -185,8 +306,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Change Theme"
-            android:backgroundTint="#3F51B5"
-            android:textColor="@android:color/white"
+            android:backgroundTint="@color/circuit_lime"
+            android:textColor="@color/circuit_black"
+            android:textStyle="bold"
             android:layout_marginTop="16dp"/>
 
     </LinearLayout>

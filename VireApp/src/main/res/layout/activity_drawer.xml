@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/circuit_bg">
 
     <!-- Main screen content -->
     <LinearLayout
@@ -16,7 +17,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="#6200EE"
+            android:background="@color/circuit_bottom_nav"
             android:elevation="4dp"
             android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
 
@@ -34,9 +35,10 @@
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:fitsSystemWindows="true"
-        android:background="#FFFFFF"
+        android:background="@color/circuit_card"
+        app:itemTextColor="@color/circuit_text_primary"
+        app:itemIconTint="@color/circuit_lime"
         app:menu="@menu/drawer_menu"
         app:headerLayout="@layout/drawer_header" />
 
 </androidx.drawerlayout.widget.DrawerLayout>
-

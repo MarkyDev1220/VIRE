@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval">
-    <solid android:color="#FFFFFF" />
+    <solid android:color="@color/circuit_card" />
     <stroke
         android:width="3dp"
-        android:color="#673AB7" />
+        android:color="@color/circuit_lime" />
     <size
         android:width="100dp"
         android:height="100dp" />

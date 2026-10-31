@@ -4,7 +4,7 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/darker_gray"
+    android:background="@color/circuit_bg"
     android:padding="16dp">
 
     <!-- TOP BAR -->
@@ -19,7 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="New Post"
-            android:textColor="@android:color/white"
+            android:textColor="@color/circuit_text_primary"
             android:textSize="18sp"
             android:textStyle="bold"
             android:layout_centerHorizontal="true"
@@ -33,10 +33,9 @@
             android:layout_marginTop="8dp"
             android:background="@android:color/transparent"
             android:src="@drawable/ic_close"
-            android:tint="@android:color/white"
+            android:tint="@color/circuit_text_primary"
             android:contentDescription="Close"/>
     </RelativeLayout>
-
 
     <!-- PROFILE HEADER -->
     <LinearLayout
@@ -60,7 +59,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Username"
-            android:textColor="@android:color/white"
+            android:textColor="@color/circuit_text_primary"
             android:textSize="16sp"
             android:textStyle="bold"/>
 
@@ -81,19 +80,20 @@
         android:gravity="top|start"
         android:background="@drawable/search_bar_bg"
         android:padding="12dp"
-        android:textColor="@android:color/black"
-        android:textColorHint="@color/black"
+        android:textColor="@color/circuit_text_primary"
+        android:textColorHint="@color/circuit_text_muted"
         android:textSize="16sp"
         android:layout_marginBottom="12dp"/>
 
     <!-- POST BUTTON -->
     <Button
         android:id="@+id/postButton"
-        android:layout_width="120dp"
+        android:layout_width="140dp"
         android:layout_height="wrap_content"
         android:text="Post"
-        android:backgroundTint="@color/purple_500"
-        android:textColor="@android:color/white"
+        android:backgroundTint="@color/circuit_lime"
+        android:textColor="@color/circuit_black"
+        android:textStyle="bold"
         android:textAllCaps="false"
         android:paddingVertical="8dp"
         android:textSize="14sp"
@@ -116,7 +116,7 @@
             android:layout_weight="1"
             android:src="@drawable/ic_gallery"
             android:background="@android:color/transparent"
-            android:tint="@android:color/white"
+            android:tint="@color/circuit_lime"
             android:contentDescription="Add Photo"/>
 
         <ImageButton
@@ -126,7 +126,7 @@
             android:layout_weight="1"
             android:src="@drawable/ic_video"
             android:background="@android:color/transparent"
-            android:tint="@android:color/white"
+            android:tint="@color/circuit_secondary"
             android:contentDescription="Add Video"/>
     </LinearLayout>
 </LinearLayout>

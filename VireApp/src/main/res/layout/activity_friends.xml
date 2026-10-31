@@ -22,6 +22,7 @@
             android:text="Friends"
             android:textSize="24sp"
             android:textStyle="bold"
+            android:textColor="@color/circuit_text_primary"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true" />
 
@@ -33,6 +34,9 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:text="+ Add Friend"
+            android:backgroundTint="@color/circuit_lime"
+            android:textColor="@color/circuit_black"
+            android:textStyle="bold"
             android:textSize="12sp" />
 
     </RelativeLayout>
@@ -43,8 +47,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Search friends"
-        android:textColor="#111111"
-        android:textColorHint="#777777"
+        android:textColor="@color/circuit_text_primary"
+        android:textColorHint="@color/circuit_text_muted"
         android:background="@drawable/edit_text_bg"
         android:layout_below="@id/friendsHeaderRow"
         android:inputType="text"
@@ -57,7 +61,7 @@
         android:layout_height="0dp"
         android:layout_below="@id/searchInputFriends"
         android:layout_above="@id/requestsHeader"
-        android:divider="@android:color/darker_gray"
+        android:divider="@color/circuit_divider"
         android:dividerHeight="1dp"
         android:layout_marginBottom="8dp"/>
 
@@ -69,7 +73,7 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="24dp"
         android:text="No friends added yet. Tap 'Find Players' or 'Search' in the menu to connect!"
-        android:textColor="#666666"
+        android:textColor="@color/circuit_text_secondary"
         android:textSize="14sp"
         android:gravity="center"
         android:visibility="gone" />
@@ -82,6 +86,7 @@
         android:text="Pending Requests"
         android:textSize="18sp"
         android:textStyle="bold"
+        android:textColor="@color/circuit_text_primary"
         android:layout_above="@id/requestsListView"
         android:layout_marginBottom="4dp"/>
 
@@ -92,7 +97,7 @@
         android:layout_height="140dp"
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="80dp"
-        android:divider="@android:color/darker_gray"
+        android:divider="@color/circuit_divider"
         android:dividerHeight="1dp"/>
 
     <TextView
@@ -102,7 +107,7 @@
         android:layout_alignTop="@id/requestsListView"
         android:layout_marginTop="16dp"
         android:text="No pending friend requests."
-        android:textColor="#777777"
+        android:textColor="@color/circuit_text_muted"
         android:textSize="14sp"
         android:gravity="center"
         android:visibility="gone" />
@@ -118,6 +123,6 @@
         android:background="@drawable/circle_bg"
         android:src="@drawable/ic_menu_hamburger"
         android:contentDescription="Menu"
-        android:tint="@android:color/white" />
+        android:tint="@color/circuit_black" />
 
 </RelativeLayout>

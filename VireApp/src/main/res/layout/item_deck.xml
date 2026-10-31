@@ -4,8 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="6dp"
-    app:cardCornerRadius="10dp"
-    app:cardElevation="3dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/circuit_card"
     android:foreground="?android:attr/selectableItemBackground">
 
     <RelativeLayout
@@ -29,7 +30,7 @@
             android:layout_toStartOf="@+id/deckMoreButton"
             android:layout_marginStart="10dp"
             android:text="Deck Name"
-            android:textColor="#212121"
+            android:textColor="@color/circuit_text_primary"
             android:textSize="17sp"
             android:textStyle="bold" />
 
@@ -41,7 +42,8 @@
             android:layout_alignTop="@id/deckTitle"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Options"
-            android:src="@drawable/ic_more_vert" />
+            android:src="@drawable/ic_more_vert"
+            app:tint="@color/circuit_text_secondary" />
 
         <LinearLayout
             android:id="@+id/deckBadgesRow"
@@ -59,13 +61,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/circle_background"
-                android:backgroundTint="#E3F2FD"
+                android:backgroundTint="@color/circuit_surface"
                 android:paddingStart="8dp"
                 android:paddingTop="2dp"
                 android:paddingEnd="8dp"
                 android:paddingBottom="2dp"
                 android:text="Magic: The Gathering"
-                android:textColor="#1565C0"
+                android:textColor="@color/circuit_secondary"
                 android:textSize="11sp"
                 android:textStyle="bold" />
 
@@ -75,13 +77,13 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
                 android:background="@drawable/circle_background"
-                android:backgroundTint="#FFF3E0"
+                android:backgroundTint="@color/circuit_surface"
                 android:paddingStart="8dp"
                 android:paddingTop="2dp"
                 android:paddingEnd="8dp"
                 android:paddingBottom="2dp"
                 android:text="Commander"
-                android:textColor="#E65100"
+                android:textColor="@color/circuit_lime"
                 android:textSize="11sp"
                 android:textStyle="bold" />
 
@@ -101,7 +103,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:text="🃏 100 Cards"
-                android:textColor="#212121"
+                android:textColor="@color/circuit_text_secondary"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
@@ -111,7 +113,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:text="❤️ 0"
-                android:textColor="#E91E63"
+                android:textColor="@color/circuit_lime"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 

@@ -4,8 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="6dp"
-    app:cardCornerRadius="10dp"
-    app:cardElevation="3dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/circuit_card"
     android:foreground="?android:attr/selectableItemBackground">
 
     <RelativeLayout
@@ -20,7 +21,7 @@
             android:layout_alignParentStart="true"
             android:layout_toStartOf="@+id/btnJoinCommunity"
             android:text="Community Name"
-            android:textColor="#212121"
+            android:textColor="@color/circuit_text_primary"
             android:textSize="17sp"
             android:textStyle="bold" />
 
@@ -31,8 +32,12 @@
             android:layout_height="36dp"
             android:layout_alignParentEnd="true"
             android:layout_alignTop="@id/communityName"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
+            android:backgroundTint="@color/circuit_lime"
+            android:textColor="@color/circuit_black"
+            android:textStyle="bold"
+            app:cornerRadius="18dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
             android:text="Join"
             android:textSize="12sp" />
 
@@ -43,13 +48,13 @@
             android:layout_below="@id/communityName"
             android:layout_marginTop="4dp"
             android:background="@drawable/circle_background"
-            android:backgroundTint="#E3F2FD"
+            android:backgroundTint="@color/circuit_surface"
             android:paddingStart="8dp"
             android:paddingTop="2dp"
             android:paddingEnd="8dp"
             android:paddingBottom="2dp"
             android:text="TCG"
-            android:textColor="#1565C0"
+            android:textColor="@color/circuit_secondary"
             android:textSize="11sp"
             android:textStyle="bold" />
 
@@ -62,7 +67,7 @@
             android:ellipsize="end"
             android:maxLines="2"
             android:text="Community description..."
-            android:textColor="#616161"
+            android:textColor="@color/circuit_text_secondary"
             android:textSize="13sp" />
 
         <TextView
@@ -72,7 +77,7 @@
             android:layout_below="@id/communityDescription"
             android:layout_marginTop="8dp"
             android:text="👥 0 Members"
-            android:textColor="#1565C0"
+            android:textColor="@color/circuit_lime"
             android:textSize="12sp"
             android:textStyle="bold" />
 

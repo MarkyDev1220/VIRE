@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/darker_gray"
+    android:background="@color/circuit_bg"
     android:fitsSystemWindows="true"
     android:paddingBottom="16dp">
 
@@ -21,7 +21,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="12dp"
-        android:background="@color/dark_gray"
+        android:background="@color/circuit_card"
         android:gravity="center_vertical"
         android:layout_marginTop="20dp"
         android:layout_below="@id/topSpacer">
@@ -31,7 +31,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:src="@drawable/ic_profile_placeholder"
-            android:background="@drawable/circle_bg"
+            android:background="@drawable/profile_image_bg"
             android:contentDescription="User Avatar"
             android:layout_marginEnd="10dp"/>
 
@@ -40,7 +40,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="What's on your mind?"
-            android:textColor="@color/light_gray"
+            android:textColor="@color/circuit_text_muted"
             android:textSize="16sp"
             android:background="@drawable/search_bar_bg"
             android:padding="12dp"
@@ -54,23 +54,23 @@
         android:layout_height="match_parent"
         android:layout_below="@id/postComposer"
         android:layout_above="@id/bottomNav"
-        android:divider="@color/dark_blue"
+        android:divider="@color/circuit_divider"
         android:dividerHeight="8dp"
         android:padding="8dp"
         android:layout_marginBottom="4dp"/>
 
-    <!-- BOTTOM NAVIGATION BAR -->
+    <!-- BOTTOM NAVIGATION BAR (Midnight Circuit) -->
     <LinearLayout
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="65dp"
         android:orientation="horizontal"
-        android:background="@color/purple_700"
+        android:background="@color/circuit_bottom_nav"
         android:gravity="center"
         android:layout_alignParentBottom="true"
         android:paddingHorizontal="12dp">
 
-        <!-- Home -->
+        <!-- Home (Active - Neon Lime) -->
         <ImageButton
             android:id="@+id/navHome"
             android:layout_width="0dp"
@@ -78,7 +78,7 @@
             android:layout_weight="1"
             android:src="@drawable/ic_home"
             android:background="@android:color/transparent"
-            android:tint="@android:color/white"
+            android:tint="@color/circuit_lime"
             android:contentDescription="Home"/>
 
         <!-- Profile -->
@@ -89,10 +89,10 @@
             android:layout_weight="1"
             android:src="@drawable/ic_profile"
             android:background="@android:color/transparent"
-            android:tint="@android:color/white"
+            android:tint="@color/circuit_text_secondary"
             android:contentDescription="Profile"/>
 
-        <!-- Create Post (+) -->
+        <!-- Create Post (+) with Neon Lime Circle and Black Icon -->
         <ImageButton
             android:id="@+id/navCreatePost"
             android:layout_width="0dp"
@@ -100,7 +100,7 @@
             android:layout_weight="1"
             android:src="@drawable/ic_add"
             android:background="@drawable/circle_bg"
-            android:tint="@android:color/white"
+            android:tint="@color/circuit_black"
             android:contentDescription="Create Post"/>
 
         <!-- Friends -->
@@ -111,7 +111,7 @@
             android:layout_weight="1"
             android:src="@drawable/ic_friends"
             android:background="@android:color/transparent"
-            android:tint="@android:color/white"
+            android:tint="@color/circuit_text_secondary"
             android:contentDescription="Friends"/>
 
         <!-- Menu (Hamburger) -->
@@ -122,8 +122,7 @@
             android:layout_weight="1"
             android:src="@drawable/ic_menu_hamburger"
             android:background="@android:color/transparent"
-            android:tint="@android:color/white"
+            android:tint="@color/circuit_text_secondary"
             android:contentDescription="Menu"/>
     </LinearLayout>
 </RelativeLayout>
-

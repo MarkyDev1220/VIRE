@@ -4,7 +4,7 @@
     android:layout_height="200dp"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="#2196F3"
+    android:background="@color/circuit_card"
     android:gravity="center">
 
     <ImageView
@@ -12,7 +12,7 @@
         android:layout_width="80dp"
         android:layout_height="80dp"
         android:src="@drawable/ic_profile_placeholder"
-        android:background="@drawable/circle_background"
+        android:background="@drawable/profile_image_bg"
         android:scaleType="centerCrop" />
 
     <TextView
@@ -20,8 +20,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Rank 5"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/circuit_text_primary"
         android:textSize="18sp"
+        android:textStyle="bold"
         android:layout_marginTop="8dp" />
 
     <ProgressBar
@@ -32,5 +33,5 @@
         android:progress="50"
         android:max="100"
         style="?android:attr/progressBarStyleHorizontal"
-        android:progressTint="#FFC107" />
+        android:progressTint="@color/circuit_lime" />
 </LinearLayout>

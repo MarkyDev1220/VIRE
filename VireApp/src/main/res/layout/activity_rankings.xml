@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp"
-    android:background="#FAFAFA">
+    android:background="@color/circuit_bg">
 
     <!-- Title -->
     <TextView
@@ -15,7 +15,7 @@
         android:text="Global TCG Rankings"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:textColor="#212121"
+        android:textColor="@color/circuit_text_primary"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="16dp"/>
 
@@ -29,8 +29,8 @@
         android:layout_marginEnd="0dp"
         android:contentDescription="Record Result"
         android:src="@drawable/ic_add"
-        app:backgroundTint="@color/purple_500"
-        app:tint="@android:color/white"/>
+        app:backgroundTint="@color/circuit_lime"
+        app:tint="@color/circuit_black"/>
 
     <!-- Spinner for TCG Games -->
     <Spinner
@@ -60,6 +60,7 @@
         android:layout_height="0dp"
         android:layout_below="@id/gameSpinner"
         android:layout_above="@id/hamburgerButton"
+        android:divider="@color/circuit_divider"
         android:dividerHeight="1dp"
         android:paddingBottom="8dp"
         android:visibility="gone"/>
@@ -74,9 +75,8 @@
         android:layout_margin="16dp"
         android:background="@drawable/circle_bg"
         android:src="@drawable/ic_menu_hamburger"
-        android:tint="@android:color/white"
+        android:tint="@color/circuit_black"
         android:contentDescription="Menu"
         android:clickable="true"
         android:focusable="true"/>
 </RelativeLayout>
-

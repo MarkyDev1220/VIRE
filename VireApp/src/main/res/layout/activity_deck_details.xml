@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
+    android:background="@color/circuit_bg"
     tools:context=".DeckDetailsActivity">
 
     <RelativeLayout
@@ -18,7 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Deck Title"
-            android:textColor="#212121"
+            android:textColor="@color/circuit_text_primary"
             android:textSize="22sp"
             android:textStyle="bold" />
 
@@ -37,13 +38,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/circle_background"
-                android:backgroundTint="#E3F2FD"
+                android:backgroundTint="@color/circuit_surface"
                 android:paddingStart="8dp"
                 android:paddingTop="2dp"
                 android:paddingEnd="8dp"
                 android:paddingBottom="2dp"
                 android:text="Magic: The Gathering"
-                android:textColor="#1565C0"
+                android:textColor="@color/circuit_secondary"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
@@ -53,13 +54,13 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
                 android:background="@drawable/circle_background"
-                android:backgroundTint="#FFF3E0"
+                android:backgroundTint="@color/circuit_surface"
                 android:paddingStart="8dp"
                 android:paddingTop="2dp"
                 android:paddingEnd="8dp"
                 android:paddingBottom="2dp"
                 android:text="Commander"
-                android:textColor="#E65100"
+                android:textColor="@color/circuit_lime"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
@@ -69,7 +70,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
                 android:text="🃏 0 Cards"
-                android:textColor="#424242"
+                android:textColor="@color/circuit_text_secondary"
                 android:textSize="13sp"
                 android:textStyle="bold" />
 
@@ -83,7 +84,7 @@
             android:layout_below="@id/detailsDeckBadgesRow"
             android:layout_marginTop="8dp"
             android:text="Deck description &amp; strategy..."
-            android:textColor="#616161"
+            android:textColor="@color/circuit_text_secondary"
             android:textSize="13sp" />
 
         <!-- Discord Button -->
@@ -95,6 +96,7 @@
             android:layout_below="@id/detailsDeckDesc"
             android:layout_marginTop="8dp"
             android:text="💬 Discord / Match Room"
+            android:textColor="@color/circuit_text_primary"
             android:textSize="13sp"
             android:visibility="gone" />
 
@@ -111,6 +113,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:text="Cards in Deck"
+                android:textColor="@color/circuit_text_primary"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -121,7 +124,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:text="+ Add Card"
-                android:textColor="#1565C0" />
+                android:textColor="@color/circuit_lime" />
 
         </RelativeLayout>
 
@@ -142,6 +145,7 @@
             android:layout_below="@id/recyclerDeckCards"
             android:layout_marginTop="20dp"
             android:text="💬 Deck Chat Companion &amp; Discussion"
+            android:textColor="@color/circuit_text_primary"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -163,6 +167,8 @@
                 android:background="@drawable/search_bar_bg"
                 android:hint="Ask for deck feedback or strategy tips..."
                 android:inputType="text"
+                android:textColor="@color/circuit_text_primary"
+                android:textColorHint="@color/circuit_text_muted"
                 android:paddingHorizontal="12dp"
                 android:textSize="13sp" />
 
@@ -174,7 +180,7 @@
                 android:background="@drawable/circle_bg"
                 android:contentDescription="Send message"
                 android:src="@drawable/ic_send"
-                app:tint="@android:color/white" />
+                app:tint="@color/circuit_black" />
 
         </LinearLayout>
 
@@ -198,7 +204,7 @@
             android:background="@drawable/circle_bg"
             android:contentDescription="Menu"
             android:src="@drawable/ic_menu_hamburger"
-            app:tint="@android:color/white" />
+            app:tint="@color/circuit_black" />
 
     </RelativeLayout>
 
