@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.widget.ImageButton
+import android.view.View
 import android.widget.ImageView
 import android.widget.ListView
 import android.widget.TextView
@@ -18,13 +18,9 @@ class HomeActivity : BaseActivity() {
 
     private lateinit var feedListView: ListView
     private lateinit var feedAdapter: PostAdapter
-
     private lateinit var createPostPrompt: TextView
-    private lateinit var navHome: ImageButton
-    private lateinit var navProfile: ImageButton
-    private lateinit var navCreatePost: ImageButton
-    private lateinit var navFriends: ImageButton
-    private lateinit var navMenu: ImageButton
+    private var allFeedPosts: List<Post> = emptyList()
+    private var selectedFeed = "For you"
 
     private var cachedUsername: String = "User"
 
@@ -52,21 +48,26 @@ class HomeActivity : BaseActivity() {
         findViewById<ImageView>(R.id.userAvatar)?.setOnClickListener {
             startActivity(Intent(this, ProfileActivity::class.java))
         }
-
-        createPostPrompt = findViewById(R.id.createPostPrompt)
-
-        // ✅ FIXED: No username passed through Intent
-        createPostPrompt.setOnClickListener {
-            createPostLauncher.launch(Intent(this, NewPostActivity::class.java))
+        findViewById<View>(R.id.btnHomeNotifications)?.setOnClickListener {
+            startActivity(Intent(this, NotificationsActivity::class.java))
         }
 
-        navHome = findViewById(R.id.navHome)
-        navProfile = findViewById(R.id.navProfile)
-        navCreatePost = findViewById(R.id.navCreatePost)
-        navFriends = findViewById(R.id.navFriends)
-        navMenu = findViewById(R.id.navMenu)
+        createPostPrompt = findViewById(R.id.createPostPrompt)
+        val openComposer = {
+            createPostLauncher.launch(Intent(this, NewPostActivity::class.java))
+        }
+        createPostPrompt.setOnClickListener { openComposer() }
+        findViewById<View>(R.id.btnHomeCreatePost)?.setOnClickListener { openComposer() }
 
-        setupBottomNav()
+        findViewById<TextView>(R.id.tabHomeForYou).setOnClickListener { setFeedFilter("For you") }
+        findViewById<TextView>(R.id.tabHomeFollowing).setOnClickListener { setFeedFilter("Following") }
+        findViewById<TextView>(R.id.tabHomeLocal).setOnClickListener { setFeedFilter("Local") }
+        findViewById<View>(R.id.cardHomeGameNight).setOnClickListener {
+            startActivity(Intent(this, GameNightListActivity::class.java))
+        }
+
+        setupStandardBottomNav(BottomTab.HOME)
+        loadFeaturedGameNight()
         refreshFeed()
     }
 
@@ -110,36 +111,55 @@ class HomeActivity : BaseActivity() {
 
     private fun refreshFeed() {
         FeedManager.fetchGlobalFeed { list ->
-            feedAdapter.apply {
-                posts.clear()
-                posts.addAll(list)
-                notifyDataSetChanged()
-            }
+            allFeedPosts = list
+            applySelectedFeed()
         }
     }
 
-    private fun setupBottomNav() {
-        navHome.setOnClickListener {
-            // Already on Home
+    private fun setFeedFilter(filter: String) {
+        selectedFeed = filter
+        listOf(
+            R.id.tabHomeForYou to "For you",
+            R.id.tabHomeFollowing to "Following",
+            R.id.tabHomeLocal to "Local"
+        ).forEach { (id, label) ->
+            val tab = findViewById<TextView>(id)
+            val selected = selectedFeed == label
+            tab.setBackgroundResource(if (selected) R.drawable.pill_tab_active else R.drawable.pill_tab_inactive)
+            tab.setTextColor(getColor(if (selected) R.color.circuit_lime else R.color.circuit_text_secondary))
         }
+        applySelectedFeed()
+    }
 
-        navProfile.setOnClickListener {
-            startActivity(Intent(this, ProfileActivity::class.java))
+    private fun applySelectedFeed() {
+        when (selectedFeed) {
+            "Following" -> FriendManager.getFriends { friendIds ->
+                showFeedPosts(allFeedPosts.filter { it.authorUid in friendIds })
+            }
+            "Local" -> showFeedPosts(
+                allFeedPosts.filter {
+                    it.postType.contains("game night", ignoreCase = true) ||
+                            it.postType.contains("local", ignoreCase = true) ||
+                            it.postType.contains("looking for players", ignoreCase = true)
+                }
+            )
+            else -> showFeedPosts(allFeedPosts)
         }
+    }
 
-        // ✅ FIXED: No username passed through Intent
-        navCreatePost.setOnClickListener {
-            createPostLauncher.launch(Intent(this, NewPostActivity::class.java))
-        }
+    private fun showFeedPosts(filtered: List<Post>) {
+        feedAdapter.posts.clear()
+        feedAdapter.posts.addAll(filtered)
+        feedAdapter.notifyDataSetChanged()
+    }
 
-        navFriends.setOnClickListener {
-            startActivity(Intent(this, FriendsActivity::class.java))
-        }
-
-        navMenu.setOnClickListener { anchor ->
-            showHamburgerMenu(anchor)
+    private fun loadFeaturedGameNight() {
+        GameNightManager.getGameNights { gameNights ->
+            val nextGameNight = gameNights.firstOrNull() ?: return@getGameNights
+            findViewById<TextView>(R.id.tvHomeGameNightTitle).text =
+                "${nextGameNight.gameTitle} · ${nextGameNight.time}"
+            findViewById<TextView>(R.id.tvHomeGameNightSubtitle).text =
+                "${nextGameNight.location} · ${nextGameNight.participants.size} players"
         }
     }
 }
-
-

@@ -4,6 +4,8 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
@@ -20,6 +22,7 @@ class CommunityListActivity : BaseActivity() {
     private lateinit var recycler: RecyclerView
     private lateinit var fabCreate: FloatingActionButton
     private lateinit var adapter: CommunityAdapter
+    private lateinit var searchInput: EditText
 
     private val categories = listOf("All", "TCG", "RPG", "Miniature Wargame", "Board Game", "Other")
     private val communityCategories = listOf("TCG", "RPG", "Miniature Wargame", "Board Game", "Other")
@@ -41,11 +44,24 @@ class CommunityListActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_community_list)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.COMMUNITIES)
 
         spinnerCategory = findViewById(R.id.spinnerCommunityCategory)
         recycler = findViewById(R.id.recyclerCommunities)
         fabCreate = findViewById(R.id.fabCreateCommunity)
+        searchInput = findViewById(R.id.searchCommunities)
+
+        findViewById<ImageButton>(R.id.btnCommunityNotifications).setOnClickListener {
+            startActivity(Intent(this, NotificationsActivity::class.java))
+        }
+        findViewById<ImageView>(R.id.btnCommunityProfile).setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
+        }
+        searchInput.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) = filterCommunities()
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+        })
 
         val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: "demo_user"
 
@@ -96,10 +112,15 @@ class CommunityListActivity : BaseActivity() {
 
     private fun filterCommunities() {
         val selectedCategory = spinnerCategory.selectedItem?.toString() ?: "All"
-        val filtered = if (selectedCategory.equals("All", ignoreCase = true)) {
-            allCommunities
-        } else {
-            allCommunities.filter { it.category.equals(selectedCategory, ignoreCase = true) }
+        val query = searchInput.text.toString().trim()
+        val filtered = allCommunities.filter { community ->
+            val matchesCategory = selectedCategory.equals("All", ignoreCase = true) ||
+                    community.category.equals(selectedCategory, ignoreCase = true)
+            val matchesQuery = query.isBlank() ||
+                    community.name.contains(query, ignoreCase = true) ||
+                    community.category.contains(query, ignoreCase = true) ||
+                    community.description.contains(query, ignoreCase = true)
+            matchesCategory && matchesQuery
         }
         adapter.submitList(filtered)
     }

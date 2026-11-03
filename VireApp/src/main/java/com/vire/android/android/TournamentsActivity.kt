@@ -44,7 +44,7 @@ class TournamentsActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_tournaments)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.COMPETE)
 
         searchView = findViewById(R.id.searchViewTournaments)
         fabCreate = findViewById(R.id.fabCreateTournament)

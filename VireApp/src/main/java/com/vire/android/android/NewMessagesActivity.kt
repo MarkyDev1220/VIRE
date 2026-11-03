@@ -8,60 +8,50 @@ import android.widget.EditText
 import android.widget.ListView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.vire.android.R
 
 class NewMessagesActivity : AppCompatActivity() {
 
     private lateinit var searchUserEditText: EditText
     private lateinit var userListView: ListView
-
-    private val allUsers = listOf(
-        "Alice",
-        "Bob",
-        "Charlie",
-        "David",
-        "Maria",
-        "Jessie"
-    )
-
+    private val allUsers = mutableListOf<String>()
     private val filteredUsers = mutableListOf<String>()
     private lateinit var adapter: ArrayAdapter<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.activity_new_messages)
 
         searchUserEditText = findViewById(R.id.searchUserEditText)
         userListView = findViewById(R.id.userListView)
-
-        filteredUsers.clear()
-        filteredUsers.addAll(allUsers)
-
         adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, filteredUsers)
         userListView.adapter = adapter
 
-        // Live search filter
         searchUserEditText.addTextChangedListener { text ->
-            val query = text.toString().lowercase()
-
+            val query = text?.toString().orEmpty().trim()
             filteredUsers.clear()
-            filteredUsers.addAll(
-                allUsers.filter { it.lowercase().contains(query) }
-            )
+            filteredUsers.addAll(allUsers.filter { it.contains(query, ignoreCase = true) })
             adapter.notifyDataSetChanged()
         }
 
-        // When user selects a name, send back to MessagesActivity
         userListView.setOnItemClickListener { _, _, position, _ ->
-            val username = filteredUsers[position]
-
-            val returnIntent = Intent().apply {
-                putExtra("selected_user", username)
-            }
-
-            setResult(Activity.RESULT_OK, returnIntent)
+            setResult(Activity.RESULT_OK, Intent().putExtra("selected_user", filteredUsers[position]))
             finish()
         }
+
+        FirebaseFirestore.getInstance().collection("users").get()
+            .addOnSuccessListener { snapshot ->
+                val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+                allUsers.clear()
+                allUsers.addAll(snapshot.documents.mapNotNull { doc ->
+                    if (doc.id == currentUid) return@mapNotNull null
+                    doc.getString("username") ?: doc.getString("fullName") ?: doc.getString("name")
+                }.filter { it.isNotBlank() }.distinct().sorted())
+                filteredUsers.clear()
+                filteredUsers.addAll(allUsers)
+                adapter.notifyDataSetChanged()
+            }
     }
 }

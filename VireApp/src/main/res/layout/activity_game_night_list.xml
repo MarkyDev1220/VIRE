@@ -23,31 +23,28 @@
         android:layout_height="wrap_content"
         android:text="+ Host"
         android:layout_alignParentEnd="true"
-        android:layout_alignTop="@id/headerTitle"
-        android:backgroundTint="@color/purple_500"
+        android:layout_above="@id/bottomNav"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="@color/circuit_lime"
         android:textSize="12sp"/>
 
     <ListView
         android:id="@+id/gameNightListView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_above="@id/bottomNav"
         android:layout_below="@id/headerTitle"
         android:divider="@color/dark_gray"
         android:dividerHeight="1dp"
         android:paddingBottom="80dp"
         android:clipToPadding="false"/>
 
-    <!-- Floating Hamburger Menu -->
-    <ImageButton
-        android:id="@+id/hamburgerButton"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_margin="16dp"
-        android:background="@drawable/circle_bg"
-        android:src="@drawable/ic_menu_hamburger"
-        android:contentDescription="Menu"
-        app:tint="@android:color/white" />
+    <include
+        android:id="@+id/bottomNav"
+        layout="@layout/layout_bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_alignParentBottom="true" />
 
 </RelativeLayout>

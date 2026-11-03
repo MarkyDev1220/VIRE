@@ -1,82 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/quest_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="12dp"
+    android:background="@color/circuit_bg"
+    android:fitsSystemWindows="true"
     tools:context=".QuestActivity">
 
-    <TextView
+    <LinearLayout
         android:id="@+id/questHeader"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Quests"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="10dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:letterSpacing="0.08"
+            android:text="VIRE / COMPETITIVE CIRCUIT"
+            android:textColor="@color/circuit_text_muted"
+            android:textSize="10sp" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="Player requests"
+            android:textColor="@color/circuit_text_primary"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/filtersRowQuest"
-        android:layout_below="@id/questHeader"
-        android:layout_marginTop="8dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/questHeader"
+        android:layout_marginHorizontal="20dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
-
         <SearchView
             android:id="@+id/searchViewQuest"
-            android:layout_weight="1"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:background="@drawable/search_bar_bg"
             android:queryHint="Search quests" />
-
         <Spinner
             android:id="@+id/filterQuestType"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp" />
+            android:layout_height="44dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/pill_tab_inactive"
+            android:paddingHorizontal="8dp" />
     </LinearLayout>
 
     <TextView
         android:id="@+id/emptyTextQuest"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_below="@id/filtersRowQuest"
         android:layout_centerHorizontal="true"
-        android:text="No quests yet."
-        android:visibility="gone"
         android:padding="16dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:text="No requests yet."
+        android:textColor="@color/circuit_text_muted"
+        android:visibility="gone" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerQuest"
-        android:layout_below="@id/filtersRowQuest"
-        android:layout_above="@+id/fabCreateQuest"
-        android:layout_marginTop="8dp"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottomNav"
+        android:layout_below="@id/filtersRowQuest"
+        android:clipToPadding="false"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="88dp" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabCreateQuest"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="16dp"
-        android:layout_marginBottom="16dp"
-        android:src="@drawable/ic_add"
-        android:contentDescription="Create quest"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <ImageButton
-        android:id="@+id/hamburgerButton"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_alignParentBottom="true"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bottomNav"
         android:layout_alignParentEnd="true"
-        android:layout_margin="16dp"
-        android:background="@drawable/circle_bg"
-        android:src="@drawable/ic_menu_hamburger"
-        android:contentDescription="Menu"
-        android:tint="@android:color/white" />
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="16dp"
+        android:contentDescription="Create quest"
+        android:src="@drawable/ic_add"
+        app:backgroundTint="@color/circuit_lime"
+        app:tint="@color/circuit_black" />
 
+    <include
+        android:id="@+id/bottomNav"
+        layout="@layout/layout_bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_alignParentBottom="true" />
 </RelativeLayout>
-

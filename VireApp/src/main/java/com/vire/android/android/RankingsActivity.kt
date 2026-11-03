@@ -23,7 +23,7 @@ class RankingsActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_rankings)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.COMPETE)
 
         gameSpinner = findViewById(R.id.gameSpinner)
         recyclerLeaderboard = findViewById(R.id.recyclerLeaderboard)
@@ -35,9 +35,12 @@ class RankingsActivity : BaseActivity() {
         val spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, games)
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         gameSpinner.adapter = spinnerAdapter
+        val requestedGame = intent.getStringExtra("gameSystem")
+        val initialGameIndex = games.indexOfFirst { it.equals(requestedGame, ignoreCase = true) }.coerceAtLeast(0)
+        gameSpinner.setSelection(initialGameIndex)
 
         recyclerLeaderboard.layoutManager = LinearLayoutManager(this)
-        val initialPlayers = LeaderboardManager.getLeaderboard(games[0])
+        val initialPlayers = LeaderboardManager.getLeaderboard(games[initialGameIndex])
         recyclerAdapter = LeaderboardAdapter(initialPlayers)
         recyclerLeaderboard.adapter = recyclerAdapter
 

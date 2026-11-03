@@ -15,7 +15,7 @@ class GameNightListActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_game_night_list)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.COMMUNITIES)
 
         listView = findViewById(R.id.gameNightListView)
         val btnHost: Button = findViewById(R.id.btnHostNew)

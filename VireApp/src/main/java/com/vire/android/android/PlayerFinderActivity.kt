@@ -26,7 +26,7 @@ class PlayerFinderActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player_finder)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.COMMUNITIES)
 
         gameInput = findViewById(R.id.gameFilterInput)
         areaInput = findViewById(R.id.areaFilterInput)

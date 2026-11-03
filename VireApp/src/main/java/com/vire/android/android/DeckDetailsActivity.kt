@@ -37,7 +37,7 @@ class DeckDetailsActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_deck_details)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.DECKS)
 
         @Suppress("DEPRECATION")
         currentDeck = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

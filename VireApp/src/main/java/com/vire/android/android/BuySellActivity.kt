@@ -48,7 +48,7 @@ class BuySellActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_buy_sell)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.DECKS)
         findViewById<TextView>(R.id.buySellText).text = "Buy/Sell Page"
 
         recycler = findViewById(R.id.recyclerMarketplace)

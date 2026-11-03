@@ -31,7 +31,7 @@ class SearchActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.COMMUNITIES)
 
         searchView = findViewById(R.id.searchViewUsers)
         spinnerCategory = findViewById(R.id.spinnerSearchCategory)

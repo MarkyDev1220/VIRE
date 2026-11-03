@@ -79,7 +79,7 @@ class FriendsActivity : BaseActivity() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.COMMUNITIES)
     }
 
     private fun loadFriends() {

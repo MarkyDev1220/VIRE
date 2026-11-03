@@ -46,6 +46,7 @@ class ProfileActivity : BaseActivity() {
     private lateinit var socialTiktok: ImageButton
     private lateinit var socialInstagram: ImageButton
     private lateinit var addFriendButton: Button
+    private lateinit var profileMessageButton: Button
     private lateinit var profileFeedListView: ListView
     private lateinit var profileFeedAdapter: ArrayAdapter<String>
     private val profileFeedPosts = mutableListOf<String>()
@@ -119,7 +120,28 @@ class ProfileActivity : BaseActivity() {
         socialTiktok = findViewById(R.id.socialTiktok)
         socialInstagram = findViewById(R.id.socialInstagram)
         addFriendButton = findViewById(R.id.addFriendButton)
+        profileMessageButton = findViewById(R.id.btnProfileMessage)
         editPenButton = findViewById(R.id.editPenButton)
+
+        findViewById<View>(R.id.btnProfileSettings).setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+        findViewById<TextView>(R.id.profileTabActivity).setOnClickListener {
+            findViewById<ScrollView>(R.id.scrollViewRoot).smoothScrollTo(0, profileFeedListView.top)
+        }
+        findViewById<TextView>(R.id.profileTabAbout).setOnClickListener {
+            findViewById<ScrollView>(R.id.scrollViewRoot).smoothScrollTo(0, aboutMeText.top)
+        }
+        findViewById<TextView>(R.id.profileTabDecks).setOnClickListener {
+            startActivity(Intent(this, CollectionActivity::class.java))
+        }
+        profileMessageButton.setOnClickListener {
+            val targetUsername = usernameText.text.toString().substringAfter(":").trim()
+                .ifBlank { fullNameText.text.toString().trim() }
+            if (targetUsername.isNotBlank()) {
+                startActivity(Intent(this, MessagesActivity::class.java).putExtra("open_user", targetUsername))
+            }
+        }
 
         profileFeedListView = findViewById(R.id.profileFeedListView)
         profileFeedAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, profileFeedPosts)
@@ -139,7 +161,7 @@ class ProfileActivity : BaseActivity() {
             startActivity(Intent(this, CollectionActivity::class.java))
         }
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.PROFILE)
         emailText.visibility = View.GONE
 
         val auth = try {
@@ -171,11 +193,13 @@ class ProfileActivity : BaseActivity() {
         val isSelf = (uid == loggedInUid)
         if (isSelf) {
             addFriendButton.visibility = View.GONE
+            profileMessageButton.visibility = View.GONE
             editPenButton.visibility = View.VISIBLE
             changeProfilePicButton.visibility = View.VISIBLE
             changeCoverButton.visibility = View.VISIBLE
         } else {
             addFriendButton.visibility = View.VISIBLE
+            profileMessageButton.visibility = View.VISIBLE
             editPenButton.visibility = View.GONE
             changeProfilePicButton.visibility = View.GONE
             changeCoverButton.visibility = View.GONE

@@ -1,82 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
-    android:background="@color/circuit_bg">
+    android:background="@color/circuit_bg"
+    android:fitsSystemWindows="true"
+    android:padding="20dp">
 
-    <!-- Title -->
-    <TextView
-        android:id="@+id/rankingsTitle"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/rankingsHeader"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Global TCG Rankings"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="@color/circuit_text_primary"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="16dp"/>
+        android:orientation="vertical"
+        android:paddingTop="8dp"
+        android:paddingBottom="10dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:letterSpacing="0.08"
+            android:text="VIRE / COMPETITIVE CIRCUIT"
+            android:textColor="@color/circuit_text_muted"
+            android:textSize="10sp" />
+        <TextView
+            android:id="@+id/rankingsTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="Global TCG rankings"
+            android:textColor="@color/circuit_text_primary"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
-    <!-- Record Result FAB (+) -->
+    <Spinner
+        android:id="@+id/gameSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_below="@id/rankingsHeader"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/search_bar_bg"
+        android:paddingHorizontal="12dp" />
+
+    <TextView
+        android:id="@+id/rankingsSeasonLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/gameSpinner"
+        android:layout_marginTop="20dp"
+        android:text="Season standings"
+        android:textColor="@color/circuit_text_primary"
+        android:textSize="17sp"
+        android:textStyle="bold" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerLeaderboard"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottomNav"
+        android:layout_below="@id/rankingsSeasonLabel"
+        android:clipToPadding="false"
+        android:paddingBottom="88dp"
+        android:scrollbars="vertical" />
+
+    <ListView
+        android:id="@+id/leaderboardList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottomNav"
+        android:layout_below="@id/rankingsSeasonLabel"
+        android:divider="@color/circuit_divider"
+        android:dividerHeight="1dp"
+        android:paddingBottom="88dp"
+        android:visibility="gone" />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabRecord"
         android:layout_width="56dp"
         android:layout_height="56dp"
+        android:layout_above="@id/bottomNav"
         android:layout_alignParentEnd="true"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="0dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginBottom="16dp"
         android:contentDescription="Record Result"
         android:src="@drawable/ic_add"
         app:backgroundTint="@color/circuit_lime"
-        app:tint="@color/circuit_black"/>
+        app:tint="@color/circuit_black" />
 
-    <!-- Spinner for TCG Games -->
-    <Spinner
-        android:id="@+id/gameSpinner"
+    <include
+        android:id="@+id/bottomNav"
+        layout="@layout/layout_bottom_navigation"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/rankingsTitle"
-        android:layout_marginTop="12dp"
-        android:background="@android:drawable/btn_dropdown"
-        android:layout_marginBottom="12dp"/>
-
-    <!-- Leaderboard RecyclerView -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerLeaderboard"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_below="@id/gameSpinner"
-        android:layout_above="@id/hamburgerButton"
-        android:scrollbars="vertical"
-        android:clipToPadding="false"
-        android:paddingBottom="12dp"/>
-
-    <!-- Fallback ListView (hidden by default) -->
-    <ListView
-        android:id="@+id/leaderboardList"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_below="@id/gameSpinner"
-        android:layout_above="@id/hamburgerButton"
-        android:divider="@color/circuit_divider"
-        android:dividerHeight="1dp"
-        android:paddingBottom="8dp"
-        android:visibility="gone"/>
-
-    <!-- Floating Hamburger Menu -->
-    <ImageButton
-        android:id="@+id/hamburgerButton"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_margin="16dp"
-        android:background="@drawable/circle_bg"
-        android:src="@drawable/ic_menu_hamburger"
-        android:tint="@color/circuit_black"
-        android:contentDescription="Menu"
-        android:clickable="true"
-        android:focusable="true"/>
+        android:layout_height="64dp"
+        android:layout_alignParentBottom="true" />
 </RelativeLayout>

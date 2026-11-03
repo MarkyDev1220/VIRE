@@ -2,16 +2,10 @@ package com.vire.android.android
 
 object UserManager {
 
-    private val demoUsers = listOf(
-        "alice", "bob", "charlie", "dave", "eve", "frank", "grace",
-        "heidi", "ivan", "judy", "mark", "olivia", "peggy", "trent",
-        "victor", "walter"
-    )
-
     private val users = mutableListOf<User>()
 
     // Legacy username-only methods
-    fun getAllUsernames(): List<String> = users.map { it.username } + demoUsers
+    fun getAllUsernames(): List<String> = users.map { it.username }
 
     fun searchUsers(query: String, excludeUserId: String? = null): List<User> {
         val q = query.trim().lowercase()
@@ -26,7 +20,17 @@ object UserManager {
 
     // Full user management
     fun addUser(user: User) {
-        users.add(user)
+        val index = users.indexOfFirst { it.id == user.id }
+        if (index >= 0) {
+            users[index] = user
+        } else {
+            users.add(user)
+        }
+    }
+
+    fun setUsers(userList: List<User>) {
+        users.clear()
+        users.addAll(userList)
     }
 
     fun updateUser(updated: User) {

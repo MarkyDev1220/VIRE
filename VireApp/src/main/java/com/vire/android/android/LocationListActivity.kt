@@ -57,7 +57,7 @@ class LocationListActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_location_list)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.COMMUNITIES)
 
         searchView = findViewById(R.id.searchViewLocations)
         spinnerType = findViewById(R.id.spinnerLocationTypeFilter)

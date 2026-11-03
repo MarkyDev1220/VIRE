@@ -1,63 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/playerFinderRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/circuit_bg"
+    android:fitsSystemWindows="true"
     android:padding="16dp">
 
     <TextView
         android:id="@+id/playerFinderHeader"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Find Players Near Me"
-        android:textSize="24sp"
-        android:textStyle="bold"
         android:layout_alignParentStart="true"
-        android:layout_marginBottom="8dp" />
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="12dp"
+        android:text="Find Players Near Me"
+        android:textColor="@color/circuit_text_primary"
+        android:textSize="24sp"
+        android:textStyle="bold" />
 
     <EditText
         android:id="@+id/gameFilterInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Filter by game (e.g. Commander, Pokémon)"
         android:layout_below="@id/playerFinderHeader"
-        android:layout_marginBottom="8dp" />
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/search_bar_bg"
+        android:hint="Filter by game (e.g. Commander, Pokémon)"
+        android:padding="12dp"
+        android:textColor="@color/circuit_text_primary"
+        android:textColorHint="@color/circuit_text_muted"
+        android:textSize="14sp" />
 
     <EditText
         android:id="@+id/areaFilterInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Filter by area (e.g. Valdosta, Local Game Store)"
         android:layout_below="@id/gameFilterInput"
-        android:layout_marginBottom="8dp" />
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/search_bar_bg"
+        android:hint="Filter by area (e.g. Valdosta, Local Game Store)"
+        android:padding="12dp"
+        android:textColor="@color/circuit_text_primary"
+        android:textColorHint="@color/circuit_text_muted"
+        android:textSize="14sp" />
 
     <EditText
         android:id="@+id/skillFilterInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Filter by skill (Beginner / Intermediate / Advanced)"
         android:layout_below="@id/areaFilterInput"
-        android:layout_marginBottom="8dp" />
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/search_bar_bg"
+        android:hint="Filter by skill (Beginner / Intermediate / Advanced)"
+        android:padding="12dp"
+        android:textColor="@color/circuit_text_primary"
+        android:textColorHint="@color/circuit_text_muted"
+        android:textSize="14sp" />
 
     <ListView
         android:id="@+id/playersListView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_above="@id/bottomNav"
         android:layout_below="@id/skillFilterInput"
-        android:divider="@android:color/darker_gray"
+        android:divider="@color/circuit_divider"
         android:dividerHeight="1dp"
-        android:paddingBottom="60dp" />
+        android:paddingBottom="8dp" />
 
-    <ImageButton
-        android:id="@+id/hamburgerButton"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_margin="16dp"
-        android:background="@drawable/circle_bg"
-        android:src="@drawable/ic_menu_hamburger"
-        android:contentDescription="Menu"
-        android:tint="@android:color/white" />
+    <!-- Bottom Navigation Bar -->
+    <include
+        layout="@layout/layout_bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_alignParentBottom="true" />
 
 </RelativeLayout>

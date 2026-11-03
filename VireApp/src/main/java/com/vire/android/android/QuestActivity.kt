@@ -36,7 +36,7 @@ class QuestActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_quest)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.COMPETE)
 
         searchView = findViewById(R.id.searchViewQuest)
         filterTypeSpinner = findViewById(R.id.filterQuestType)

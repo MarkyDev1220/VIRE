@@ -4,6 +4,8 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
@@ -25,7 +27,9 @@ class DeckListActivity : BaseActivity() {
     private lateinit var fabCreate: FloatingActionButton
     private lateinit var emptyText: TextView
     private lateinit var countText: TextView
+    private lateinit var searchInput: EditText
     private lateinit var adapter: DeckAdapter
+    private var searchQuery = ""
 
     private val gameSystems = listOf(
         "All",
@@ -65,7 +69,7 @@ class DeckListActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_deck_list)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.DECKS)
 
         rgScope = findViewById(R.id.rgDeckScope)
         rbMyDecks = findViewById(R.id.rbMyDecks)
@@ -75,6 +79,22 @@ class DeckListActivity : BaseActivity() {
         fabCreate = findViewById(R.id.fabCreateDeck)
         emptyText = findViewById(R.id.emptyDecksText)
         countText = findViewById(R.id.deckCountText)
+        searchInput = findViewById(R.id.searchDecks)
+
+        findViewById<ImageButton>(R.id.btnDeckNotifications).setOnClickListener {
+            startActivity(Intent(this, NotificationsActivity::class.java))
+        }
+        findViewById<ImageView>(R.id.btnDeckProfile).setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
+        }
+        searchInput.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                searchQuery = s?.toString().orEmpty().trim()
+                applyDeckSearch()
+            }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+        })
 
         recycler.layoutManager = LinearLayoutManager(this)
         adapter = DeckAdapter(
@@ -133,18 +153,37 @@ class DeckListActivity : BaseActivity() {
                     list.filter { it.gameSystem.equals(selectedGame, ignoreCase = true) }
                 }
                 allDecks = filtered
-                adapter.submitList(filtered)
-                countText.text = "${filtered.size} decks"
-                emptyText.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+                updateDeckMetrics(filtered)
+                applyDeckSearch()
             }
         } else {
             DeckManager.getPublicDecks(selectedGame) { list ->
                 allDecks = list
-                adapter.submitList(list)
-                countText.text = "${list.size} decks"
-                emptyText.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
+                updateDeckMetrics(list)
+                applyDeckSearch()
             }
         }
+    }
+
+    private fun updateDeckMetrics(decks: List<Deck>) {
+        findViewById<TextView>(R.id.tvDeckMetricCount).text = decks.size.toString()
+        val cardsOwned = decks.sumOf { deck ->
+            deck.cards.sumOf { card -> card.quantity.coerceAtLeast(0) }
+        }
+        findViewById<TextView>(R.id.tvCardsOwned).text = cardsOwned.toString()
+    }
+
+    private fun applyDeckSearch() {
+        val query = searchQuery
+        val filtered = if (query.isBlank()) allDecks else allDecks.filter { deck ->
+            deck.deckName.contains(query, ignoreCase = true) ||
+                    deck.gameSystem.contains(query, ignoreCase = true) ||
+                    deck.format.contains(query, ignoreCase = true) ||
+                    deck.cards.any { it.cardName.contains(query, ignoreCase = true) }
+        }
+        adapter.submitList(filtered)
+        countText.text = "${filtered.size} decks"
+        emptyText.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
     }
 
     private fun openAddEditDeckDialog(existingDeck: Deck?) {

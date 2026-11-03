@@ -19,7 +19,7 @@ class SettingsActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.MENU)
 
         val sharedPref = getSharedPreferences("VirePrefs", MODE_PRIVATE)
 

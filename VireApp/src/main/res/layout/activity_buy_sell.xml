@@ -1,19 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/buysell_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/circuit_bg"
+    android:fitsSystemWindows="true"
     android:padding="12dp"
     tools:context=".BuySellActivity">
 
-    <!-- Header row: Title only (hamburger moved to bottom-right) -->
+    <!-- Header row -->
     <LinearLayout
         android:id="@+id/headerRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:paddingTop="8dp"
         android:paddingBottom="8dp">
 
@@ -22,7 +25,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Buy/Sell Page"
+            android:text="Buy / Sell Marketplace"
+            android:textColor="@color/circuit_text_primary"
             android:textSize="20sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -30,18 +34,19 @@
     <!-- Search + filter row -->
     <LinearLayout
         android:id="@+id/rowFilters"
-        android:layout_below="@id/headerRow"
-        android:layout_marginTop="8dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/headerRow"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
         android:padding="4dp">
 
         <SearchView
             android:id="@+id/searchViewMarketplace"
-            android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:queryHint="Search listings" />
 
         <Spinner
@@ -54,47 +59,44 @@
     <!-- Empty text when there are no listings -->
     <TextView
         android:id="@+id/emptyText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_below="@id/rowFilters"
         android:layout_centerHorizontal="true"
-        android:text="No listings yet."
-        android:visibility="gone"
         android:padding="16dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:text="No listings yet."
+        android:textColor="@color/circuit_text_muted"
+        android:visibility="gone" />
 
-    <!-- Listings: keep above the bottom controls (use the FAB id as anchor) -->
+    <!-- Listings: keep above the bottom controls -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerMarketplace"
-        android:layout_below="@id/rowFilters"
-        android:layout_above="@+id/fabAddListing"
-        android:layout_marginTop="8dp"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_above="@id/bottomNav"
+        android:layout_below="@id/rowFilters"
+        android:layout_marginTop="8dp"
         android:padding="4dp" />
 
-    <!-- Add listing FAB (bottom-left) -->
+    <!-- Add listing FAB (+) moved UP above bottom navigation menu -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddListing"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="16dp"
-        android:layout_marginBottom="16dp"
-        android:src="@drawable/ic_add"
-        android:contentDescription="Add listing"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <!-- Hamburger Menu Button (bottom-right) -->
-    <ImageButton
-        android:id="@+id/hamburgerButton"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_alignParentBottom="true"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bottomNav"
         android:layout_alignParentEnd="true"
-        android:layout_margin="16dp"
-        android:background="@drawable/circle_bg"
-        android:src="@drawable/ic_menu_hamburger"
-        android:contentDescription="Menu"
-        android:tint="@android:color/white" />
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:contentDescription="Add listing"
+        android:src="@drawable/ic_add"
+        app:backgroundTint="@color/circuit_lime"
+        app:tint="@color/circuit_black" />
+
+    <!-- Bottom Navigation Bar -->
+    <include
+        layout="@layout/layout_bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_alignParentBottom="true" />
 
 </RelativeLayout>

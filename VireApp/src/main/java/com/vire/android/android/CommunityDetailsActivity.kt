@@ -46,7 +46,7 @@ class CommunityDetailsActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_community_details)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.COMMUNITIES)
 
         @Suppress("DEPRECATION")
         currentCommunity = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

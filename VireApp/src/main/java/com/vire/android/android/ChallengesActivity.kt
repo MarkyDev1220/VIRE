@@ -40,7 +40,7 @@ class ChallengesActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_challenges)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.COMPETE)
         findViewById<TextView>(R.id.challengesText).text = "Challenges"
 
         recycler = findViewById(R.id.recyclerChallenges)

@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
+    android:orientation="vertical"
     tools:context=".LocationDetailsActivity">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -215,19 +221,14 @@
             android:layout_marginTop="8dp"
             android:nestedScrollingEnabled="false" />
 
-        <!-- Hamburger Menu Button -->
-        <ImageButton
-            android:id="@+id/hamburgerButton"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:layout_below="@id/recyclerStoreReviews"
-            android:layout_alignParentEnd="true"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/circle_bg"
-            android:contentDescription="Menu"
-            android:src="@drawable/ic_menu_hamburger"
-            app:tint="@android:color/white" />
 
     </RelativeLayout>
 
 </ScrollView>
+
+    <include
+        android:id="@+id/bottomNav"
+        layout="@layout/layout_bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="64dp" />
+</LinearLayout>

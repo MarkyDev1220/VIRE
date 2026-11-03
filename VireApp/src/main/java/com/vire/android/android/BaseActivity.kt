@@ -8,13 +8,57 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.vire.android.R
+
+enum class BottomTab {
+    HOME,
+    PROFILE,
+    DECKS,
+    COMMUNITIES,
+    COMPETE,
+    MESSAGES,
+    MENU,
+    NONE
+}
 
 open class BaseActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+    }
+
+    override fun setContentView(layoutResID: Int) {
+        super.setContentView(layoutResID)
+        applyStatusBarInsets()
+    }
+
+    override fun setContentView(view: View?) {
+        super.setContentView(view)
+        applyStatusBarInsets()
+    }
+
+    override fun setContentView(view: View?, params: ViewGroup.LayoutParams?) {
+        super.setContentView(view, params)
+        applyStatusBarInsets()
+    }
+
+    private fun applyStatusBarInsets() {
+        val rootChild = findViewById<ViewGroup>(android.R.id.content)?.getChildAt(0) ?: return
+        ViewCompat.setOnApplyWindowInsetsListener(rootChild) { view, insets ->
+            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            view.setPadding(
+                view.paddingLeft,
+                statusBarHeight,
+                view.paddingRight,
+                view.paddingBottom
+            )
+            insets
+        }
     }
 
     override fun onResume() {
@@ -25,11 +69,51 @@ open class BaseActivity : AppCompatActivity() {
         }
     }
 
-    protected open fun setupHamburgerMenu() {
-        val hamburgerButton = findViewById<ImageButton>(R.id.hamburgerButton)
-        hamburgerButton?.setOnClickListener { view ->
-            showHamburgerMenu(view)
+    fun setupStandardBottomNav(activeTab: BottomTab = BottomTab.NONE) {
+        if (findViewById<View>(R.id.bottomNav) == null) return
+
+        val navHome = findViewById<View>(R.id.navHome)
+        val navProfile = findViewById<View>(R.id.navProfile)
+        val navDecks = findViewById<View>(R.id.navDecks)
+        val navCommunities = findViewById<View>(R.id.navCommunities)
+        val navMenu = findViewById<View>(R.id.navMenu)
+
+        val selectedTab = when (activeTab) {
+            BottomTab.COMPETE, BottomTab.MESSAGES, BottomTab.MENU -> BottomTab.MENU
+            else -> activeTab
         }
+        val navItems = listOf(
+            Triple(findViewById<ImageView>(R.id.iconHome), findViewById<TextView>(R.id.textHome), BottomTab.HOME),
+            Triple(findViewById<ImageView>(R.id.iconProfile), findViewById<TextView>(R.id.textProfile), BottomTab.PROFILE),
+            Triple(findViewById<ImageView>(R.id.iconDecks), findViewById<TextView>(R.id.textDecks), BottomTab.DECKS),
+            Triple(findViewById<ImageView>(R.id.iconCommunities), findViewById<TextView>(R.id.textCommunities), BottomTab.COMMUNITIES),
+            Triple(findViewById<ImageView>(R.id.iconMenu), findViewById<TextView>(R.id.textMenu), BottomTab.MENU)
+        )
+        val activeColor = ContextCompat.getColor(this, R.color.circuit_lime)
+        val inactiveColor = ContextCompat.getColor(this, R.color.circuit_text_secondary)
+        navItems.forEach { (icon, label, tab) ->
+            val color = if (selectedTab == tab) activeColor else inactiveColor
+            icon?.setColorFilter(color)
+            label?.setTextColor(color)
+        }
+
+        navHome?.setOnClickListener {
+            if (this !is HomeActivity) {
+                startActivity(Intent(this, HomeActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                })
+            }
+        }
+        navProfile?.setOnClickListener {
+            if (this !is ProfileActivity) startActivity(Intent(this, ProfileActivity::class.java))
+        }
+        navDecks?.setOnClickListener {
+            if (this !is DeckListActivity) startActivity(Intent(this, DeckListActivity::class.java))
+        }
+        navCommunities?.setOnClickListener {
+            if (this !is CommunityListActivity) startActivity(Intent(this, CommunityListActivity::class.java))
+        }
+        navMenu?.setOnClickListener { view -> showHamburgerMenu(view) }
     }
 
     fun showHamburgerMenu(anchor: View) {

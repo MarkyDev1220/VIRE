@@ -48,7 +48,7 @@ class CollectionActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_collection)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.DECKS)
 
         recycler = findViewById(R.id.recyclerCollection)
         searchView = findViewById(R.id.searchViewCollection)

@@ -5,6 +5,8 @@
     android:id="@+id/collection_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/circuit_bg"
+    android:fitsSystemWindows="true"
     android:padding="12dp"
     tools:context=".CollectionActivity">
 
@@ -24,6 +26,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="My Collection"
+            android:textColor="@color/circuit_text_primary"
             android:textSize="22sp"
             android:textStyle="bold" />
 
@@ -32,7 +35,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="0 items"
-            android:textColor="#666666"
+            android:textColor="@color/circuit_text_muted"
             android:textSize="14sp" />
     </LinearLayout>
 
@@ -61,6 +64,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Type:"
+            android:textColor="@color/circuit_text_secondary"
             android:textSize="12sp"
             android:textStyle="bold" />
 
@@ -77,6 +81,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:text="Status:"
+            android:textColor="@color/circuit_text_secondary"
             android:textSize="12sp"
             android:textStyle="bold" />
 
@@ -97,7 +102,7 @@
         android:padding="16dp"
         android:text="Your collection is empty.\nTap + to add games, decks, or expansions!"
         android:textAlignment="center"
-        android:textColor="#888888"
+        android:textColor="@color/circuit_text_muted"
         android:textSize="15sp"
         android:visibility="gone" />
 
@@ -106,35 +111,31 @@
         android:id="@+id/recyclerCollection"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/fabAddCollectionItem"
+        android:layout_above="@id/bottomNav"
         android:layout_below="@id/rowCollectionFilters"
         android:layout_marginTop="8dp"
         android:clipToPadding="false"
         android:paddingBottom="12dp" />
 
-    <!-- Add Item FAB (bottom-start) -->
+    <!-- Add Item FAB (+) moved UP above bottom navigation menu -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddCollectionItem"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="16dp"
+        android:layout_above="@id/bottomNav"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
         android:contentDescription="Add collection item"
-        android:src="@drawable/ic_add" />
+        android:src="@drawable/ic_add"
+        app:backgroundTint="@color/circuit_lime"
+        app:tint="@color/circuit_black" />
 
-    <!-- Hamburger Menu Button (bottom-end) -->
-    <ImageButton
-        android:id="@+id/hamburgerButton"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_margin="16dp"
-        android:background="@drawable/circle_bg"
-        android:contentDescription="Menu"
-        android:src="@drawable/ic_menu_hamburger"
-        app:tint="@android:color/white" />
+    <!-- Bottom Navigation Bar -->
+    <include
+        layout="@layout/layout_bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_alignParentBottom="true" />
 
 </RelativeLayout>

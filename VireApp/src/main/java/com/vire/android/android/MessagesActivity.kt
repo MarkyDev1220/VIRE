@@ -1,200 +1,425 @@
 package com.vire.android.android
 
-import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.OnBackPressedCallback
+import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.vire.android.R
 
 class MessagesActivity : BaseActivity() {
 
-    private lateinit var recyclerUsers: RecyclerView
-    private lateinit var recyclerChat: RecyclerView
-    private lateinit var messageInput: EditText
-    private lateinit var sendBtn: ImageButton
-    private lateinit var searchUsers: EditText
-    private lateinit var chatHeader: TextView
-    private lateinit var menuBtn: ImageButton
-    private lateinit var newMessageBtn: ImageButton
-    private lateinit var addFriendBtn: Button
-    private lateinit var chatInputBar: View
-    private lateinit var leftPanel: View
-    private lateinit var rightPanel: View
+    // Containers
+    private lateinit var inboxContainer: View
+    private lateinit var chatContainer: View
 
-    private lateinit var usersAdapter: MessagesListAdapter
+    // Inbox Views
+    private lateinit var btnInboxNotifications: ImageButton
+    private lateinit var btnInboxProfile: ImageView
+    private lateinit var searchMessagesInput: EditText
+    private lateinit var btnClearSearch: ImageButton
+    private lateinit var btnNewChat: Button
+    private lateinit var tabAll: TextView
+    private lateinit var tabUnread: TextView
+    private lateinit var tabGroups: TextView
+    private lateinit var cardFriendsRequests: CardView
+    private lateinit var btnMarkAllRead: TextView
+    private lateinit var tvSearchUsersHeader: TextView
+    private lateinit var recyclerSearchUsers: RecyclerView
+    private lateinit var recyclerConversations: RecyclerView
+
+
+
+    // Chat Views
+    private lateinit var btnChatBack: ImageButton
+    private lateinit var chatUserAvatar: ImageView
+    private lateinit var chatHeaderTitle: TextView
+    private lateinit var chatHeaderSubtitle: TextView
+    private lateinit var btnChatOptions: ImageButton
+    private lateinit var recyclerChatMessages: RecyclerView
+    private lateinit var messageInput: EditText
+    private lateinit var sendMessage: ImageButton
+
+    // Adapters & State
+    private lateinit var inboxAdapter: InboxConversationAdapter
+    private lateinit var inlineSearchAdapter: UserChatSearchAdapter
     private var chatAdapter: ChatAdapter? = null
 
-    private var activeUser: String? = null
-    private var isNewMessageMode = false
+    private var currentFilter = InboxConversationAdapter.FilterType.ALL
+    private var currentSearchQuery = ""
+    private var activeChatUser: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_messages)
 
-        recyclerUsers = findViewById(R.id.recyclerUsers)
-        recyclerChat = findViewById(R.id.recyclerChatMessages)
-        messageInput = findViewById(R.id.messageInput)
-        sendBtn = findViewById(R.id.sendMessage)
-        searchUsers = findViewById(R.id.searchUsers)
-        chatHeader = findViewById(R.id.chatHeader)
-        menuBtn = findViewById(R.id.hamburgerButton)
-        newMessageBtn = findViewById(R.id.newMessageButton)
-        addFriendBtn = findViewById(R.id.addFriendButton)
-        chatInputBar = findViewById(R.id.chatInputBar)
-        leftPanel = findViewById(R.id.leftPanel)
-        rightPanel = findViewById(R.id.rightPanel)
+        bindViews()
+        setupAdapters()
+        setupSearch()
+        setupTabs()
+        setupActions()
+        setupBottomNav()
+        setupChat()
+        setupBackNavigation()
 
-        setupUsersList()
-        setupSearchListener()
-        setupSendMessage()
-        setupHamburgerMenu()
-        setupNewMessageButton()
-        setupAddFriendButton()
-
-        showConversationListMode()
-    }
-
-    private fun setupUsersList() {
-        usersAdapter = MessagesListAdapter(
-            MessageManager.getLastMessagesForAllUsers()
-        ) { selectedUser ->
-            openChatWithUser(selectedUser)
+        val requestedChatUser = intent.getStringExtra("open_user")
+        fetchRealAppUsersFromFirestore { users ->
+            requestedChatUser?.let { requested ->
+                val resolvedUser = users.firstOrNull { it.equals(requested, ignoreCase = true) } ?: requested
+                openChat(resolvedUser)
+            }
         }
-
-        recyclerUsers.adapter = usersAdapter
-        recyclerUsers.layoutManager = LinearLayoutManager(this)
+        refreshInboxData()
     }
 
-    private fun openChatWithUser(selectedUser: String) {
-        activeUser = selectedUser
-        chatHeader.text = selectedUser
 
-        showChatMode()
 
-        val messages = MessageManager.getMessagesForUser(selectedUser)
-        chatAdapter = ChatAdapter(messages)
-        recyclerChat.adapter = chatAdapter
-        recyclerChat.layoutManager = LinearLayoutManager(this).apply {
-            stackFromEnd = true
-        }
+    private fun fetchRealAppUsersFromFirestore(onLoaded: ((List<String>) -> Unit)? = null) {
+        val auth = try { com.google.firebase.auth.FirebaseAuth.getInstance() } catch (e: Exception) { null }
+        val currentUid = auth?.currentUser?.uid
 
-        recyclerChat.scrollToPosition(messages.size - 1)
-    }
-
-    private fun setupSendMessage() {
-        sendBtn.setOnClickListener {
-            val user = activeUser ?: return@setOnClickListener
-            val text = messageInput.text.toString().trim()
-            if (text.isEmpty()) return@setOnClickListener
-
-            val newMessage = Message("Me", text)
-            MessageManager.sendMessageForUser(user, newMessage)
-
-            chatAdapter?.notifyItemInserted(MessageManager.getMessagesForUser(user).size - 1)
-            recyclerChat.scrollToPosition(MessageManager.getMessagesForUser(user).size - 1)
-
-            usersAdapter.updateData(MessageManager.getLastMessagesForAllUsers())
-
-            messageInput.text.clear()
-        }
-    }
-
-    private fun setupSearchListener() {
-        searchUsers.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {
-                if (isNewMessageMode) {
-                    usersAdapter.filter(s.toString())
+        try {
+            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                .collection("users")
+                .get()
+                .addOnSuccessListener { querySnapshot ->
+                    val userList = mutableListOf<String>()
+                    for (doc in querySnapshot) {
+                        val uid = doc.id
+                        if (uid == currentUid) continue
+                        val username = doc.getString("username")
+                            ?: doc.getString("fullName")
+                            ?: doc.getString("name")
+                            ?: ""
+                        if (username.isNotBlank()) {
+                            userList.add(username)
+                            MessageManager.registerUser(username)
+                        }
+                    }
+                    val sortedUsers = userList.distinct().sorted()
+                    inlineSearchAdapter.updateUsers(sortedUsers)
+                    onLoaded?.invoke(sortedUsers)
                 }
+                .addOnFailureListener {
+                    onLoaded?.invoke(getAllKnownUsers())
+                }
+        } catch (_: Exception) {
+            onLoaded?.invoke(getAllKnownUsers())
+        }
+    }
+
+    private fun bindViews() {
+        inboxContainer = findViewById(R.id.inboxContainer)
+        chatContainer = findViewById(R.id.chatContainer)
+
+        btnInboxNotifications = findViewById(R.id.btnInboxNotifications)
+        btnInboxProfile = findViewById(R.id.btnInboxProfile)
+        searchMessagesInput = findViewById(R.id.searchMessagesInput)
+        btnClearSearch = findViewById(R.id.btnClearSearch)
+        btnNewChat = findViewById(R.id.btnNewChat)
+        tabAll = findViewById(R.id.tabAll)
+        tabUnread = findViewById(R.id.tabUnread)
+        tabGroups = findViewById(R.id.tabGroups)
+        cardFriendsRequests = findViewById(R.id.cardFriendsRequests)
+        btnMarkAllRead = findViewById(R.id.btnMarkAllRead)
+        tvSearchUsersHeader = findViewById(R.id.tvSearchUsersHeader)
+        recyclerSearchUsers = findViewById(R.id.recyclerSearchUsers)
+        recyclerConversations = findViewById(R.id.recyclerConversations)
+
+
+
+        btnChatBack = findViewById(R.id.btnChatBack)
+        chatUserAvatar = findViewById(R.id.chatUserAvatar)
+        chatHeaderTitle = findViewById(R.id.chatHeaderTitle)
+        chatHeaderSubtitle = findViewById(R.id.chatHeaderSubtitle)
+        btnChatOptions = findViewById(R.id.btnChatOptions)
+        recyclerChatMessages = findViewById(R.id.recyclerChatMessages)
+        messageInput = findViewById(R.id.messageInput)
+        sendMessage = findViewById(R.id.sendMessage)
+    }
+
+    private fun setupAdapters() {
+        // Inbox Conversations
+        inboxAdapter = InboxConversationAdapter(
+            MessageManager.getConversationsList()
+        ) { conversation ->
+            openChat(conversation.name)
+        }
+        recyclerConversations.layoutManager = LinearLayoutManager(this)
+        recyclerConversations.adapter = inboxAdapter
+
+        // Inline User Search
+        val allUsers = getAllKnownUsers()
+        inlineSearchAdapter = UserChatSearchAdapter(allUsers) { selectedUser ->
+            openChat(selectedUser)
+        }
+        recyclerSearchUsers.layoutManager = LinearLayoutManager(this)
+        recyclerSearchUsers.adapter = inlineSearchAdapter
+    }
+
+    private fun getAllKnownUsers(): List<String> {
+        val all = mutableSetOf<String>()
+        all.addAll(MessageManager.getAllUsernames())
+        all.addAll(UserManager.getAllUsernames())
+        return all.filter { it.isNotBlank() && !it.equals("Me", ignoreCase = true) }.sorted()
+    }
+
+    private fun setupSearch() {
+        searchMessagesInput.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                val query = s?.toString()?.trim() ?: ""
+                currentSearchQuery = query
+
+                if (query.isNotEmpty()) {
+                    btnClearSearch.visibility = View.VISIBLE
+                    tvSearchUsersHeader.visibility = View.VISIBLE
+                    recyclerSearchUsers.visibility = View.VISIBLE
+                    inlineSearchAdapter.filter(query)
+                } else {
+                    btnClearSearch.visibility = View.GONE
+                    tvSearchUsersHeader.visibility = View.GONE
+                    recyclerSearchUsers.visibility = View.GONE
+                }
+
+                inboxAdapter.applyFilter(currentFilter, currentSearchQuery)
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
+
+        btnClearSearch.setOnClickListener {
+            searchMessagesInput.text.clear()
+        }
+    }
+
+    private fun setupTabs() {
+        tabAll.setOnClickListener {
+            selectTab(InboxConversationAdapter.FilterType.ALL)
+        }
+
+        tabUnread.setOnClickListener {
+            selectTab(InboxConversationAdapter.FilterType.UNREAD)
+        }
+
+        tabGroups.setOnClickListener {
+            selectTab(InboxConversationAdapter.FilterType.GROUPS)
+        }
+    }
+
+    private fun selectTab(filterType: InboxConversationAdapter.FilterType) {
+        currentFilter = filterType
+
+        tabAll.setBackgroundResource(
+            if (filterType == InboxConversationAdapter.FilterType.ALL) R.drawable.pill_tab_active else R.drawable.pill_tab_inactive
+        )
+        tabAll.setTextColor(
+            getColor(if (filterType == InboxConversationAdapter.FilterType.ALL) R.color.circuit_lime else R.color.circuit_text_secondary)
+        )
+
+        tabUnread.setBackgroundResource(
+            if (filterType == InboxConversationAdapter.FilterType.UNREAD) R.drawable.pill_tab_active else R.drawable.pill_tab_inactive
+        )
+        tabUnread.setTextColor(
+            getColor(if (filterType == InboxConversationAdapter.FilterType.UNREAD) R.color.circuit_lime else R.color.circuit_text_secondary)
+        )
+
+        tabGroups.setBackgroundResource(
+            if (filterType == InboxConversationAdapter.FilterType.GROUPS) R.drawable.pill_tab_active else R.drawable.pill_tab_inactive
+        )
+        tabGroups.setTextColor(
+            getColor(if (filterType == InboxConversationAdapter.FilterType.GROUPS) R.color.circuit_lime else R.color.circuit_text_secondary)
+        )
+
+        inboxAdapter.applyFilter(currentFilter, currentSearchQuery)
+    }
+
+    private fun setupActions() {
+        btnInboxNotifications.setOnClickListener {
+            startActivity(Intent(this, NotificationsActivity::class.java))
+        }
+
+        btnInboxProfile.setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
+        }
+
+        cardFriendsRequests.setOnClickListener {
+            startActivity(Intent(this, FriendsActivity::class.java))
+        }
+
+        btnMarkAllRead.setOnClickListener {
+            MessageManager.markAllAsRead()
+            refreshInboxData()
+        }
+
+        btnNewChat.setOnClickListener {
+            showNewChatDialog()
+        }
+    }
+
+    private fun showNewChatDialog() {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_new_chat_search, null)
+        val closeBtn = dialogView.findViewById<ImageButton>(R.id.btnCloseNewChatDialog)
+        val searchInput = dialogView.findViewById<EditText>(R.id.dialogSearchUserInput)
+        val recyclerView = dialogView.findViewById<RecyclerView>(R.id.dialogUsersRecyclerView)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        val allUsers = getAllKnownUsers()
+        val dialogAdapter = UserChatSearchAdapter(allUsers) { selectedUser ->
+            dialog.dismiss()
+            openChat(selectedUser)
+        }
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = dialogAdapter
+
+        fetchRealAppUsersFromFirestore { users ->
+            dialogAdapter.updateUsers(users)
+        }
+
+        searchInput.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                dialogAdapter.filter(s?.toString()?.trim() ?: "")
             }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
-    }
 
-    override fun setupHamburgerMenu() {
-        menuBtn.setOnClickListener { anchor ->
-            showHamburgerMenu(anchor)
+        closeBtn.setOnClickListener {
+            dialog.dismiss()
         }
+
+        dialog.show()
     }
 
-    private fun setupNewMessageButton() {
-        newMessageBtn.setOnClickListener { anchor ->
-            val popup = PopupMenu(this, anchor)
-            popup.menu.apply {
-                add("Add Friend")
-                add("Search for Users")
-                add("New Message")
-            }
+    private fun setupBottomNav() {
+        setupStandardBottomNav(BottomTab.MESSAGES)
+    }
 
+    private fun setupChat() {
+        btnChatBack.setOnClickListener {
+            closeChat()
+        }
+
+        btnChatOptions.setOnClickListener { anchor ->
+            val popup = PopupMenu(this, anchor)
+            popup.menu.add("Clear History")
+            popup.menu.add("View Profile")
             popup.setOnMenuItemClickListener { item ->
-                when (item.title.toString()) {
-                    "Add Friend" -> {
-                        startActivity(Intent(this, AddFriendActivity::class.java))
+                when (item.title) {
+                    "View Profile" -> {
+                        startActivity(Intent(this, ProfileActivity::class.java))
                     }
-                    "Search for Users" -> {
-                        isNewMessageMode = true
-                        showNewMessageMode()
-                    }
-                    "New Message" -> {
-                        activeUser = null
-                        showConversationListMode()
+                    "Clear History" -> {
+                        activeChatUser?.let { user ->
+                            MessageManager.getMessagesForUser(user).clear()
+                            chatAdapter?.notifyDataSetChanged()
+                            refreshInboxData()
+                        }
                     }
                 }
                 true
             }
-
             popup.show()
         }
-    }
 
-    private fun setupAddFriendButton() {
-        addFriendBtn.setOnClickListener {
-            startActivity(Intent(this, AddFriendActivity::class.java))
+        sendMessage.setOnClickListener {
+            sendCurrentMessage()
         }
     }
 
-    private fun showConversationListMode() {
-        isNewMessageMode = false
+    private fun sendCurrentMessage() {
+        val user = activeChatUser ?: return
+        val text = messageInput.text.toString().trim()
+        if (text.isEmpty()) return
 
-        searchUsers.visibility = View.GONE
-        chatInputBar.visibility = View.GONE
-        chatHeader.visibility = View.GONE
+        val newMessage = Message("Me", text)
+        MessageManager.sendMessageForUser(user, newMessage)
 
-        usersAdapter.updateData(MessageManager.getLastMessagesForAllUsers())
+        val messages = MessageManager.getMessagesForUser(user)
+        chatAdapter?.notifyItemInserted(messages.size - 1)
+        recyclerChatMessages.scrollToPosition(messages.size - 1)
+
+        messageInput.text.clear()
+        refreshInboxData()
     }
 
-    private fun showNewMessageMode() {
-        isNewMessageMode = true
+    private fun openChat(user: String) {
+        activeChatUser = user
+        MessageManager.markAsRead(user)
 
-        searchUsers.visibility = View.VISIBLE
-        chatInputBar.visibility = View.GONE
-        chatHeader.visibility = View.GONE
+        chatHeaderTitle.text = user
+        chatHeaderSubtitle.text = "Active now"
 
-        usersAdapter.updateData(MessageManager.getAllUsersAsMessageList())
+        val messages = MessageManager.getMessagesForUser(user)
+        chatAdapter = ChatAdapter(messages)
+        recyclerChatMessages.layoutManager = LinearLayoutManager(this).apply {
+            stackFromEnd = true
+        }
+        recyclerChatMessages.adapter = chatAdapter
+
+        if (messages.isNotEmpty()) {
+            recyclerChatMessages.scrollToPosition(messages.size - 1)
+        }
+
+        inboxContainer.visibility = View.GONE
+        chatContainer.visibility = View.VISIBLE
     }
 
-    private fun showChatMode() {
-        searchUsers.visibility = View.GONE
-        chatInputBar.visibility = View.VISIBLE
-        chatHeader.visibility = View.VISIBLE
+    private fun closeChat() {
+        activeChatUser = null
+        chatContainer.visibility = View.GONE
+        inboxContainer.visibility = View.VISIBLE
+        refreshInboxData()
+    }
+
+    private fun setupBackNavigation() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (chatContainer.visibility == View.VISIBLE) {
+                    closeChat()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
+    }
+
+    private fun refreshInboxData() {
+        val conversations = MessageManager.getConversationsList()
+        inboxAdapter.updateData(conversations)
+        inboxAdapter.applyFilter(currentFilter, currentSearchQuery)
+
+        val totalUnread = MessageManager.getTotalUnreadCount()
+        tabUnread.text = if (totalUnread > 0) "Unread · $totalUnread" else "Unread"
     }
 
     override fun onResume() {
         super.onResume()
-        usersAdapter.updateData(MessageManager.getLastMessagesForAllUsers())
-        activeUser?.let { user ->
+        fetchRealAppUsersFromFirestore()
+        refreshInboxData()
+        activeChatUser?.let { user ->
+            val messages = MessageManager.getMessagesForUser(user)
             chatAdapter?.notifyDataSetChanged()
-            recyclerChat.scrollToPosition(MessageManager.getMessagesForUser(user).size - 1)
+            if (messages.isNotEmpty()) {
+                recyclerChatMessages.scrollToPosition(messages.size - 1)
+            }
         }
     }
 }

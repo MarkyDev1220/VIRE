@@ -37,7 +37,7 @@ class TournamentDetailsActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_tournament_details)
 
-        setupHamburgerMenu()
+        setupStandardBottomNav(BottomTab.COMPETE)
 
         @Suppress("DEPRECATION")
         currentTournament = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

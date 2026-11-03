@@ -1,12 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/friendsRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/circuit_bg"
     android:fitsSystemWindows="true"
     android:paddingStart="16dp"
     android:paddingEnd="16dp"
-    android:paddingTop="28dp"
-    android:paddingBottom="16dp">
+    android:paddingTop="12dp">
 
     <!-- Header Row -->
     <RelativeLayout
@@ -19,12 +21,12 @@
             android:id="@+id/friendsHeader"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Friends"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="@color/circuit_text_primary"
             android:layout_alignParentStart="true"
-            android:layout_centerVertical="true" />
+            android:layout_centerVertical="true"
+            android:text="Friends"
+            android:textColor="@color/circuit_text_primary"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/addFriendHeaderButton"
@@ -33,11 +35,11 @@
             android:layout_height="38dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:text="+ Add Friend"
             android:backgroundTint="@color/circuit_lime"
+            android:text="+ Add Friend"
             android:textColor="@color/circuit_black"
-            android:textStyle="bold"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:textStyle="bold" />
 
     </RelativeLayout>
 
@@ -46,24 +48,24 @@
         android:id="@+id/searchInputFriends"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Search friends"
-        android:textColor="@color/circuit_text_primary"
-        android:textColorHint="@color/circuit_text_muted"
-        android:background="@drawable/edit_text_bg"
         android:layout_below="@id/friendsHeaderRow"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/edit_text_bg"
+        android:hint="Search friends"
         android:inputType="text"
-        android:layout_marginBottom="12dp"/>
+        android:textColor="@color/circuit_text_primary"
+        android:textColorHint="@color/circuit_text_muted" />
 
     <!-- Friends List -->
     <ListView
         android:id="@+id/friendsListView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_below="@id/searchInputFriends"
         android:layout_above="@id/requestsHeader"
+        android:layout_below="@id/searchInputFriends"
+        android:layout_marginBottom="8dp"
         android:divider="@color/circuit_divider"
-        android:dividerHeight="1dp"
-        android:layout_marginBottom="8dp"/>
+        android:dividerHeight="1dp" />
 
     <TextView
         android:id="@+id/emptyFriendsText"
@@ -72,10 +74,10 @@
         android:layout_below="@id/searchInputFriends"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="24dp"
+        android:gravity="center"
         android:text="No friends added yet. Tap 'Find Players' or 'Search' in the menu to connect!"
         android:textColor="@color/circuit_text_secondary"
         android:textSize="14sp"
-        android:gravity="center"
         android:visibility="gone" />
 
     <!-- Pending Requests Header -->
@@ -83,22 +85,22 @@
         android:id="@+id/requestsHeader"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Pending Requests"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="@color/circuit_text_primary"
         android:layout_above="@id/requestsListView"
-        android:layout_marginBottom="4dp"/>
+        android:layout_marginBottom="4dp"
+        android:text="Pending Requests"
+        android:textColor="@color/circuit_text_primary"
+        android:textSize="18sp"
+        android:textStyle="bold" />
 
     <!-- Pending Requests List -->
     <ListView
         android:id="@+id/requestsListView"
         android:layout_width="match_parent"
-        android:layout_height="140dp"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="80dp"
+        android:layout_height="120dp"
+        android:layout_above="@id/bottomNav"
+        android:layout_marginBottom="8dp"
         android:divider="@color/circuit_divider"
-        android:dividerHeight="1dp"/>
+        android:dividerHeight="1dp" />
 
     <TextView
         android:id="@+id/emptyRequestsText"
@@ -106,23 +108,17 @@
         android:layout_height="wrap_content"
         android:layout_alignTop="@id/requestsListView"
         android:layout_marginTop="16dp"
+        android:gravity="center"
         android:text="No pending friend requests."
         android:textColor="@color/circuit_text_muted"
         android:textSize="14sp"
-        android:gravity="center"
         android:visibility="gone" />
 
-    <!-- Hamburger menu fixed bottom-right -->
-    <ImageButton
-        android:id="@+id/hamburgerButton"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_margin="16dp"
-        android:background="@drawable/circle_bg"
-        android:src="@drawable/ic_menu_hamburger"
-        android:contentDescription="Menu"
-        android:tint="@color/circuit_black" />
+    <!-- Bottom Navigation Bar -->
+    <include
+        layout="@layout/layout_bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_alignParentBottom="true" />
 
 </RelativeLayout>
