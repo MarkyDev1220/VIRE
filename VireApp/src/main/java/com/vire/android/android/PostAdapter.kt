@@ -38,12 +38,15 @@ class PostAdapter(
         val likeButton = view.findViewById<Button>(R.id.likeButton)
         val commentButton = view.findViewById<Button>(R.id.commentButton)
         val commentsContainer = view.findViewById<LinearLayout>(R.id.commentsContainer)
+        val actionsButton = view.findViewById<ImageButton>(R.id.btnPostActions)
 
         val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: "demo_user"
 
         // Username + content
         usernameText.text = post.username
         contentText.text = post.content
+        actionsButton.visibility = if (post.id.isNotBlank() && post.authorUid.isNotBlank()) View.VISIBLE else View.GONE
+        actionsButton.setOnClickListener { TrustSafetyManager.showPostActions(context, post) }
 
         // Image support
         if (!post.imageUri.isNullOrEmpty()) {

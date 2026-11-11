@@ -16,7 +16,8 @@ import com.vire.android.R
 class CommunityPostAdapter(
     initial: List<CommunityPost> = emptyList(),
     private val currentUid: String = "",
-    private val onLikeClick: (CommunityPost) -> Unit
+    private val onLikeClick: (CommunityPost) -> Unit,
+    private val onActionsClick: (CommunityPost) -> Unit = {}
 ) : ListAdapter<CommunityPost, CommunityPostAdapter.VH>(DIFF) {
 
     init {
@@ -39,6 +40,7 @@ class CommunityPostAdapter(
         private val tvContent: TextView = itemView.findViewById(R.id.postContent)
         private val ivPostImage: ImageView = itemView.findViewById(R.id.postImage)
         private val btnLike: Button = itemView.findViewById(R.id.btnLikePost)
+        private val btnActions: android.widget.ImageButton = itemView.findViewById(R.id.btnCommunityPostActions)
 
         fun bind(p: CommunityPost) {
             tvName.text = p.authorName
@@ -74,6 +76,7 @@ class CommunityPostAdapter(
             }
 
             btnLike.setOnClickListener { onLikeClick(p) }
+            btnActions.setOnClickListener { onActionsClick(p) }
         }
     }
 

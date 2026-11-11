@@ -13,6 +13,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -60,6 +61,8 @@ class MessagesActivity : BaseActivity() {
     private var currentFilter = InboxConversationAdapter.FilterType.ALL
     private var currentSearchQuery = ""
     private var activeChatUser: String? = null
+    private var blockedUserIds: Set<String> = emptySet()
+    private var blockedUsernames: Set<String> = emptySet()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,33 +93,44 @@ class MessagesActivity : BaseActivity() {
         val auth = try { com.google.firebase.auth.FirebaseAuth.getInstance() } catch (e: Exception) { null }
         val currentUid = auth?.currentUser?.uid
 
-        try {
-            com.google.firebase.firestore.FirebaseFirestore.getInstance()
-                .collection("users")
-                .get()
-                .addOnSuccessListener { querySnapshot ->
-                    val userList = mutableListOf<String>()
-                    for (doc in querySnapshot) {
-                        val uid = doc.id
-                        if (uid == currentUid) continue
-                        val username = doc.getString("username")
-                            ?: doc.getString("fullName")
-                            ?: doc.getString("name")
-                            ?: ""
-                        if (username.isNotBlank()) {
-                            userList.add(username)
-                            MessageManager.registerUser(username)
+        TrustSafetyManager.getBlockedUsers { blockedUsers ->
+            blockedUserIds = blockedUsers.mapTo(mutableSetOf()) { it.uid }
+            blockedUsernames = blockedUsers.map { it.username.trim().lowercase() }.filter { it.isNotBlank() }.toSet()
+            try {
+                com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .get()
+                    .addOnSuccessListener { querySnapshot ->
+                        val userList = mutableListOf<String>()
+                        for (doc in querySnapshot) {
+                            val uid = doc.id
+                            if (uid == currentUid || uid in blockedUserIds) continue
+                            val username = doc.getString("username")
+                                ?: doc.getString("fullName")
+                                ?: doc.getString("name")
+                                ?: ""
+                            if (username.isNotBlank() && username.lowercase() !in blockedUsernames) {
+                                userList.add(username)
+                                MessageManager.registerUser(username)
+                            }
                         }
+                        val sortedUsers = userList.distinct().sorted()
+                        inlineSearchAdapter.updateUsers(sortedUsers)
+                        onLoaded?.invoke(sortedUsers)
+                        refreshInboxData()
+                        if (activeChatUser?.lowercase()?.let { it in blockedUsernames } == true) closeChat()
                     }
-                    val sortedUsers = userList.distinct().sorted()
-                    inlineSearchAdapter.updateUsers(sortedUsers)
-                    onLoaded?.invoke(sortedUsers)
-                }
-                .addOnFailureListener {
-                    onLoaded?.invoke(getAllKnownUsers())
-                }
-        } catch (_: Exception) {
-            onLoaded?.invoke(getAllKnownUsers())
+                    .addOnFailureListener {
+                        val allowedUsers = getAllKnownUsers().filter { it.lowercase() !in blockedUsernames }
+                        inlineSearchAdapter.updateUsers(allowedUsers)
+                        onLoaded?.invoke(allowedUsers)
+                        refreshInboxData()
+                        if (activeChatUser?.lowercase()?.let { it in blockedUsernames } == true) closeChat()
+                    }
+            } catch (_: Exception) {
+                val allowedUsers = getAllKnownUsers().filter { it.lowercase() !in blockedUsernames }
+                onLoaded?.invoke(allowedUsers)
+            }
         }
     }
 
@@ -345,6 +359,11 @@ class MessagesActivity : BaseActivity() {
 
     private fun sendCurrentMessage() {
         val user = activeChatUser ?: return
+        if (user.lowercase() in blockedUsernames) {
+            Toast.makeText(this, "Unblock this player before messaging", Toast.LENGTH_SHORT).show()
+            closeChat()
+            return
+        }
         val text = messageInput.text.toString().trim()
         if (text.isEmpty()) return
 
@@ -360,6 +379,10 @@ class MessagesActivity : BaseActivity() {
     }
 
     private fun openChat(user: String) {
+        if (user.lowercase() in blockedUsernames) {
+            Toast.makeText(this, "This player is blocked", Toast.LENGTH_SHORT).show()
+            return
+        }
         activeChatUser = user
         MessageManager.markAsRead(user)
 
@@ -403,6 +426,7 @@ class MessagesActivity : BaseActivity() {
 
     private fun refreshInboxData() {
         val conversations = MessageManager.getConversationsList()
+            .filter { it.name.lowercase() !in blockedUsernames }
         inboxAdapter.updateData(conversations)
         inboxAdapter.applyFilter(currentFilter, currentSearchQuery)
 

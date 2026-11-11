@@ -81,7 +81,8 @@ class CommunityDetailsActivity : BaseActivity() {
                 CommunityManager.toggleLikePost(post.id, community.id, currentUid) {
                     loadPosts()
                 }
-            }
+            },
+            onActionsClick = { post -> TrustSafetyManager.showCommunityPostActions(this, post) }
         )
         recyclerPosts.adapter = postAdapter
 
@@ -119,8 +120,11 @@ class CommunityDetailsActivity : BaseActivity() {
     private fun loadPosts() {
         val communityId = currentCommunity?.id ?: return
         CommunityManager.getPostsForCommunity(communityId) { posts ->
-            postAdapter.submitList(posts)
-            emptyPostsText.visibility = if (posts.isEmpty()) View.VISIBLE else View.GONE
+            TrustSafetyManager.getBlockedUserIds { blocked ->
+                val visiblePosts = posts.filter { it.authorUid !in blocked }
+                postAdapter.submitList(visiblePosts)
+                emptyPostsText.visibility = if (visiblePosts.isEmpty()) View.VISIBLE else View.GONE
+            }
         }
     }
 

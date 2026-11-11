@@ -139,33 +139,47 @@ class SettingsActivity : BaseActivity() {
     }
 
     private fun performAccountDeletion() {
-        val auth = FirebaseAuth.getInstance()
-        val user = auth.currentUser
-
+        val user = FirebaseAuth.getInstance().currentUser
         if (user == null) {
             clearUserSession(this)
-            Toast.makeText(this, "Session cleared", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "No signed-in account was found", Toast.LENGTH_SHORT).show()
             finishDeletionAndRedirect()
             return
         }
 
         val uid = user.uid
+        val userRef = FirebaseFirestore.getInstance().collection("users").document(uid)
+        userRef.collection("blockedUsers").get()
+            .addOnSuccessListener { blockedUsers ->
+                val batch = FirebaseFirestore.getInstance().batch()
+                blockedUsers.documents.forEach { batch.delete(it.reference) }
+                batch.commit()
+                    .addOnSuccessListener {
+                        userRef.delete()
+                            .addOnSuccessListener {
+                                user.delete()
+                                    .addOnSuccessListener { finishDeletionAndRedirect() }
+                                    .addOnFailureListener { error ->
+                                        showDeletionFailure(
+                                            "Your profile data was removed, but Firebase could not delete the sign-in account: ${error.message}. Sign in again and retry."
+                                        )
+                                    }
+                            }
+                            .addOnFailureListener { error ->
+                                showDeletionFailure("Could not remove your profile data: ${error.message}")
+                            }
+                    }
+                    .addOnFailureListener { error ->
+                        showDeletionFailure("Could not remove your blocked-user data: ${error.message}")
+                    }
+            }
+            .addOnFailureListener { error ->
+                showDeletionFailure("Could not prepare account data cleanup: ${error.message}")
+            }
+    }
 
-        // Try deleting Firebase Auth user
-        user.delete().addOnSuccessListener {
-            // Delete Firestore user document
-            try {
-                FirebaseFirestore.getInstance().collection("users").document(uid).delete()
-            } catch (_: Exception) {}
-
-            finishDeletionAndRedirect()
-        }.addOnFailureListener { e ->
-            Toast.makeText(
-                this,
-                "Account deletion failed: ${e.message}. Please log out, log back in, and try again.",
-                Toast.LENGTH_LONG
-            ).show()
-        }
+    private fun showDeletionFailure(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     private fun finishDeletionAndRedirect() {

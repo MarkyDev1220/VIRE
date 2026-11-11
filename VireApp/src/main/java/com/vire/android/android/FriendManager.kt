@@ -16,11 +16,16 @@ object FriendManager {
         val senderUid = currentUid() ?: return onResult(false)
         if (senderUid == receiverUid) return onResult(false)
 
-        // Check if already friends or if request already exists
-        isFriend(receiverUid) { alreadyFriends ->
-            if (alreadyFriends) return@isFriend onResult(false)
+        TrustSafetyManager.isBlocked(receiverUid) { blocked ->
+            if (blocked) {
+                onResult(false)
+                return@isBlocked
+            }
+            // Check if already friends or if request already exists
+            isFriend(receiverUid) { alreadyFriends ->
+                if (alreadyFriends) return@isFriend onResult(false)
 
-            db.collection("friendRequests")
+                db.collection("friendRequests")
                 .whereEqualTo("fromUid", senderUid)
                 .whereEqualTo("toUid", receiverUid)
                 .whereEqualTo("status", "pending")
@@ -46,20 +51,21 @@ object FriendManager {
                             .addOnFailureListener { onResult(true) }
                     }
                 }
-                .addOnFailureListener {
-                    val data = hashMapOf(
-                        "fromUid" to senderUid,
-                        "toUid" to receiverUid,
-                        "status" to "pending",
-                        "createdAt" to Timestamp.now()
-                    )
-                    db.collection("friendRequests").add(data)
-                        .addOnSuccessListener {
-                            dispatchFriendRequestNotification(senderUid, receiverUid)
-                            onResult(true)
-                        }
-                        .addOnFailureListener { onResult(true) }
-                }
+                    .addOnFailureListener {
+                        val data = hashMapOf(
+                            "fromUid" to senderUid,
+                            "toUid" to receiverUid,
+                            "status" to "pending",
+                            "createdAt" to Timestamp.now()
+                        )
+                        db.collection("friendRequests").add(data)
+                            .addOnSuccessListener {
+                                dispatchFriendRequestNotification(senderUid, receiverUid)
+                                onResult(true)
+                            }
+                            .addOnFailureListener { onResult(true) }
+                    }
+            }
         }
     }
 

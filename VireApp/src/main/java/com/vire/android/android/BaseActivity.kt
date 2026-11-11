@@ -10,7 +10,6 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.vire.android.R
@@ -49,16 +48,23 @@ open class BaseActivity : AppCompatActivity() {
 
     private fun applyStatusBarInsets() {
         val rootChild = findViewById<ViewGroup>(android.R.id.content)?.getChildAt(0) ?: return
+        val initialLeft = rootChild.paddingLeft
+        val initialTop = rootChild.paddingTop
+        val initialRight = rootChild.paddingRight
+        val initialBottom = rootChild.paddingBottom
+
         ViewCompat.setOnApplyWindowInsetsListener(rootChild) { view, insets ->
-            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val displayCutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
             view.setPadding(
-                view.paddingLeft,
-                statusBarHeight,
-                view.paddingRight,
-                view.paddingBottom
+                initialLeft + maxOf(systemBars.left, displayCutout.left),
+                initialTop + maxOf(systemBars.top, displayCutout.top),
+                initialRight + maxOf(systemBars.right, displayCutout.right),
+                initialBottom + maxOf(systemBars.bottom, displayCutout.bottom)
             )
             insets
         }
+        ViewCompat.requestApplyInsets(rootChild)
     }
 
     override fun onResume() {

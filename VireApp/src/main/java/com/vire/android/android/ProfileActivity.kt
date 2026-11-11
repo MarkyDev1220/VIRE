@@ -123,9 +123,6 @@ class ProfileActivity : BaseActivity() {
         profileMessageButton = findViewById(R.id.btnProfileMessage)
         editPenButton = findViewById(R.id.editPenButton)
 
-        findViewById<View>(R.id.btnProfileSettings).setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
         findViewById<TextView>(R.id.profileTabActivity).setOnClickListener {
             findViewById<ScrollView>(R.id.scrollViewRoot).smoothScrollTo(0, profileFeedListView.top)
         }
@@ -191,13 +188,25 @@ class ProfileActivity : BaseActivity() {
         emailText.visibility = View.GONE
 
         val isSelf = (uid == loggedInUid)
+        val profileActionButton = findViewById<ImageButton>(R.id.btnProfileSettings)
         if (isSelf) {
+            profileActionButton.setImageResource(R.drawable.ic_settings)
+            profileActionButton.contentDescription = "Settings"
+            profileActionButton.setOnClickListener {
+                startActivity(Intent(this, SettingsActivity::class.java))
+            }
             addFriendButton.visibility = View.GONE
             profileMessageButton.visibility = View.GONE
             editPenButton.visibility = View.VISIBLE
             changeProfilePicButton.visibility = View.VISIBLE
             changeCoverButton.visibility = View.VISIBLE
         } else {
+            profileActionButton.setImageResource(R.drawable.ic_more_vert)
+            profileActionButton.contentDescription = "Report or block player"
+            profileActionButton.setOnClickListener {
+                val displayName = usernameText.text.toString().substringAfter(":").trim().ifBlank { "Player" }
+                TrustSafetyManager.showProfileActions(this, uid, displayName)
+            }
             addFriendButton.visibility = View.VISIBLE
             profileMessageButton.visibility = View.VISIBLE
             editPenButton.visibility = View.GONE
@@ -472,8 +481,25 @@ class ProfileActivity : BaseActivity() {
             val genderSpinner = dialogView.findViewById<Spinner>(R.id.editGender)
             val themeBtn = dialogView.findViewById<Button>(R.id.editThemeButtonDialog)
 
-            val user = loadUser(this)
+            val genders = arrayOf(
+                "Not specified",
+                "Male",
+                "Female",
+                "Non-binary",
+                "Transgender Male",
+                "Transgender Female",
+                "Other / Prefer not to say"
+            )
+            val genderAdapter = ArrayAdapter(
+                this,
+                android.R.layout.simple_spinner_item,
+                genders
+            ).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+            genderSpinner.adapter = genderAdapter
 
+            val user = loadUser(this)
             user?.let {
                 firstNameInput.setText(it.firstName)
                 lastNameInput.setText(it.lastName)
@@ -487,9 +513,16 @@ class ProfileActivity : BaseActivity() {
                 gamerBioInput.setText(it.gamerBio)
                 dobInput.setText(it.dateOfBirth)
 
-                val genders = arrayOf("Not specified", "Male", "Female", "Non-binary", "Other")
-                val genderIdx = genders.indexOfFirst { g -> g.equals(it.gender, ignoreCase = true) }
-                if (genderIdx >= 0) genderSpinner.setSelection(genderIdx)
+                val normalizedGender = when {
+                    it.gender.equals("Not set", ignoreCase = true) ||
+                        it.gender.equals("Not specified", ignoreCase = true) -> "Not specified"
+                    it.gender.equals("Other", ignoreCase = true) -> "Other / Prefer not to say"
+                    else -> it.gender
+                }
+                val genderIdx = genders.indexOfFirst { option ->
+                    option.equals(normalizedGender, ignoreCase = true)
+                }
+                genderSpinner.setSelection(genderIdx.takeIf { index -> index >= 0 } ?: 0)
             }
 
             dobInput.inputType = InputType.TYPE_NULL
@@ -536,10 +569,19 @@ class ProfileActivity : BaseActivity() {
                         is13Plus = user?.is13Plus ?: true
                     )
                     saveUser(updatedUser, this)
-                    saveUserToFirestore(updatedUser)
-
-                    Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show()
-                    currentUid?.let { loadUserProfile(it) }
+                    saveUserToFirestore(updatedUser) { saved ->
+                        if (saved) {
+                            Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show()
+                            currentUid?.let { loadUserProfile(it) }
+                        } else {
+                            genderText.text = "Gender: ${updatedUser.gender}"
+                            Toast.makeText(
+                                this,
+                                "Profile changes are saved on this device but could not sync to your account.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
@@ -548,11 +590,16 @@ class ProfileActivity : BaseActivity() {
         }
     }
 
-    private fun saveUserToFirestore(user: User) {
-        val uid = currentUid ?: return
+    private fun saveUserToFirestore(user: User, onResult: (Boolean) -> Unit) {
+        val uid = currentUid
+        if (uid.isNullOrBlank()) {
+            onResult(false)
+            return
+        }
         val db = try {
             FirebaseFirestore.getInstance()
         } catch (e: IllegalStateException) {
+            onResult(false)
             return
         }
 
@@ -575,12 +622,8 @@ class ProfileActivity : BaseActivity() {
 
         db.collection("users").document(uid)
             .set(data as Map<String, Any>, com.google.firebase.firestore.SetOptions.merge())
-            .addOnSuccessListener {
-                Toast.makeText(this, "Profile updated successfully!", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener {
-                Toast.makeText(this, "Profile updated locally", Toast.LENGTH_SHORT).show()
-            }
+            .addOnSuccessListener { onResult(true) }
+            .addOnFailureListener { onResult(false) }
     }
 
     private fun convertUriToBase64(uri: Uri, isCover: Boolean): String? {

@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.googleServices)
+    alias(libs.plugins.firebaseCrashlytics)
 }
 
 android {
@@ -11,7 +12,7 @@ android {
         applicationId = "com.vire.android"
         minSdk = 30
         targetSdk = 36
-        versionCode = 10
+        versionCode = 11
         versionName = "1"
 
     }
@@ -53,6 +54,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
+    implementation(libs.firebase.crashlytics)
     implementation(libs.picasso)
 
     debugImplementation(libs.compose.ui.tooling)

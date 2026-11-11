@@ -23,6 +23,7 @@ class SearchActivity : BaseActivity() {
     private val categories = listOf("All", "Username", "Favorite Game", "Local Area", "Skill Level")
 
     private val allSearchItems = mutableListOf<UserSearchItem>()
+    private var blockedUserIds: Set<String> = emptySet()
 
     private val db by lazy { FirebaseFirestore.getInstance() }
     private val auth by lazy { FirebaseAuth.getInstance() }
@@ -131,20 +132,23 @@ class SearchActivity : BaseActivity() {
                     return@addOnSuccessListener
                 }
 
-                allSearchItems.clear()
-
-                for ((user, profileImageUrl) in loadedUsers) {
-                    allSearchItems.add(
-                        UserSearchItem(
-                            user = user,
-                            profileImageUrl = profileImageUrl,
-                            friendshipState = FriendManager.FriendshipState.NONE
-                        )
-                    )
+                TrustSafetyManager.getBlockedUserIds { blocked ->
+                    blockedUserIds = blocked
+                    allSearchItems.clear()
+                    for ((user, profileImageUrl) in loadedUsers) {
+                        if (user.id !in blockedUserIds) {
+                            allSearchItems.add(
+                                UserSearchItem(
+                                    user = user,
+                                    profileImageUrl = profileImageUrl,
+                                    friendshipState = FriendManager.FriendshipState.NONE
+                                )
+                            )
+                        }
+                    }
+                    progressBar.visibility = View.GONE
+                    filterUsers()
                 }
-
-                progressBar.visibility = View.GONE
-                filterUsers()
             }
             .addOnFailureListener { e ->
                 progressBar.visibility = View.GONE
@@ -183,6 +187,7 @@ class SearchActivity : BaseActivity() {
 
         val filtered = allSearchItems.filter { item ->
             val user = item.user
+            if (user.id in blockedUserIds) return@filter false
             if (query.isEmpty()) return@filter true
 
             val matchesUsername = user.username.lowercase().contains(query)
@@ -204,7 +209,7 @@ class SearchActivity : BaseActivity() {
 
         if (filtered.isEmpty() && query.length >= 2) {
             FriendManager.findUserByQuery(query) { matchedUser ->
-                if (matchedUser != null && matchedUser.id != auth.currentUser?.uid) {
+                if (matchedUser != null && matchedUser.id != auth.currentUser?.uid && matchedUser.id !in blockedUserIds) {
                     if (allSearchItems.none { it.user.id == matchedUser.id }) {
                         FriendManager.getFriendshipState(matchedUser.id) { state, reqId ->
                             val newItem = UserSearchItem(user = matchedUser, friendshipState = state, requestId = reqId)

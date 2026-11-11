@@ -21,6 +21,7 @@ class HomeActivity : BaseActivity() {
     private lateinit var createPostPrompt: TextView
     private var allFeedPosts: List<Post> = emptyList()
     private var selectedFeed = "For you"
+    private var blockedUserIds: Set<String> = emptySet()
 
     private var cachedUsername: String = "User"
 
@@ -112,7 +113,10 @@ class HomeActivity : BaseActivity() {
     private fun refreshFeed() {
         FeedManager.fetchGlobalFeed { list ->
             allFeedPosts = list
-            applySelectedFeed()
+            TrustSafetyManager.getBlockedUserIds { blocked ->
+                blockedUserIds = blocked
+                applySelectedFeed()
+            }
         }
     }
 
@@ -132,18 +136,19 @@ class HomeActivity : BaseActivity() {
     }
 
     private fun applySelectedFeed() {
+        val visiblePosts = allFeedPosts.filter { it.authorUid !in blockedUserIds }
         when (selectedFeed) {
             "Following" -> FriendManager.getFriends { friendIds ->
-                showFeedPosts(allFeedPosts.filter { it.authorUid in friendIds })
+                showFeedPosts(visiblePosts.filter { it.authorUid in friendIds })
             }
             "Local" -> showFeedPosts(
-                allFeedPosts.filter {
+                visiblePosts.filter {
                     it.postType.contains("game night", ignoreCase = true) ||
                             it.postType.contains("local", ignoreCase = true) ||
                             it.postType.contains("looking for players", ignoreCase = true)
                 }
             )
-            else -> showFeedPosts(allFeedPosts)
+            else -> showFeedPosts(visiblePosts)
         }
     }
 

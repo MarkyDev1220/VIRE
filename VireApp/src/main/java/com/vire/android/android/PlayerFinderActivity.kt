@@ -19,6 +19,7 @@ class PlayerFinderActivity : BaseActivity() {
     private lateinit var playersAdapter: ArrayAdapter<String>
 
     private val displayedPlayers = mutableListOf<User>()
+    private var blockedUserIds: Set<String> = emptySet()
     private val db by lazy { FirebaseFirestore.getInstance() }
     private val auth by lazy { FirebaseAuth.getInstance() }
 
@@ -113,7 +114,10 @@ class PlayerFinderActivity : BaseActivity() {
                     )
                     displayedPlayers.add(user)
                 }
-                updatePlayerDisplay(displayedPlayers)
+                TrustSafetyManager.getBlockedUserIds { blocked ->
+                    blockedUserIds = blocked
+                    applyFilters()
+                }
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Error finding players: ${e.message}", Toast.LENGTH_LONG).show()
@@ -126,6 +130,7 @@ class PlayerFinderActivity : BaseActivity() {
         val skillQuery = skillInput.text.toString().trim()
 
         val filtered = displayedPlayers.filter { user ->
+            if (user.id in blockedUserIds) return@filter false
             val gameMatch = if (gameQuery.isNotEmpty()) {
                 user.favoriteGames.any { it.contains(gameQuery, ignoreCase = true) }
             } else true
