@@ -47,23 +47,56 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     private fun applyStatusBarInsets() {
-        val rootChild = findViewById<ViewGroup>(android.R.id.content)?.getChildAt(0) ?: return
+        val rootChild = findViewById<ViewGroup>(android.R.id.content)?.getChildAt(0)
+            ?: return
+
         val initialLeft = rootChild.paddingLeft
         val initialTop = rootChild.paddingTop
         val initialRight = rootChild.paddingRight
         val initialBottom = rootChild.paddingBottom
 
+        // Find the bottom navigation container, if this screen has one.
+        val bottomNav = rootChild.findViewById<View>(R.id.bottomNav)
+        val navLayoutParams = bottomNav?.layoutParams as? ViewGroup.MarginLayoutParams
+        val initialNavBottomMargin = navLayoutParams?.bottomMargin ?: 0
+
+        // The chat composer is pinned inside this container rather than in the shared bottom nav.
+        val chatContainer = rootChild.findViewById<View>(R.id.chatContainer)
+        val chatLayoutParams = chatContainer?.layoutParams as? ViewGroup.MarginLayoutParams
+        val initialChatBottomMargin = chatLayoutParams?.bottomMargin ?: 0
+
         ViewCompat.setOnApplyWindowInsetsListener(rootChild) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val navigationBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             val displayCutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
+
+            // Keep content clear of the status bar and display cutouts.
             view.setPadding(
                 initialLeft + maxOf(systemBars.left, displayCutout.left),
                 initialTop + maxOf(systemBars.top, displayCutout.top),
                 initialRight + maxOf(systemBars.right, displayCutout.right),
-                initialBottom + maxOf(systemBars.bottom, displayCutout.bottom)
+                initialBottom
             )
+
+            // Keep the app's bottom navigation above Android's navigation controls.
+            val params = bottomNav?.layoutParams as? ViewGroup.MarginLayoutParams
+            if (params != null) {
+                params.bottomMargin = initialNavBottomMargin + navigationBars.bottom
+                bottomNav.layoutParams = params
+            }
+
+            // Lift the chat composer above both the system navigation bar and the keyboard.
+            val chatParams = chatContainer?.layoutParams as? ViewGroup.MarginLayoutParams
+            if (chatParams != null) {
+                chatParams.bottomMargin =
+                    initialChatBottomMargin + maxOf(navigationBars.bottom, ime.bottom)
+                chatContainer.layoutParams = chatParams
+            }
+
             insets
         }
+
         ViewCompat.requestApplyInsets(rootChild)
     }
 

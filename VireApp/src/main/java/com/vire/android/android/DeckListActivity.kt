@@ -234,59 +234,67 @@ class DeckListActivity : BaseActivity() {
 
         val username = getSharedPreferences("user_prefs", MODE_PRIVATE).getString("username", "Gamer") ?: "Gamer"
 
-        val builder = AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle(if (isEdit) "Edit Deck" else "Create TCG Deck")
             .setView(view)
-            .setPositiveButton(if (isEdit) "Save" else "Create Deck") { _, _ ->
-                val deckName = etName.text.toString().trim()
-                if (deckName.isEmpty()) {
-                    Toast.makeText(this, "Deck name is required", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
+            .setPositiveButton(if (isEdit) "Save" else "Create Deck", null)
+            .setNegativeButton("Cancel", null)
+            .create()
 
-                val gameSystem = spGame.selectedItem?.toString() ?: "Magic: The Gathering"
-                val format = etFormat.text.toString().trim().ifBlank { "Standard" }
-                val description = etDesc.text.toString().trim()
-                val discordUrl = etDiscord.text.toString().trim()
-                val isPublic = cbPublic.isChecked
-                val coverImageUrl = pendingImageUri?.toString() ?: existingDeck?.coverImageUrl ?: ""
+        currentDialog = dialog
+        dialog.show()
 
-                val deck = Deck(
-                    id = existingDeck?.id ?: "",
-                    userId = existingDeck?.userId ?: "",
-                    username = username,
-                    deckName = deckName,
-                    gameSystem = gameSystem,
-                    format = format,
-                    description = description,
-                    cards = existingDeck?.cards ?: emptyList(),
-                    cardCount = existingDeck?.cards?.sumOf { it.quantity } ?: 0,
-                    coverImageUrl = coverImageUrl,
-                    discordUrl = discordUrl,
-                    isPublic = isPublic
-                )
+        // Keep the form open when validation fails; AlertDialog's default positive
+        // button listener dismisses the dialog before the validation callback runs.
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val deckName = etName.text.toString().trim()
+            if (deckName.isEmpty()) {
+                etName.error = "Deck name is required"
+                etName.requestFocus()
+                return@setOnClickListener
+            }
 
-                if (isEdit) {
-                    DeckManager.updateDeck(deck) { success ->
-                        if (success) {
-                            Toast.makeText(this, "Deck updated!", Toast.LENGTH_SHORT).show()
-                            loadDecks()
-                        }
+            etName.error = null
+            val gameSystem = spGame.selectedItem?.toString() ?: "Magic: The Gathering"
+            val format = etFormat.text.toString().trim().ifBlank { "Standard" }
+            val description = etDesc.text.toString().trim()
+            val discordUrl = etDiscord.text.toString().trim()
+            val isPublic = cbPublic.isChecked
+            val coverImageUrl = pendingImageUri?.toString() ?: existingDeck?.coverImageUrl ?: ""
+
+            val deck = Deck(
+                id = existingDeck?.id ?: "",
+                userId = existingDeck?.userId ?: "",
+                username = username,
+                deckName = deckName,
+                gameSystem = gameSystem,
+                format = format,
+                description = description,
+                cards = existingDeck?.cards ?: emptyList(),
+                cardCount = existingDeck?.cards?.sumOf { it.quantity } ?: 0,
+                coverImageUrl = coverImageUrl,
+                discordUrl = discordUrl,
+                isPublic = isPublic
+            )
+
+            if (isEdit) {
+                DeckManager.updateDeck(deck) { success ->
+                    if (success) {
+                        dialog.dismiss()
+                        Toast.makeText(this, "Deck updated!", Toast.LENGTH_SHORT).show()
+                        loadDecks()
                     }
-                } else {
-                    DeckManager.createDeck(deck) { success, _ ->
-                        if (success) {
-                            Toast.makeText(this, "Deck created!", Toast.LENGTH_SHORT).show()
-                            loadDecks()
-                        }
+                }
+            } else {
+                DeckManager.createDeck(deck) { success, _ ->
+                    if (success) {
+                        dialog.dismiss()
+                        Toast.makeText(this, "Deck created!", Toast.LENGTH_SHORT).show()
+                        loadDecks()
                     }
                 }
             }
-            .setNegativeButton("Cancel", null)
-
-        val dialog = builder.create()
-        currentDialog = dialog
-        dialog.show()
+        }
     }
 
     private fun confirmDeleteDeck(deck: Deck) {
