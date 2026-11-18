@@ -10,6 +10,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.vire.android.R
@@ -29,7 +30,6 @@ open class BaseActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        UserManager.syncFromFirestore()
     }
 
     override fun setContentView(layoutResID: Int) {
@@ -48,57 +48,17 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     private fun applyStatusBarInsets() {
-        val rootChild = findViewById<ViewGroup>(android.R.id.content)?.getChildAt(0)
-            ?: return
-
-        val initialLeft = rootChild.paddingLeft
-        val initialTop = rootChild.paddingTop
-        val initialRight = rootChild.paddingRight
-        val initialBottom = rootChild.paddingBottom
-
-        // Find the bottom navigation container, if this screen has one.
-        val bottomNav = rootChild.findViewById<View>(R.id.bottomNav)
-        val navLayoutParams = bottomNav?.layoutParams as? ViewGroup.MarginLayoutParams
-        val initialNavBottomMargin = navLayoutParams?.bottomMargin ?: 0
-
-        // The chat composer is pinned inside this container rather than in the shared bottom nav.
-        val chatContainer = rootChild.findViewById<View>(R.id.chatContainer)
-        val chatLayoutParams = chatContainer?.layoutParams as? ViewGroup.MarginLayoutParams
-        val initialChatBottomMargin = chatLayoutParams?.bottomMargin ?: 0
-
+        val rootChild = findViewById<ViewGroup>(android.R.id.content)?.getChildAt(0) ?: return
         ViewCompat.setOnApplyWindowInsetsListener(rootChild) { view, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val navigationBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            val displayCutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
-
-            // Keep content clear of the status bar and display cutouts.
+            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
             view.setPadding(
-                initialLeft + maxOf(systemBars.left, displayCutout.left),
-                initialTop + maxOf(systemBars.top, displayCutout.top),
-                initialRight + maxOf(systemBars.right, displayCutout.right),
-                initialBottom
+                view.paddingLeft,
+                statusBarHeight,
+                view.paddingRight,
+                view.paddingBottom
             )
-
-            // Keep the app's bottom navigation above Android's navigation controls.
-            val params = bottomNav?.layoutParams as? ViewGroup.MarginLayoutParams
-            if (params != null) {
-                params.bottomMargin = initialNavBottomMargin + navigationBars.bottom
-                bottomNav.layoutParams = params
-            }
-
-            // Lift the chat composer above both the system navigation bar and the keyboard.
-            val chatParams = chatContainer?.layoutParams as? ViewGroup.MarginLayoutParams
-            if (chatParams != null) {
-                chatParams.bottomMargin =
-                    initialChatBottomMargin + maxOf(navigationBars.bottom, ime.bottom)
-                chatContainer.layoutParams = chatParams
-            }
-
             insets
         }
-
-        ViewCompat.requestApplyInsets(rootChild)
     }
 
     override fun onResume() {
@@ -110,7 +70,9 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     fun setupStandardBottomNav(activeTab: BottomTab = BottomTab.NONE) {
-        val navHome = findViewById<View>(R.id.navHome) ?: return
+        if (findViewById<View>(R.id.bottomNav) == null) return
+
+        val navHome = findViewById<View>(R.id.navHome)
         val navProfile = findViewById<View>(R.id.navProfile)
         val navDecks = findViewById<View>(R.id.navDecks)
         val navCommunities = findViewById<View>(R.id.navCommunities)
@@ -135,32 +97,26 @@ open class BaseActivity : AppCompatActivity() {
             label?.setTextColor(color)
         }
 
-        navHome.setOnClickListener {
+        navHome?.setOnClickListener {
             if (this !is HomeActivity) {
                 startActivity(Intent(this, HomeActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 })
             }
         }
         navProfile?.setOnClickListener {
-            if (this !is ProfileActivity) {
-                startActivity(Intent(this, ProfileActivity::class.java))
-            }
+            if (this !is ProfileActivity) startActivity(Intent(this, ProfileActivity::class.java))
         }
         navDecks?.setOnClickListener {
-            if (this !is DeckListActivity) {
-                startActivity(Intent(this, DeckListActivity::class.java))
-            }
+            if (this !is DeckListActivity) startActivity(Intent(this, DeckListActivity::class.java))
         }
         navCommunities?.setOnClickListener {
-            if (this !is CommunityListActivity) {
-                startActivity(Intent(this, CommunityListActivity::class.java))
-            }
+            if (this !is CommunityListActivity) startActivity(Intent(this, CommunityListActivity::class.java))
         }
         navMenu?.setOnClickListener { view -> showHamburgerMenu(view) }
     }
 
-    fun showHamburgerMenu(@Suppress("UNUSED_PARAMETER") anchor: View? = null) {
+    fun showHamburgerMenu(anchor: View) {
         val items = listOf(
             Pair("🏠", "Home"),
             Pair("🔔", "Notifications"),

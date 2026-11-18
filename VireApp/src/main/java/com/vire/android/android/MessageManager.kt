@@ -1,123 +1,216 @@
 package com.vire.android.android
 
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.Timestamp
+
 object MessageManager {
 
-    // Map each user/group to their own list of messages
-    private val messagesMap = mutableMapOf<String, MutableList<Message>>()
+    private val db by lazy { FirebaseFirestore.getInstance() }
+    private val uidByUsername = mutableMapOf<String, String>()
+    private val displayNames = mutableListOf<String>()
+    private var activeMessagesListener: ListenerRegistration? = null
+    private var activeListenerGeneration = 0
+    private var activeHiddenMessageIds: Set<String> = emptySet()
 
-    // Map user/group to unread message count
-    private val unreadMap = mutableMapOf<String, Int>()
-
-    // Set of group conversation names
-    private val groupSet = mutableSetOf<String>()
-
-    // Custom time labels for conversations
-    private val timeLabelMap = mutableMapOf<String, String>()
-
-    // List of ALL real users in the system (for new message search)
-    private val allUsers = mutableSetOf<String>()
-
-    // Clear all conversations or reset
-    fun clearAll() {
-        messagesMap.clear()
-        unreadMap.clear()
-        groupSet.clear()
-        timeLabelMap.clear()
-        allUsers.clear()
-    }
-
-    // Register real app users
-    fun setRegisteredUsers(usernames: List<String>) {
-        allUsers.clear()
-        allUsers.addAll(usernames)
-    }
-
-    // Register a user
-    fun registerUser(username: String) {
-        if (username.isNotBlank()) {
-            allUsers.add(username)
-            messagesMap.getOrPut(username) { mutableListOf() }
+    fun setRegisteredUsers(users: Map<String, String>) {
+        uidByUsername.clear()
+        displayNames.clear()
+        users.forEach { (username, uid) ->
+            if (username.isNotBlank() && uid.isNotBlank()) {
+                uidByUsername[username.lowercase()] = uid
+                displayNames.add(username)
+            }
         }
     }
 
-    // Get all messages for a specific user
-    fun getMessagesForUser(user: String): MutableList<Message> =
-        messagesMap.getOrPut(user) { mutableListOf() }
-
-    // Send a message to a specific user's chat
-    fun sendMessageForUser(user: String, message: Message) {
-        messagesMap.getOrPut(user) { mutableListOf() }.add(message)
-        allUsers.add(user)
-        unreadMap[user] = 0
-        timeLabelMap[user] = "Just now"
-    }
-
-    // Simulate receiving a message from a specific user
-    fun receiveMessageForUser(user: String, message: Message) {
-        messagesMap.getOrPut(user) { mutableListOf() }.add(message)
-        allUsers.add(user)
-        unreadMap[user] = (unreadMap[user] ?: 0) + 1
-        timeLabelMap[user] = "Just now"
-    }
-
-    // Mark a specific conversation as read
-    fun markAsRead(user: String) {
-        unreadMap[user] = 0
-    }
-
-    // Mark all conversations as read
-    fun markAllAsRead() {
-        for (key in messagesMap.keys) {
-            unreadMap[key] = 0
+    fun registerUser(username: String, uid: String) {
+        if (username.isNotBlank() && uid.isNotBlank()) {
+            uidByUsername[username.lowercase()] = uid
+            if (displayNames.none { it.equals(username, ignoreCase = true) }) displayNames.add(username)
         }
     }
 
-    // Total unread messages across all conversations
-    fun getTotalUnreadCount(): Int {
-        return unreadMap.values.sum()
-    }
+    fun getUserId(username: String): String? = uidByUsername[username.lowercase()]
 
-    // Unread count for a specific user
-    fun getUnreadCount(user: String): Int {
-        return unreadMap[user] ?: 0
-    }
+    fun getAllUsernames(): List<String> = displayNames.toList()
 
-    // Rich conversations list for Inbox (only shows active chats with messages)
-    fun getConversationsList(): List<ConversationItem> {
-        return messagesMap
-            .filter { entry -> entry.value.isNotEmpty() }
-            .map { (user, messages) ->
-                val lastMsg = messages.lastOrNull()
-                val lastContent = lastMsg?.content ?: "Start a conversation"
-                val time = timeLabelMap[user] ?: if (lastMsg != null) {
-                    formatTimestamp(lastMsg.timestamp)
-                } else {
-                    "Recent"
+    fun conversationId(firstUid: String, secondUid: String): String =
+        listOf(firstUid, secondUid).sorted().joinToString("_")
+
+    fun listenToConversation(
+        conversationId: String,
+        currentUid: String,
+        onMessages: (List<Message>) -> Unit
+    ) {
+        activeMessagesListener?.remove()
+        val generation = ++activeListenerGeneration
+        activeHiddenMessageIds = emptySet()
+        val settingsRef = db.collection("users").document(currentUid)
+            .collection("messageSettings").document(conversationId)
+        settingsRef.get().addOnSuccessListener { settings ->
+            if (generation != activeListenerGeneration) return@addOnSuccessListener
+            activeHiddenMessageIds = (settings.get("deletedMessageIds") as? List<*>)
+                ?.filterIsInstance<String>()?.toSet().orEmpty()
+            activeMessagesListener = db.collection("conversations")
+                .document(conversationId)
+                .collection("messages")
+                .orderBy("timestamp")
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null || snapshot == null) return@addSnapshotListener
+                    val messages = snapshot.documents.mapNotNull { document ->
+                        if (document.id in activeHiddenMessageIds) return@mapNotNull null
+                        val senderUid = document.getString("senderUid") ?: return@mapNotNull null
+                        val content = document.getString("content") ?: return@mapNotNull null
+                        Message(
+                            id = document.id,
+                            sender = if (senderUid == currentUid) "Me" else (document.getString("senderName") ?: "Gamer"),
+                            content = content,
+                            timestamp = document.getTimestamp("timestamp")?.toDate()?.time ?: System.currentTimeMillis(),
+                            senderUid = senderUid
+                        )
+                    }
+                    onMessages(messages)
                 }
-                val unread = unreadMap[user] ?: 0
-                val isGroup = groupSet.contains(user)
-
-                ConversationItem(
-                    id = user,
-                    name = user,
-                    lastMessage = lastContent,
-                    timeFormatted = time,
-                    unreadCount = unread,
-                    isGroup = isGroup
-                )
-            }.sortedWith(
-                compareByDescending<ConversationItem> { it.unreadCount > 0 }
-                    .thenBy { it.name }
-            )
+        }
     }
 
-    private fun formatTimestamp(timestamp: Long): String {
-        val diff = System.currentTimeMillis() - timestamp
-        val seconds = diff / 1000
-        val minutes = seconds / 60
+    fun stopListening() {
+        activeListenerGeneration++
+        activeMessagesListener?.remove()
+        activeMessagesListener = null
+    }
+
+    fun sendMessage(
+        currentUid: String,
+        currentUsername: String,
+        otherUid: String,
+        otherUsername: String,
+        content: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        val conversationId = conversationId(currentUid, otherUid)
+        val conversationRef = db.collection("conversations").document(conversationId)
+        val messageRef = conversationRef.collection("messages").document()
+        val participants = listOf(currentUid, otherUid)
+        val names = mapOf(currentUid to currentUsername, otherUid to otherUsername)
+        val batch = db.batch()
+
+        batch.set(
+            conversationRef,
+            mapOf(
+                "participantUids" to participants,
+                "participantNames" to names,
+                "lastMessage" to content,
+                "lastSenderUid" to currentUid,
+                "updatedAt" to FieldValue.serverTimestamp()
+            ),
+            SetOptions.merge()
+        )
+        batch.set(
+            messageRef,
+            mapOf(
+                "senderUid" to currentUid,
+                "senderName" to currentUsername,
+                "content" to content,
+                "timestamp" to FieldValue.serverTimestamp()
+            )
+        )
+        batch.commit()
+            .addOnSuccessListener { onResult(true, null) }
+            .addOnFailureListener { error ->
+                onResult(false, error.localizedMessage ?: error.javaClass.simpleName)
+            }
+    }
+
+    fun loadConversations(currentUid: String, onResult: (List<ConversationItem>) -> Unit) {
+        db.collection("conversations")
+            .whereArrayContains("participantUids", currentUid)
+            .get()
+            .addOnSuccessListener { conversations ->
+                db.collection("users").document(currentUid)
+                    .collection("messageSettings")
+                    .get()
+                    .addOnSuccessListener { settingsSnapshot ->
+                        val settings = settingsSnapshot.documents.associateBy { it.id }
+                        val items = conversations.documents.mapNotNull { document ->
+                            val state = settings[document.id]
+                            val hidden = state?.getBoolean("hidden") == true
+                            val deleted = state?.getBoolean("deleted") == true
+                            if (hidden || deleted) return@mapNotNull null
+
+                            val participants = document.get("participantUids") as? List<*> ?: return@mapNotNull null
+                            val otherUid = participants.filterIsInstance<String>().firstOrNull { it != currentUid }
+                                ?: return@mapNotNull null
+                            val names = document.get("participantNames") as? Map<*, *>
+                            val otherName = names?.get(otherUid) as? String ?: "Gamer"
+                            val timestamp = document.getTimestamp("updatedAt")
+                            ConversationItem(
+                                id = document.id,
+                                name = otherName,
+                                lastMessage = document.getString("lastMessage") ?: "",
+                                timeFormatted = timestamp?.let { formatTimestamp(it) } ?: "Just now",
+                                unreadCount = 0,
+                                isGroup = participants.size > 2,
+                                otherUid = otherUid,
+                                archived = state?.getBoolean("archived") == true
+                            )
+                        }.sortedByDescending { document ->
+                            conversations.documents.firstOrNull { it.id == document.id }
+                                ?.getTimestamp("updatedAt")?.toDate()?.time ?: 0L
+                        }
+                        onResult(items)
+                    }
+                    .addOnFailureListener { error -> onResult(emptyList()) }
+            }
+            .addOnFailureListener { onResult(emptyList()) }
+    }
+
+    fun setConversationState(
+        currentUid: String,
+        conversationId: String,
+        archived: Boolean,
+        hidden: Boolean,
+        deleted: Boolean = false,
+        onResult: (Boolean) -> Unit
+    ) {
+        db.collection("users").document(currentUid)
+            .collection("messageSettings").document(conversationId)
+            .set(
+                mapOf(
+                    "archived" to archived,
+                    "hidden" to hidden,
+                    "deleted" to deleted,
+                    "updatedAt" to FieldValue.serverTimestamp()
+                ),
+                SetOptions.merge()
+            )
+            .addOnSuccessListener { onResult(true) }
+            .addOnFailureListener { onResult(false) }
+    }
+
+    fun hideMessageForUser(currentUid: String, conversationId: String, messageId: String, onResult: (Boolean) -> Unit) {
+        if (messageId.isBlank()) {
+            onResult(false)
+            return
+        }
+        db.collection("users").document(currentUid)
+            .collection("messageSettings").document(conversationId)
+            .set(mapOf("deletedMessageIds" to FieldValue.arrayUnion(messageId)), SetOptions.merge())
+            .addOnSuccessListener {
+                activeHiddenMessageIds = activeHiddenMessageIds + messageId
+                onResult(true)
+            }
+            .addOnFailureListener { onResult(false) }
+    }
+
+    private fun formatTimestamp(timestamp: Timestamp): String {
+        val diff = (System.currentTimeMillis() - timestamp.toDate().time).coerceAtLeast(0L)
+        val minutes = diff / 60_000
         val hours = minutes / 60
         val days = hours / 24
-
         return when {
             minutes < 1 -> "Just now"
             minutes < 60 -> "${minutes}m"
@@ -127,21 +220,4 @@ object MessageManager {
             else -> "Recent"
         }
     }
-
-    fun getAllMessages(): List<Message> = messagesMap.values.flatten()
-
-    fun getLastMessagesForAllUsers(): List<Pair<String, Message?>> {
-        return messagesMap.map { entry ->
-            val lastMessage = entry.value.lastOrNull()
-            entry.key to lastMessage
-        }.toList()
-    }
-
-    fun getAllUsersAsMessageList(): List<Pair<String, Message?>> {
-        return allUsers.map { username ->
-            username to messagesMap[username]?.lastOrNull()
-        }
-    }
-
-    fun getAllUsernames(): List<String> = allUsers.toList()
 }

@@ -19,7 +19,6 @@ class PlayerFinderActivity : BaseActivity() {
     private lateinit var playersAdapter: ArrayAdapter<String>
 
     private val displayedPlayers = mutableListOf<User>()
-    private var blockedUserIds: Set<String> = emptySet()
     private val db by lazy { FirebaseFirestore.getInstance() }
     private val auth by lazy { FirebaseAuth.getInstance() }
 
@@ -91,24 +90,17 @@ class PlayerFinderActivity : BaseActivity() {
 
     private fun loadPlayers() {
         val currentUid = auth.currentUser?.uid
-        db.collection(UserDirectory.COLLECTION).get()
+        db.collection("users").get()
             .addOnSuccessListener { result ->
                 displayedPlayers.clear()
                 for (doc in result) {
                     val uid = doc.id
                     if (uid == currentUid) continue
 
-                    val name = doc.getString("username")
-                        ?: doc.getString("fullName")
-                        ?: doc.getString("displayName")
-                        ?: doc.getString("name")
-                        ?: doc.getString("email")?.substringBefore("@")
-                        ?: "Gamer"
-
                     val user = User(
                         id = uid,
-                        username = name,
-                        email = doc.getString("email") ?: doc.getString("emailAddress") ?: "",
+                        username = doc.getString("username") ?: "Unknown",
+                        email = doc.getString("email") ?: "",
                         gender = doc.getString("gender") ?: "",
                         dateOfBirth = doc.getString("dateOfBirth") ?: "",
                         favoriteGames = (doc.get("favoriteGames") as? List<*>)?.filterIsInstance<String>()
@@ -121,11 +113,7 @@ class PlayerFinderActivity : BaseActivity() {
                     )
                     displayedPlayers.add(user)
                 }
-                UserManager.setUsers(displayedPlayers)
-                TrustSafetyManager.getBlockedUserIds { blocked ->
-                    blockedUserIds = blocked
-                    applyFilters()
-                }
+                updatePlayerDisplay(displayedPlayers)
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Error finding players: ${e.message}", Toast.LENGTH_LONG).show()
@@ -138,7 +126,6 @@ class PlayerFinderActivity : BaseActivity() {
         val skillQuery = skillInput.text.toString().trim()
 
         val filtered = displayedPlayers.filter { user ->
-            if (user.id in blockedUserIds) return@filter false
             val gameMatch = if (gameQuery.isNotEmpty()) {
                 user.favoriteGames.any { it.contains(gameQuery, ignoreCase = true) }
             } else true

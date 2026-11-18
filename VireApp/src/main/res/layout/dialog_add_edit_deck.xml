@@ -72,6 +72,23 @@
             android:inputType="textMultiLine"
             android:lines="3" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Deck List (one card per line; optional quantity like Card Name x4)"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/editDeckCardList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top|start"
+            android:hint="Sol Ring x1&#10;Arcane Signet x1&#10;Mountain x20"
+            android:inputType="textMultiLine|textCapSentences"
+            android:minLines="4" />
+
         <!-- Discord Match Room Link -->
         <TextView
             android:layout_width="wrap_content"

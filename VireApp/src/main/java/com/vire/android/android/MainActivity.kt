@@ -2,6 +2,7 @@ package com.vire.android.android
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Patterns
@@ -29,46 +30,13 @@ class MainActivity : AppCompatActivity() {
         val isLogout = intent.getBooleanExtra("is_logout", false)
 
         val currentUser = auth.currentUser
-        if (!isLogout && currentUser != null) {
-            db.collection("users").document(currentUser.uid).get()
-                .addOnSuccessListener { doc ->
-                    if (doc.exists()) {
-                        val email = currentUser.email.orEmpty()
-                        val username = doc.getString("username")
-                            ?: email.substringBefore("@").ifBlank { "Gamer" }
-                        db.collection(UserDirectory.COLLECTION)
-                            .document(currentUser.uid)
-                            .set(
-                                UserDirectory.fromPrivateData(currentUser.uid, doc.data.orEmpty()),
-                                com.google.firebase.firestore.SetOptions.merge()
-                            )
-                            .addOnSuccessListener {
-                                saveLocalSession(currentUser.uid, username, email)
-                                startActivity(Intent(this, HomeActivity::class.java))
-                                finish()
-                            }
-                            .addOnFailureListener { e ->
-                                Toast.makeText(
-                                    this,
-                                    "Could not sync your searchable profile: ${e.localizedMessage}",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-                    } else {
-                        Toast.makeText(
-                            this,
-                            "Your account profile is missing. Sign up with the same email to finish setup.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-                .addOnFailureListener { e ->
-                    Toast.makeText(
-                        this,
-                        "Could not load your profile from Firestore: ${e.localizedMessage}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+        val prefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val savedUid = prefs.getString("uid", null)
+
+        if (!isLogout && (currentUser != null || savedUid != null)) {
+            startActivity(Intent(this, HomeActivity::class.java))
+            finish()
+            return
         }
 
         setupTcgEntranceAnimation()
@@ -83,16 +51,42 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            if (!Patterns.EMAIL_ADDRESS.matcher(emailOrUsername).matches()) {
-                binding.emailOrUsernameEditText.error = "Enter the email used for this account"
-                Toast.makeText(
-                    this,
-                    "Sign in with your email address. Usernames are not used to look up private email addresses.",
-                    Toast.LENGTH_LONG
-                ).show()
-                return@setOnClickListener
+            if (emailOrUsername.contains("@")) {
+                if (!Patterns.EMAIL_ADDRESS.matcher(emailOrUsername).matches()) {
+                    binding.emailOrUsernameEditText.error = "Enter a valid email"
+                    return@setOnClickListener
+                }
+                performFirebaseLogin(emailOrUsername, password)
+            } else {
+                db.collection("users")
+                    .whereEqualTo("usernameLowercase", emailOrUsername.lowercase())
+                    .get()
+                    .addOnSuccessListener { result ->
+                        val matchedDoc = result.documents.firstOrNull()
+                        val email = matchedDoc?.getString("email")
+                        if (!email.isNullOrEmpty()) {
+                            performFirebaseLogin(email, password)
+                        } else {
+                            db.collection("users")
+                                .whereEqualTo("username", emailOrUsername)
+                                .get()
+                                .addOnSuccessListener { res2 ->
+                                    val email2 = res2.documents.firstOrNull()?.getString("email")
+                                    if (!email2.isNullOrEmpty()) {
+                                        performFirebaseLogin(email2, password)
+                                    } else {
+                                        Toast.makeText(this, "Username not found", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(this, "Username not found", Toast.LENGTH_SHORT).show()
+                                }
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "Login failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                    }
             }
-            performFirebaseLogin(emailOrUsername, password)
         }
 
         binding.signUpButton.setOnClickListener {
@@ -245,40 +239,22 @@ class MainActivity : AppCompatActivity() {
                     .addOnSuccessListener { doc ->
                         if (doc.exists()) {
                             val username = doc.getString("username") ?: email.substringBefore("@")
-                            db.collection(UserDirectory.COLLECTION)
-                                .document(uid)
-                                .set(
-                                    UserDirectory.fromPrivateData(uid, doc.data.orEmpty()),
-                                    com.google.firebase.firestore.SetOptions.merge()
-                                )
-                                .addOnSuccessListener {
-                                    saveLocalSession(uid, username, email)
-                                    Toast.makeText(this, "Welcome back, $username!", Toast.LENGTH_SHORT).show()
-                                    startActivity(Intent(this, HomeActivity::class.java))
-                                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-                                    finish()
-                                }
-                                .addOnFailureListener { e ->
-                                    Toast.makeText(
-                                        this,
-                                        "Could not sync your searchable profile: ${e.localizedMessage}",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
+                            saveLocalSession(uid, username, email)
+                            Toast.makeText(this, "Welcome back, $username!", Toast.LENGTH_SHORT).show()
+                            startActivity(Intent(this, HomeActivity::class.java))
+                            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+                            finish()
                         } else {
-                            Toast.makeText(
-                                this,
-                                "Your account exists, but its profile is missing. Sign up with the same email to finish setup.",
-                                Toast.LENGTH_LONG
-                            ).show()
+                            // Document does not exist - account was deleted
+                            auth.signOut()
+                            Toast.makeText(this, "This account has been deleted.", Toast.LENGTH_LONG).show()
                         }
                     }
-                    .addOnFailureListener { e ->
-                        Toast.makeText(
-                            this,
-                            "Signed in, but Firestore could not load your profile: ${e.localizedMessage}",
-                            Toast.LENGTH_LONG
-                        ).show()
+                    .addOnFailureListener {
+                        saveLocalSession(uid, email.substringBefore("@"), email)
+                        startActivity(Intent(this, HomeActivity::class.java))
+                        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+                        finish()
                     }
             }
             .addOnFailureListener { e ->
@@ -296,7 +272,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun saveLocalSession(uid: String, username: String, email: String = "") {
-        val prefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
+        val prefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         prefs.edit()
             .putString("uid", uid)
             .putString("username", username)

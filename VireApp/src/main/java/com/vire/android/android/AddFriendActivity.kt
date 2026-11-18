@@ -64,7 +64,12 @@ class AddFriendActivity : AppCompatActivity() {
                 if (success) {
                     Toast.makeText(this, "Friend request sent to ${target.username}!", Toast.LENGTH_LONG).show()
                     previewSendBtn.text = "Request Pending"
-                    previewSendBtn.setBackgroundColor(Color.parseColor("#9E9E9E"))
+                    previewSendBtn.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                        androidx.core.content.ContextCompat.getColor(this, R.color.circuit_lime)
+                    )
+                    previewSendBtn.setTextColor(
+                        androidx.core.content.ContextCompat.getColor(this, R.color.circuit_black)
+                    )
                 } else {
                     previewSendBtn.isEnabled = true
                     Toast.makeText(this, "Request already sent or user is already your friend.", Toast.LENGTH_LONG).show()
@@ -113,22 +118,39 @@ class AddFriendActivity : AppCompatActivity() {
                         FriendManager.FriendshipState.FRIENDS -> {
                             previewSendBtn.text = "Friends ✓"
                             previewSendBtn.isEnabled = false
-                            previewSendBtn.setBackgroundColor(Color.parseColor("#616161"))
+                            previewSendBtn.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                                androidx.core.content.ContextCompat.getColor(this, R.color.circuit_text_muted)
+                            )
                         }
                         FriendManager.FriendshipState.PENDING_SENT -> {
                             previewSendBtn.text = "Request Pending"
                             previewSendBtn.isEnabled = false
-                            previewSendBtn.setBackgroundColor(Color.parseColor("#9E9E9E"))
+                            previewSendBtn.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                                androidx.core.content.ContextCompat.getColor(this, R.color.circuit_lime)
+                            )
+                            previewSendBtn.setTextColor(
+                                androidx.core.content.ContextCompat.getColor(this, R.color.circuit_black)
+                            )
                         }
                         FriendManager.FriendshipState.PENDING_RECEIVED -> {
                             previewSendBtn.text = "Accept Request"
                             previewSendBtn.isEnabled = true
-                            previewSendBtn.setBackgroundColor(Color.parseColor("#388E3C"))
+                            previewSendBtn.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                                androidx.core.content.ContextCompat.getColor(this, R.color.circuit_lime)
+                            )
+                            previewSendBtn.setTextColor(
+                                androidx.core.content.ContextCompat.getColor(this, R.color.circuit_black)
+                            )
                         }
                         FriendManager.FriendshipState.NONE -> {
                             previewSendBtn.text = "Send Friend Request"
                             previewSendBtn.isEnabled = true
-                            previewSendBtn.setBackgroundColor(Color.parseColor("#388E3C"))
+                            previewSendBtn.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                                androidx.core.content.ContextCompat.getColor(this, R.color.circuit_lime)
+                            )
+                            previewSendBtn.setTextColor(
+                                androidx.core.content.ContextCompat.getColor(this, R.color.circuit_black)
+                            )
                         }
                     }
                 }

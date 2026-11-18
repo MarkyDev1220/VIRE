@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/bottomNav"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:background="@color/circuit_bottom_nav"
+    android:orientation="horizontal"
+    android:baselineAligned="false">
+
+    <LinearLayout
+        android:id="@+id/navHome"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:background="?android:attr/selectableItemBackground">
+
+        <ImageView
+            android:id="@+id/iconHome"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_home"
+            app:tint="@color/circuit_text_secondary"
+            android:contentDescription="Home" />
+
+        <TextView
+            android:id="@+id/textHome"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Home"
+            android:textSize="11sp"
+            android:textColor="@color/circuit_text_secondary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/navProfile"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:background="?android:attr/selectableItemBackground">
+
+        <ImageView
+            android:id="@+id/iconProfile"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_profile"
+            app:tint="@color/circuit_text_secondary"
+            android:contentDescription="Profile" />
+
+        <TextView
+            android:id="@+id/textProfile"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Profile"
+            android:textSize="11sp"
+            android:textColor="@color/circuit_text_secondary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/navDecks"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:background="?android:attr/selectableItemBackground">
+
+        <ImageView
+            android:id="@+id/iconDecks"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_gallery"
+            app:tint="@color/circuit_text_secondary"
+            android:contentDescription="Decks" />
+
+        <TextView
+            android:id="@+id/textDecks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Decks"
+            android:textSize="11sp"
+            android:textColor="@color/circuit_text_secondary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/navCommunities"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:background="?android:attr/selectableItemBackground">
+
+        <ImageView
+            android:id="@+id/iconCommunities"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_friends"
+            app:tint="@color/circuit_text_secondary"
+            android:contentDescription="Communities" />
+
+        <TextView
+            android:id="@+id/textCommunities"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Communities"
+            android:textSize="11sp"
+            android:textColor="@color/circuit_text_secondary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/navMenu"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:background="?android:attr/selectableItemBackground">
+
+        <ImageView
+            android:id="@+id/iconMenu"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_menu_hamburger"
+            app:tint="@color/circuit_text_secondary"
+            android:contentDescription="Menu" />
+
+        <TextView
+            android:id="@+id/textMenu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Menu"
+            android:textSize="11sp"
+            android:textColor="@color/circuit_text_secondary" />
+    </LinearLayout>
+
+</LinearLayout>

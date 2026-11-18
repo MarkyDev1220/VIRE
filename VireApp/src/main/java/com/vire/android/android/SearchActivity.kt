@@ -23,7 +23,6 @@ class SearchActivity : BaseActivity() {
     private val categories = listOf("All", "Username", "Favorite Game", "Local Area", "Skill Level")
 
     private val allSearchItems = mutableListOf<UserSearchItem>()
-    private var blockedUserIds: Set<String> = emptySet()
 
     private val db by lazy { FirebaseFirestore.getInstance() }
     private val auth by lazy { FirebaseAuth.getInstance() }
@@ -81,19 +80,10 @@ class SearchActivity : BaseActivity() {
 
     private fun loadAllUsers() {
         val currentUid = auth.currentUser?.uid
-        if (currentUid == null) {
-            progressBar.visibility = View.GONE
-            allSearchItems.clear()
-            adapter.submitList(emptyList())
-            emptyText.text = "Sign in to search for users."
-            emptyText.visibility = View.VISIBLE
-            return
-        }
-
         progressBar.visibility = View.VISIBLE
         emptyText.visibility = View.GONE
 
-        db.collection(UserDirectory.COLLECTION).get()
+        db.collection("users").get()
             .addOnSuccessListener { result ->
                 allSearchItems.clear()
                 val loadedUsers = mutableListOf<Pair<User, String?>>()
@@ -141,91 +131,49 @@ class SearchActivity : BaseActivity() {
                     return@addOnSuccessListener
                 }
 
-                UserManager.setUsers(loadedUsers.map { it.first })
+                allSearchItems.clear()
 
-                TrustSafetyManager.getBlockedUserIds { blocked ->
-                    blockedUserIds = blocked
-                    FriendManager.getFriends { friendUids ->
-                        FriendManager.getPendingRequests { pendingReqs ->
-                            val pendingReqIdMap = pendingReqs.associate { it.second to it.first }
-
-                            db.collection("friendRequests")
-                                .whereEqualTo("fromUid", currentUid)
-                                .whereEqualTo("status", "pending")
-                                .get()
-                                .addOnSuccessListener { sentSnap ->
-                                    val sentReqIdMap = sentSnap.documents.mapNotNull { doc ->
-                                        val to = doc.getString("toUid") ?: return@mapNotNull null
-                                        to to doc.id
-                                    }.toMap()
-
-                                    populateSearchItems(loadedUsers, friendUids, pendingReqIdMap, sentReqIdMap, currentUid)
-                                }
-                                .addOnFailureListener {
-                                    populateSearchItems(loadedUsers, friendUids, pendingReqIdMap, emptyMap(), null)
-                                }
-                        }
-                    }
+                for ((user, profileImageUrl) in loadedUsers) {
+                    allSearchItems.add(
+                        UserSearchItem(
+                            user = user,
+                            profileImageUrl = profileImageUrl,
+                            friendshipState = FriendManager.FriendshipState.NONE
+                        )
+                    )
                 }
+
+                progressBar.visibility = View.GONE
+                filterUsers()
             }
             .addOnFailureListener { e ->
                 progressBar.visibility = View.GONE
-                val isPermissionDenied =
-                    e.message?.contains("PERMISSION_DENIED", ignoreCase = true) == true
-                val isDatabaseConfigurationError =
-                    e.message?.contains("NOT_FOUND", ignoreCase = true) == true ||
+                val isFirestoreNotConfigured = e.message?.contains("PERMISSION_DENIED", ignoreCase = true) == true ||
+                        e.message?.contains("NOT_FOUND", ignoreCase = true) == true ||
                         e.message?.contains("disabled", ignoreCase = true) == true ||
                         e.message?.contains("does not exist", ignoreCase = true) == true
 
-                Log.w("SearchActivity", "Firestore error loading users: ${e.message}", e)
-                val errorMessage = when {
-                    isPermissionDenied ->
-                        "Firestore denied access to public profiles. Check the signed-in account and public profile rules."
-                    isDatabaseConfigurationError ->
-                        "The Firestore database is unavailable. Check the Firebase project configuration."
-                    else -> "Error loading users: ${e.localizedMessage}"
+                val msg = if (isFirestoreNotConfigured) {
+                    "Cloud Firestore database is disabled or not created in Firebase Console for project 'vire-7b583'. Showing sample gamers."
+                } else {
+                    "Error loading users: ${e.message}"
                 }
-                Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
-                allSearchItems.clear()
-                adapter.submitList(emptyList())
-                emptyText.text = "Users could not be loaded. Please try again."
-                emptyText.visibility = View.VISIBLE
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                Log.e("SearchActivity", "Firestore error: ${e.message}", e)
+                loadDemoUsers()
             }
     }
 
-    private fun populateSearchItems(
-        loadedUsers: List<Pair<User, String?>>,
-        friendUids: List<String>,
-        pendingReqIdMap: Map<String, String>,
-        sentReqIdMap: Map<String, String>,
-        currentUid: String?
-    ) {
+    private fun loadDemoUsers() {
         allSearchItems.clear()
-        for ((user, profileImageUrl) in loadedUsers) {
-            if (user.id !in blockedUserIds) {
-                val state = when {
-                    currentUid != null && user.id == currentUid -> FriendManager.FriendshipState.NONE
-                    friendUids.contains(user.id) -> FriendManager.FriendshipState.FRIENDS
-                    sentReqIdMap.containsKey(user.id) -> FriendManager.FriendshipState.PENDING_SENT
-                    pendingReqIdMap.containsKey(user.id) -> FriendManager.FriendshipState.PENDING_RECEIVED
-                    else -> FriendManager.FriendshipState.NONE
-                }
-                val reqId = when (state) {
-                    FriendManager.FriendshipState.PENDING_SENT -> sentReqIdMap[user.id]
-                    FriendManager.FriendshipState.PENDING_RECEIVED -> pendingReqIdMap[user.id]
-                    else -> null
-                }
-                allSearchItems.add(
-                    UserSearchItem(
-                        user = user,
-                        profileImageUrl = profileImageUrl,
-                        friendshipState = state,
-                        requestId = reqId
-                    )
+        for (user in FriendManager.getDemoUsers()) {
+            allSearchItems.add(
+                UserSearchItem(
+                    user = user,
+                    friendshipState = FriendManager.FriendshipState.NONE
                 )
-            }
+            )
         }
-        progressBar.visibility = View.GONE
         filterUsers()
     }
 
@@ -235,10 +183,10 @@ class SearchActivity : BaseActivity() {
 
         val filtered = allSearchItems.filter { item ->
             val user = item.user
-            if (user.id in blockedUserIds) return@filter false
             if (query.isEmpty()) return@filter true
 
             val matchesUsername = user.username.lowercase().contains(query)
+            val matchesEmail = user.email.lowercase().contains(query)
             val matchesArea = user.localArea.lowercase().contains(query)
             val matchesSkill = user.skillLevel.lowercase().contains(query)
             val matchesGame = user.favoriteGames.any { it.lowercase().contains(query) }
@@ -246,17 +194,17 @@ class SearchActivity : BaseActivity() {
             val matchesBio = user.gamerBio.lowercase().contains(query)
 
             when (category) {
-                "Username" -> matchesUsername
+                "Username" -> matchesUsername || matchesEmail
                 "Favorite Game" -> matchesGame
                 "Local Area" -> matchesArea
                 "Skill Level" -> matchesSkill
-                else -> matchesUsername || matchesArea || matchesSkill || matchesGame || matchesGenre || matchesBio
+                else -> matchesUsername || matchesEmail || matchesArea || matchesSkill || matchesGame || matchesGenre || matchesBio
             }
         }
 
         if (filtered.isEmpty() && query.length >= 2) {
             FriendManager.findUserByQuery(query) { matchedUser ->
-                if (matchedUser != null && matchedUser.id != auth.currentUser?.uid && matchedUser.id !in blockedUserIds) {
+                if (matchedUser != null && matchedUser.id != auth.currentUser?.uid) {
                     if (allSearchItems.none { it.user.id == matchedUser.id }) {
                         FriendManager.getFriendshipState(matchedUser.id) { state, reqId ->
                             val newItem = UserSearchItem(user = matchedUser, friendshipState = state, requestId = reqId)
