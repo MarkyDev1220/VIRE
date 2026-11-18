@@ -19,7 +19,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
-import com.squareup.picasso.Picasso
 import com.vire.android.R
 import java.io.ByteArrayOutputStream
 import java.util.*
@@ -63,16 +62,23 @@ class ProfileActivity : BaseActivity() {
     private var currentUid: String? = null
 
     private val pickImageLauncher = registerForActivityResult(
-        ActivityResultContracts.GetContent()
+        ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         val uid = currentUid ?: return@registerForActivityResult
         uri?.let {
+            try {
+                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (error: SecurityException) {
+                Log.w("ProfileActivity", "Could not persist image access", error)
+            }
             if (changingCoverPhoto) {
                 selectedCoverUri = uri
+                persistSelectedImageLocally(uri, isCover = true)
                 profileSafeLoad(uri, coverPhoto)
                 uploadImageToStorage(uid, uri, "coverImageUrl")
             } else {
                 selectedProfileUri = uri
+                persistSelectedImageLocally(uri, isCover = false)
                 profileSafeLoad(uri, profileImage)
                 uploadImageToStorage(uid, uri, "profileImageUrl")
             }
@@ -218,12 +224,12 @@ class ProfileActivity : BaseActivity() {
 
         changeProfilePicButton.setOnClickListener {
             changingCoverPhoto = false
-            pickImageLauncher.launch("image/*")
+            pickImageLauncher.launch(arrayOf("image/*"))
         }
 
         changeCoverButton.setOnClickListener {
             changingCoverPhoto = true
-            pickImageLauncher.launch("image/*")
+            pickImageLauncher.launch(arrayOf("image/*"))
         }
 
         editPenButton.setOnClickListener { showEditProfileDialog() }
@@ -235,34 +241,7 @@ class ProfileActivity : BaseActivity() {
         findViewById<ImageButton>(R.id.socialtwitch)?.setOnClickListener { openSocialLink("https://twitch.tv") }
         findViewById<ImageButton>(R.id.socialkick)?.setOnClickListener { openSocialLink("https://kick.com") }
 
-        addFriendButton.setOnClickListener {
-            val currentUid = FirebaseAuth.getInstance().currentUser?.uid
-            val profileUid = intent.getStringExtra("uid") ?: return@setOnClickListener
 
-            if (currentUid == null) {
-                Toast.makeText(this, "You must be logged in.", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            if (currentUid == profileUid) {
-                Toast.makeText(this, "You cannot add yourself.", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            FriendManager.isFriend(profileUid) { isFriend ->
-                if (isFriend) {
-                    Toast.makeText(this, "Already friends.", Toast.LENGTH_SHORT).show()
-                } else {
-                    FriendManager.sendRequest(profileUid) { success ->
-                        Toast.makeText(
-                            this,
-                            if (success) "Friend request sent!" else "Failed to send request.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
-        }
     }
 
     override fun onResume() {
@@ -335,11 +314,15 @@ class ProfileActivity : BaseActivity() {
                     val profileUrl = doc.getString("profileImageUrl")
                         ?: doc.getString("profileImage")
                         ?: doc.getString("avatarUrl")
+                        ?: doc.getString("photoUrl")
+                        ?: doc.getString("profilePictureUrl")
                         ?: doc.getString("profileImageUri")
                         ?: ""
 
                     val coverUrl = doc.getString("coverImageUrl")
+                        ?: doc.getString("coverPhotoUrl")
                         ?: doc.getString("coverImage")
+                        ?: doc.getString("coverPhoto")
                         ?: doc.getString("coverUrl")
                         ?: doc.getString("coverImageUri")
                         ?: ""
@@ -351,33 +334,17 @@ class ProfileActivity : BaseActivity() {
                     val defaultAvatar = if (isMychaela) R.drawable.mychaela_avatar else R.drawable.ic_profile_placeholder
                     val defaultCover = if (isMychaela) R.drawable.mychaela_cover else R.drawable.default_cover
 
-                    if (profileUrl.isNotBlank() && !profileUrl.startsWith("content://")) {
-                        remoteSafeLoad(profileUrl, profileImage)
-                    } else {
-                        profileImage.setImageResource(defaultAvatar)
-                        try {
-                            FirebaseStorage.getInstance().reference
-                                .child("profileImages/$uid/profileImageUrl.jpg")
-                                .downloadUrl
-                                .addOnSuccessListener { downloadUrl ->
-                                    remoteSafeLoad(downloadUrl.toString(), profileImage)
-                                }
-                        } catch (_: Exception) {}
-                    }
-
-                    if (coverUrl.isNotBlank() && !coverUrl.startsWith("content://")) {
-                        remoteSafeLoad(coverUrl, coverPhoto)
-                    } else {
-                        coverPhoto.setImageResource(defaultCover)
-                        try {
-                            FirebaseStorage.getInstance().reference
-                                .child("profileImages/$uid/coverImageUrl.jpg")
-                                .downloadUrl
-                                .addOnSuccessListener { downloadUrl ->
-                                    remoteSafeLoad(downloadUrl.toString(), coverPhoto)
-                                }
-                        } catch (_: Exception) {}
-                    }
+                    val localImageUser = loadUser(this)?.takeIf { it.id == uid }
+                    val profileSource = profileUrl.takeUnless {
+                        it.isBlank() || it.startsWith("content://") || it.startsWith("file://")
+                    } ?: localImageUser?.profileImageUri?.toString()
+                        ?: "profileImages/$uid/profileImageUrl.jpg"
+                    val coverSource = coverUrl.takeUnless {
+                        it.isBlank() || it.startsWith("content://") || it.startsWith("file://")
+                    } ?: localImageUser?.coverImageUri?.toString()
+                        ?: "profileImages/$uid/coverImageUrl.jpg"
+                    remoteSafeLoad(profileSource, profileImage, defaultAvatar)
+                    remoteSafeLoad(coverSource, coverPhoto, defaultCover)
 
                     val loggedInUid = FirebaseAuth.getInstance().currentUser?.uid
                     if (uid == loggedInUid) {
@@ -395,7 +362,9 @@ class ProfileActivity : BaseActivity() {
                             skillLevel = skillLevel,
                             localArea = localArea,
                             gamerBio = gamerBio,
-                            aboutMe = aboutMe
+                            aboutMe = aboutMe,
+                            profileImageUri = selectedProfileUri ?: localImageUser?.profileImageUri,
+                            coverImageUri = selectedCoverUri ?: localImageUser?.coverImageUri
                         )
                         saveUser(currentLocalUser, this)
                     }
@@ -411,12 +380,7 @@ class ProfileActivity : BaseActivity() {
                     }
                 }
 
-                if (uid == FirebaseAuth.getInstance().currentUser?.uid) {
-                    addFriendButton.visibility = View.GONE
-                } else {
-                    addFriendButton.visibility = View.VISIBLE
-                }
-
+                refreshFriendButton(uid)
                 loadHostedGameNights(uid)
             }
             .addOnFailureListener {
@@ -429,8 +393,87 @@ class ProfileActivity : BaseActivity() {
                     profileImage.setImageResource(R.drawable.mychaela_avatar)
                     coverPhoto.setImageResource(R.drawable.mychaela_cover)
                 }
+                refreshFriendButton(uid)
                 loadHostedGameNights(uid)
             }
+    }
+
+    private fun refreshFriendButton(targetUid: String) {
+        val signedInUid = FirebaseAuth.getInstance().currentUser?.uid
+            ?: getSharedPreferences("user_prefs", Context.MODE_PRIVATE).getString("uid", null)
+        if (signedInUid.isNullOrBlank() || signedInUid == targetUid) {
+            addFriendButton.visibility = View.GONE
+            return
+        }
+
+        addFriendButton.visibility = View.VISIBLE
+        addFriendButton.isEnabled = false
+        FriendManager.getFriendshipState(targetUid) { state, requestId ->
+            if (isFinishing || currentUid != targetUid) return@getFriendshipState
+            addFriendButton.isEnabled = true
+            addFriendButton.text = when (state) {
+                FriendManager.FriendshipState.NONE -> "Add Friend"
+                FriendManager.FriendshipState.PENDING_SENT -> "Request Pending"
+                FriendManager.FriendshipState.PENDING_RECEIVED -> "Respond to Request"
+                FriendManager.FriendshipState.FRIENDS -> "Friends ▼"
+            }
+            addFriendButton.setOnClickListener {
+                when (state) {
+                    FriendManager.FriendshipState.NONE -> {
+                        addFriendButton.isEnabled = false
+                        FriendManager.sendFriendRequest(targetUid) { _, message ->
+                            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                            refreshFriendButton(targetUid)
+                        }
+                    }
+                    FriendManager.FriendshipState.PENDING_SENT ->
+                        Toast.makeText(this, "Your friend request is still pending.", Toast.LENGTH_SHORT).show()
+                    FriendManager.FriendshipState.PENDING_RECEIVED -> {
+                        val pendingRequestId = requestId
+                        if (pendingRequestId == null) {
+                            refreshFriendButton(targetUid)
+                            return@setOnClickListener
+                        }
+                        AlertDialog.Builder(this)
+                            .setTitle("Friend request")
+                            .setMessage("Accept the friend request from ${fullNameText.text}?")
+                            .setPositiveButton("Accept") { _, _ ->
+                                FriendManager.acceptRequest(pendingRequestId) { success ->
+                                    Toast.makeText(this, if (success) "You are now friends." else "Could not accept request.", Toast.LENGTH_SHORT).show()
+                                    refreshFriendButton(targetUid)
+                                }
+                            }
+                            .setNegativeButton("Decline") { _, _ ->
+                                FriendManager.declineRequest(pendingRequestId) { success ->
+                                    Toast.makeText(this, if (success) "Friend request declined." else "Could not decline request.", Toast.LENGTH_SHORT).show()
+                                    refreshFriendButton(targetUid)
+                                }
+                            }
+                            .setNeutralButton("Cancel", null)
+                            .show()
+                    }
+                    FriendManager.FriendshipState.FRIENDS -> {
+                        val menu = PopupMenu(this, addFriendButton)
+                        menu.menu.add("Unfriend")
+                        menu.setOnMenuItemClickListener {
+                            AlertDialog.Builder(this)
+                                .setTitle("Unfriend ${fullNameText.text}?")
+                                .setMessage("They will no longer be on your friends list.")
+                                .setPositiveButton("Unfriend") { _, _ ->
+                                    FriendManager.removeFriend(targetUid) { success ->
+                                        Toast.makeText(this, if (success) "Friend removed." else "Could not remove friend.", Toast.LENGTH_SHORT).show()
+                                        refreshFriendButton(targetUid)
+                                    }
+                                }
+                                .setNegativeButton("Cancel", null)
+                                .show()
+                            true
+                        }
+                        menu.show()
+                    }
+                }
+            }
+        }
     }
 
     private fun loadFromLocalUserPrefs() {
@@ -446,8 +489,16 @@ class ProfileActivity : BaseActivity() {
         skillLevelText.text = "Skill Level: ${u.skillLevel.ifBlank { "Not specified" }}"
         localAreaText.text = "Local Gaming Area: ${u.localArea.ifBlank { "Not specified" }}"
         gamerBioText.text = "Gamer Bio: ${u.gamerBio.ifBlank { "No gamer bio added yet" }}"
-        profileImage.setImageResource(R.drawable.ic_profile_placeholder)
-        coverPhoto.setImageResource(R.drawable.default_cover)
+        ProfileImageLoader.load(
+            u.profileImageUri?.toString() ?: "profileImages/${u.id}/profileImageUrl.jpg",
+            profileImage,
+            R.drawable.ic_profile_placeholder
+        )
+        ProfileImageLoader.load(
+            u.coverImageUri?.toString() ?: "profileImages/${u.id}/coverImageUrl.jpg",
+            coverPhoto,
+            R.drawable.default_cover
+        )
     }
 
     private fun loadHostedGameNights(uid: String) {
@@ -605,7 +656,7 @@ class ProfileActivity : BaseActivity() {
 
         val data = hashMapOf(
             "username" to user.username,
-            "usernameLowercase" to user.username.lowercase(),
+            "usernameLowercase" to user.username.lowercase(Locale.ROOT),
             "email" to user.email,
             "firstName" to user.firstName,
             "lastName" to user.lastName,
@@ -724,68 +775,22 @@ class ProfileActivity : BaseActivity() {
         }
     }
 
-    private fun profileSafeLoad(uri: Uri, target: ImageView) {
-        try {
-            Picasso.get().load(uri).fit().centerCrop().into(target)
-        } catch (e: Exception) {
-            try {
-                target.setImageURI(uri)
-            } catch (_: Exception) {}
-        }
+    private fun persistSelectedImageLocally(uri: Uri, isCover: Boolean) {
+        val uid = currentUid ?: return
+        val user = loadUser(this)?.takeIf { it.id == uid }
+            ?: User(id = uid, username = usernameText.text.toString().substringAfter(":").trim().ifBlank { "Gamer" }, email = "")
+        saveUser(
+            if (isCover) user.copy(coverImageUri = uri) else user.copy(profileImageUri = uri),
+            this
+        )
     }
 
-    private fun remoteSafeLoad(url: String, target: ImageView) {
+    private fun profileSafeLoad(uri: Uri, target: ImageView) {
         val placeholder = if (target.id == R.id.coverPhoto) R.drawable.default_cover else R.drawable.ic_profile_placeholder
-        if (url.isBlank()) {
-            target.setImageResource(placeholder)
-            return
-        }
+        ProfileImageLoader.load(uri.toString(), target, placeholder)
+    }
 
-        try {
-            if (url.startsWith("data:image")) {
-                val pureBase64 = url.substringAfter("base64,")
-                val decodedBytes = Base64.decode(pureBase64, Base64.DEFAULT)
-                val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-                if (bitmap != null) {
-                    target.setImageBitmap(bitmap)
-                    return
-                }
-            }
-
-            if (url.startsWith("http")) {
-                Picasso.get()
-                    .load(url)
-                    .placeholder(placeholder)
-                    .error(placeholder)
-                    .fit()
-                    .centerCrop()
-                    .into(target)
-                return
-            }
-
-            if (url.startsWith("content://") || url.startsWith("file://")) {
-                val uri = Uri.parse(url)
-                try {
-                    val stream = contentResolver.openInputStream(uri)
-                    if (stream != null) {
-                        stream.close()
-                        Picasso.get()
-                            .load(uri)
-                            .placeholder(placeholder)
-                            .error(placeholder)
-                            .fit()
-                            .centerCrop()
-                            .into(target)
-                        return
-                    }
-                } catch (_: Exception) {
-                    // content:// URI belongs to another physical device. Fallback to placeholder.
-                }
-            }
-
-            target.setImageResource(placeholder)
-        } catch (_: Exception) {
-            target.setImageResource(placeholder)
-        }
+    private fun remoteSafeLoad(url: String, target: ImageView, placeholder: Int) {
+        ProfileImageLoader.load(url, target, placeholder)
     }
 }

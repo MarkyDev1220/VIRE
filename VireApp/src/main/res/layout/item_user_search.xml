@@ -5,6 +5,7 @@
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="6dp"
     android:layout_marginVertical="4dp"
+    app:cardBackgroundColor="@color/circuit_card"
     app:cardCornerRadius="10dp"
     app:cardElevation="2dp"
     android:foreground="?android:attr/selectableItemBackground">
@@ -33,7 +34,9 @@
             android:layout_toStartOf="@+id/userSearchActionButton"
             android:layout_marginStart="12dp"
             android:text="Username"
-            android:textColor="#212121"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="@color/circuit_text_primary"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -47,7 +50,7 @@
             android:layout_marginStart="12dp"
             android:layout_marginTop="2dp"
             android:text="Local Area"
-            android:textColor="#666666"
+            android:textColor="@color/circuit_text_secondary"
             android:textSize="12sp" />
 
         <!-- Skill Level Badge -->
@@ -80,7 +83,7 @@
             android:ellipsize="end"
             android:maxLines="2"
             android:text="Gamer bio or favorite games..."
-            android:textColor="#757575"
+            android:textColor="@color/circuit_text_secondary"
             android:textSize="12sp" />
 
         <!-- Friend Action Button -->

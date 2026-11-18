@@ -12,8 +12,8 @@ android {
         applicationId = "com.vire.android"
         minSdk = 30
         targetSdk = 36
-        versionCode = 11
-        versionName = "1"
+        versionCode = 12
+        versionName = "2"
 
     }
     buildFeatures {

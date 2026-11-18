@@ -117,11 +117,18 @@ class FriendsActivity : BaseActivity() {
     }
 
     private fun loadFriendRequests() {
-        FriendManager.getPendingRequests { requests ->
+        FriendManager.getPendingRequests { requests, error ->
             displayedRequests.clear()
             displayedRequests.addAll(requests)
 
             val emptyReqText = findViewById<TextView>(R.id.emptyRequestsText)
+            if (error != null) {
+                requestsAdapter.clear()
+                requestsAdapter.notifyDataSetChanged()
+                emptyReqText?.visibility = View.GONE
+                Toast.makeText(this, "Could not load friend requests: $error", Toast.LENGTH_LONG).show()
+                return@getPendingRequests
+            }
             if (requests.isEmpty()) {
                 requestsAdapter.clear()
                 requestsAdapter.notifyDataSetChanged()

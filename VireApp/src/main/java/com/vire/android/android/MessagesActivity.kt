@@ -35,6 +35,8 @@ class MessagesActivity : BaseActivity() {
     private lateinit var tabAll: TextView
     private lateinit var tabUnread: TextView
     private lateinit var tabGroups: TextView
+    private lateinit var tabArchived: TextView
+    private lateinit var tabHidden: TextView
     private lateinit var cardFriendsRequests: CardView
     private lateinit var btnMarkAllRead: TextView
     private lateinit var tvSearchUsersHeader: TextView
@@ -67,6 +69,7 @@ class MessagesActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_messages)
+        MessageManager.initialize(this)
 
         bindViews()
         setupAdapters()
@@ -146,6 +149,8 @@ class MessagesActivity : BaseActivity() {
         tabAll = findViewById(R.id.tabAll)
         tabUnread = findViewById(R.id.tabUnread)
         tabGroups = findViewById(R.id.tabGroups)
+        tabArchived = findViewById(R.id.tabArchived)
+        tabHidden = findViewById(R.id.tabHidden)
         cardFriendsRequests = findViewById(R.id.cardFriendsRequests)
         btnMarkAllRead = findViewById(R.id.btnMarkAllRead)
         tvSearchUsersHeader = findViewById(R.id.tvSearchUsersHeader)
@@ -220,43 +225,30 @@ class MessagesActivity : BaseActivity() {
     }
 
     private fun setupTabs() {
-        tabAll.setOnClickListener {
-            selectTab(InboxConversationAdapter.FilterType.ALL)
-        }
-
-        tabUnread.setOnClickListener {
-            selectTab(InboxConversationAdapter.FilterType.UNREAD)
-        }
-
-        tabGroups.setOnClickListener {
-            selectTab(InboxConversationAdapter.FilterType.GROUPS)
-        }
+        tabAll.setOnClickListener { selectTab(InboxConversationAdapter.FilterType.ALL) }
+        tabUnread.setOnClickListener { selectTab(InboxConversationAdapter.FilterType.UNREAD) }
+        tabGroups.setOnClickListener { selectTab(InboxConversationAdapter.FilterType.GROUPS) }
+        tabArchived.setOnClickListener { selectTab(InboxConversationAdapter.FilterType.ARCHIVED) }
+        tabHidden.setOnClickListener { selectTab(InboxConversationAdapter.FilterType.HIDDEN) }
     }
 
     private fun selectTab(filterType: InboxConversationAdapter.FilterType) {
         currentFilter = filterType
-
-        tabAll.setBackgroundResource(
-            if (filterType == InboxConversationAdapter.FilterType.ALL) R.drawable.pill_tab_active else R.drawable.pill_tab_inactive
-        )
-        tabAll.setTextColor(
-            getColor(if (filterType == InboxConversationAdapter.FilterType.ALL) R.color.circuit_lime else R.color.circuit_text_secondary)
-        )
-
-        tabUnread.setBackgroundResource(
-            if (filterType == InboxConversationAdapter.FilterType.UNREAD) R.drawable.pill_tab_active else R.drawable.pill_tab_inactive
-        )
-        tabUnread.setTextColor(
-            getColor(if (filterType == InboxConversationAdapter.FilterType.UNREAD) R.color.circuit_lime else R.color.circuit_text_secondary)
-        )
-
-        tabGroups.setBackgroundResource(
-            if (filterType == InboxConversationAdapter.FilterType.GROUPS) R.drawable.pill_tab_active else R.drawable.pill_tab_inactive
-        )
-        tabGroups.setTextColor(
-            getColor(if (filterType == InboxConversationAdapter.FilterType.GROUPS) R.color.circuit_lime else R.color.circuit_text_secondary)
-        )
-
+        listOf(
+            tabAll to InboxConversationAdapter.FilterType.ALL,
+            tabUnread to InboxConversationAdapter.FilterType.UNREAD,
+            tabGroups to InboxConversationAdapter.FilterType.GROUPS,
+            tabArchived to InboxConversationAdapter.FilterType.ARCHIVED,
+            tabHidden to InboxConversationAdapter.FilterType.HIDDEN
+        ).forEach { (tab, tabFilter) ->
+            val selected = filterType == tabFilter
+            tab.setBackgroundResource(
+                if (selected) R.drawable.pill_tab_active else R.drawable.pill_tab_inactive
+            )
+            tab.setTextColor(
+                getColor(if (selected) R.color.circuit_lime else R.color.circuit_text_secondary)
+            )
+        }
         inboxAdapter.applyFilter(currentFilter, currentSearchQuery)
     }
 
@@ -326,25 +318,36 @@ class MessagesActivity : BaseActivity() {
     }
 
     private fun setupChat() {
-        btnChatBack.setOnClickListener {
-            closeChat()
-        }
+        btnChatBack.setOnClickListener { closeChat() }
 
         btnChatOptions.setOnClickListener { anchor ->
+            val user = activeChatUser ?: return@setOnClickListener
             val popup = PopupMenu(this, anchor)
-            popup.menu.add("Clear History")
+            popup.menu.add(if (MessageManager.isConversationArchived(user)) "Unarchive Conversation" else "Archive Conversation")
+            popup.menu.add(if (MessageManager.isConversationHidden(user)) "Unhide Conversation" else "Hide Conversation")
+            popup.menu.add("Delete Conversation")
             popup.menu.add("View Profile")
             popup.setOnMenuItemClickListener { item ->
-                when (item.title) {
-                    "View Profile" -> {
-                        startActivity(Intent(this, ProfileActivity::class.java))
+                when (item.title.toString()) {
+                    "View Profile" -> startActivity(Intent(this, ProfileActivity::class.java))
+                    "Archive Conversation", "Unarchive Conversation" -> {
+                        MessageManager.setConversationArchived(user, !MessageManager.isConversationArchived(user))
+                        closeChat()
                     }
-                    "Clear History" -> {
-                        activeChatUser?.let { user ->
-                            MessageManager.getMessagesForUser(user).clear()
-                            chatAdapter?.notifyDataSetChanged()
-                            refreshInboxData()
-                        }
+                    "Hide Conversation", "Unhide Conversation" -> {
+                        MessageManager.setConversationHidden(user, !MessageManager.isConversationHidden(user))
+                        closeChat()
+                    }
+                    "Delete Conversation" -> {
+                        AlertDialog.Builder(this)
+                            .setTitle("Delete conversation?")
+                            .setMessage("This removes the conversation and its messages from this device.")
+                            .setNegativeButton("Cancel", null)
+                            .setPositiveButton("Delete") { _, _ ->
+                                MessageManager.deleteConversation(user)
+                                closeChat()
+                            }
+                            .show()
                     }
                 }
                 true
@@ -352,9 +355,7 @@ class MessagesActivity : BaseActivity() {
             popup.show()
         }
 
-        sendMessage.setOnClickListener {
-            sendCurrentMessage()
-        }
+        sendMessage.setOnClickListener { sendCurrentMessage() }
     }
 
     private fun sendCurrentMessage() {

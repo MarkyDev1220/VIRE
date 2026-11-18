@@ -274,10 +274,17 @@ class DeckListActivity : BaseActivity() {
                         }
                     }
                 } else {
-                    DeckManager.createDeck(deck) { success, _ ->
-                        if (success) {
-                            Toast.makeText(this, "Deck created!", Toast.LENGTH_SHORT).show()
+                    DeckManager.createDeck(deck) { success, deckId ->
+                        if (success && !deckId.isNullOrBlank()) {
+                            val createdDeck = deck.copy(
+                                id = deckId,
+                                userId = FirebaseAuth.getInstance().currentUser?.uid ?: "demo_user"
+                            )
+                            Toast.makeText(this, "Deck created! Add cards to your list next.", Toast.LENGTH_SHORT).show()
+                            startActivity(Intent(this, DeckDetailsActivity::class.java).putExtra("deck", createdDeck))
                             loadDecks()
+                        } else {
+                            Toast.makeText(this, "Could not save the deck. Please try again.", Toast.LENGTH_LONG).show()
                         }
                     }
                 }

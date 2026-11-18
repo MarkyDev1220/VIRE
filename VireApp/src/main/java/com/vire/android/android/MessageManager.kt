@@ -1,123 +1,165 @@
 package com.vire.android.android
 
+import android.content.Context
+import android.content.SharedPreferences
+import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
+
 object MessageManager {
+    private const val TAG = "MessageManager"
+    private const val PREFERENCES_PREFIX = "message_store_"
 
-    // Map each user/group to their own list of messages
     private val messagesMap = mutableMapOf<String, MutableList<Message>>()
-
-    // Map user/group to unread message count
     private val unreadMap = mutableMapOf<String, Int>()
-
-    // Set of group conversation names
     private val groupSet = mutableSetOf<String>()
-
-    // Custom time labels for conversations
+    private val archivedSet = mutableSetOf<String>()
+    private val hiddenSet = mutableSetOf<String>()
     private val timeLabelMap = mutableMapOf<String, String>()
-
-    // List of ALL real users in the system (for new message search)
     private val allUsers = mutableSetOf<String>()
 
-    // Clear all conversations or reset
-    fun clearAll() {
-        messagesMap.clear()
-        unreadMap.clear()
-        groupSet.clear()
-        timeLabelMap.clear()
-        allUsers.clear()
+    private var preferences: SharedPreferences? = null
+    private var activeAccount: String? = null
+
+    @Synchronized
+    fun initialize(context: Context) {
+        val account = FirebaseAuth.getInstance().currentUser?.uid ?: "guest"
+        if (activeAccount == account) return
+
+        clearMemory()
+        activeAccount = account
+        preferences = context.applicationContext.getSharedPreferences(
+            "$PREFERENCES_PREFIX$account",
+            Context.MODE_PRIVATE
+        )
+        loadPersistedState()
     }
 
-    // Register real app users
+    @Synchronized
+    fun clearAll() {
+        clearMemory()
+        persist()
+    }
+
+    @Synchronized
     fun setRegisteredUsers(usernames: List<String>) {
         allUsers.clear()
-        allUsers.addAll(usernames)
+        allUsers.addAll(usernames.filter { it.isNotBlank() })
+        persist()
     }
 
-    // Register a user
+    @Synchronized
     fun registerUser(username: String) {
         if (username.isNotBlank()) {
             allUsers.add(username)
             messagesMap.getOrPut(username) { mutableListOf() }
+            persist()
         }
     }
 
-    // Get all messages for a specific user
     fun getMessagesForUser(user: String): MutableList<Message> =
         messagesMap.getOrPut(user) { mutableListOf() }
 
-    // Send a message to a specific user's chat
+    @Synchronized
     fun sendMessageForUser(user: String, message: Message) {
         messagesMap.getOrPut(user) { mutableListOf() }.add(message)
         allUsers.add(user)
         unreadMap[user] = 0
         timeLabelMap[user] = "Just now"
+        archivedSet.remove(user)
+        hiddenSet.remove(user)
+        persist()
     }
 
-    // Simulate receiving a message from a specific user
+    @Synchronized
     fun receiveMessageForUser(user: String, message: Message) {
         messagesMap.getOrPut(user) { mutableListOf() }.add(message)
         allUsers.add(user)
         unreadMap[user] = (unreadMap[user] ?: 0) + 1
         timeLabelMap[user] = "Just now"
+        archivedSet.remove(user)
+        persist()
     }
 
-    // Mark a specific conversation as read
+    @Synchronized
     fun markAsRead(user: String) {
         unreadMap[user] = 0
+        persist()
     }
 
-    // Mark all conversations as read
+    @Synchronized
     fun markAllAsRead() {
-        for (key in messagesMap.keys) {
-            unreadMap[key] = 0
+        messagesMap.keys.forEach { unreadMap[it] = 0 }
+        persist()
+    }
+
+    fun getTotalUnreadCount(): Int = unreadMap.values.sum()
+
+    fun getUnreadCount(user: String): Int = unreadMap[user] ?: 0
+
+    @Synchronized
+    fun setConversationArchived(user: String, archived: Boolean) {
+        if (archived) {
+            archivedSet.add(user)
+            hiddenSet.remove(user)
+        } else {
+            archivedSet.remove(user)
         }
+        persist()
     }
 
-    // Total unread messages across all conversations
-    fun getTotalUnreadCount(): Int {
-        return unreadMap.values.sum()
+    @Synchronized
+    fun setConversationHidden(user: String, hidden: Boolean) {
+        if (hidden) {
+            hiddenSet.add(user)
+            archivedSet.remove(user)
+        } else {
+            hiddenSet.remove(user)
+        }
+        persist()
     }
 
-    // Unread count for a specific user
-    fun getUnreadCount(user: String): Int {
-        return unreadMap[user] ?: 0
+    fun isConversationArchived(user: String): Boolean = user in archivedSet
+
+    fun isConversationHidden(user: String): Boolean = user in hiddenSet
+
+    @Synchronized
+    fun deleteConversation(user: String) {
+        messagesMap.remove(user)
+        unreadMap.remove(user)
+        groupSet.remove(user)
+        archivedSet.remove(user)
+        hiddenSet.remove(user)
+        timeLabelMap.remove(user)
+        persist()
     }
 
-    // Rich conversations list for Inbox (only shows active chats with messages)
     fun getConversationsList(): List<ConversationItem> {
         return messagesMap
-            .filter { entry -> entry.value.isNotEmpty() }
+            .filter { (_, messages) -> messages.isNotEmpty() }
             .map { (user, messages) ->
-                val lastMsg = messages.lastOrNull()
-                val lastContent = lastMsg?.content ?: "Start a conversation"
-                val time = timeLabelMap[user] ?: if (lastMsg != null) {
-                    formatTimestamp(lastMsg.timestamp)
-                } else {
-                    "Recent"
-                }
-                val unread = unreadMap[user] ?: 0
-                val isGroup = groupSet.contains(user)
-
+                val lastMessage = messages.last()
                 ConversationItem(
                     id = user,
                     name = user,
-                    lastMessage = lastContent,
-                    timeFormatted = time,
-                    unreadCount = unread,
-                    isGroup = isGroup
+                    lastMessage = lastMessage.content,
+                    timeFormatted = timeLabelMap[user] ?: formatTimestamp(lastMessage.timestamp),
+                    unreadCount = unreadMap[user] ?: 0,
+                    isGroup = user in groupSet,
+                    isArchived = user in archivedSet,
+                    isHidden = user in hiddenSet
                 )
-            }.sortedWith(
-                compareByDescending<ConversationItem> { it.unreadCount > 0 }
-                    .thenBy { it.name }
-            )
+            }
+            .sortedWith(compareByDescending<ConversationItem> { it.unreadCount > 0 }.thenBy { it.name })
     }
 
     private fun formatTimestamp(timestamp: Long): String {
-        val diff = System.currentTimeMillis() - timestamp
-        val seconds = diff / 1000
+        val seconds = (System.currentTimeMillis() - timestamp) / 1000
         val minutes = seconds / 60
         val hours = minutes / 60
         val days = hours / 24
-
         return when {
             minutes < 1 -> "Just now"
             minutes < 60 -> "${minutes}m"
@@ -130,18 +172,107 @@ object MessageManager {
 
     fun getAllMessages(): List<Message> = messagesMap.values.flatten()
 
-    fun getLastMessagesForAllUsers(): List<Pair<String, Message?>> {
-        return messagesMap.map { entry ->
-            val lastMessage = entry.value.lastOrNull()
-            entry.key to lastMessage
-        }.toList()
+    fun getLastMessagesForAllUsers(): List<Pair<String, Message?>> = messagesMap.map { (user, messages) ->
+        user to messages.lastOrNull()
     }
 
-    fun getAllUsersAsMessageList(): List<Pair<String, Message?>> {
-        return allUsers.map { username ->
-            username to messagesMap[username]?.lastOrNull()
-        }
+    fun getAllUsersAsMessageList(): List<Pair<String, Message?>> = allUsers.map { user ->
+        user to messagesMap[user]?.lastOrNull()
     }
 
     fun getAllUsernames(): List<String> = allUsers.toList()
+
+    private fun clearMemory() {
+        messagesMap.clear()
+        unreadMap.clear()
+        groupSet.clear()
+        archivedSet.clear()
+        hiddenSet.clear()
+        timeLabelMap.clear()
+        allUsers.clear()
+    }
+
+    private fun loadPersistedState() {
+        val storedState = preferences?.getString("state", null) ?: return
+        try {
+            val state = JSONObject(storedState)
+            val storedMessages = state.optJSONObject("messages") ?: JSONObject()
+            val users = storedMessages.keys()
+            while (users.hasNext()) {
+                val user = users.next()
+                val storedUserMessages = storedMessages.optJSONArray(user) ?: continue
+                val messages = mutableListOf<Message>()
+                for (index in 0 until storedUserMessages.length()) {
+                    val item = storedUserMessages.optJSONObject(index) ?: continue
+                    val sender = item.optString("sender")
+                    val content = item.optString("content")
+                    if (sender.isNotBlank() && content.isNotBlank()) {
+                        messages.add(Message(sender, content, item.optLong("timestamp")))
+                    }
+                }
+                if (messages.isNotEmpty()) messagesMap[user] = messages
+            }
+
+            val unread = state.optJSONObject("unread") ?: JSONObject()
+            val unreadUsers = unread.keys()
+            while (unreadUsers.hasNext()) {
+                val user = unreadUsers.next()
+                unreadMap[user] = unread.optInt(user).coerceAtLeast(0)
+            }
+            readStringArray(state.optJSONArray("groups"), groupSet)
+            readStringArray(state.optJSONArray("archived"), archivedSet)
+            readStringArray(state.optJSONArray("hidden"), hiddenSet)
+            readStringArray(state.optJSONArray("users"), allUsers)
+
+            val times = state.optJSONObject("times") ?: JSONObject()
+            val timeUsers = times.keys()
+            while (timeUsers.hasNext()) {
+                val user = timeUsers.next()
+                timeLabelMap[user] = times.optString(user)
+            }
+        } catch (error: JSONException) {
+            Log.e(TAG, "Could not restore saved messages", error)
+        }
+    }
+
+    private fun readStringArray(array: JSONArray?, destination: MutableSet<String>) {
+        if (array == null) return
+        for (index in 0 until array.length()) {
+            array.optString(index).takeIf { it.isNotBlank() }?.let(destination::add)
+        }
+    }
+
+    private fun persist() {
+        val editor = preferences?.edit() ?: return
+        try {
+            val state = JSONObject()
+            val messages = JSONObject()
+            messagesMap.forEach { (user, userMessages) ->
+                val items = JSONArray()
+                userMessages.forEach { message ->
+                    items.put(JSONObject()
+                        .put("sender", message.sender)
+                        .put("content", message.content)
+                        .put("timestamp", message.timestamp))
+                }
+                messages.put(user, items)
+            }
+            state.put("messages", messages)
+
+            val unread = JSONObject()
+            unreadMap.forEach { (user, count) -> unread.put(user, count) }
+            state.put("unread", unread)
+            state.put("groups", JSONArray(groupSet.toList()))
+            state.put("archived", JSONArray(archivedSet.toList()))
+            state.put("hidden", JSONArray(hiddenSet.toList()))
+            state.put("users", JSONArray(allUsers.toList()))
+
+            val times = JSONObject()
+            timeLabelMap.forEach { (user, label) -> times.put(user, label) }
+            state.put("times", times)
+            editor.putString("state", state.toString()).apply()
+        } catch (error: JSONException) {
+            Log.e(TAG, "Could not save messages", error)
+        }
+    }
 }

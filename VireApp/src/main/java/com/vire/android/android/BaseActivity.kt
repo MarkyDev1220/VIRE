@@ -10,7 +10,9 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.vire.android.R
 
@@ -29,6 +31,12 @@ open class BaseActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.isNavigationBarContrastEnforced = false
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
     }
 
     override fun setContentView(layoutResID: Int) {
@@ -48,20 +56,42 @@ open class BaseActivity : AppCompatActivity() {
 
     private fun applyStatusBarInsets() {
         val rootChild = findViewById<ViewGroup>(android.R.id.content)?.getChildAt(0) ?: return
+        rootChild.fitsSystemWindows = false
         val initialLeft = rootChild.paddingLeft
         val initialTop = rootChild.paddingTop
         val initialRight = rootChild.paddingRight
         val initialBottom = rootChild.paddingBottom
+        val bottomNav = rootChild.findViewById<View>(R.id.bottomNav)
+        val bottomNavHeight = bottomNav?.layoutParams?.height ?: ViewGroup.LayoutParams.WRAP_CONTENT
+        val bottomNavLeft = bottomNav?.paddingLeft ?: 0
+        val bottomNavTop = bottomNav?.paddingTop ?: 0
+        val bottomNavRight = bottomNav?.paddingRight ?: 0
+        val bottomNavBottom = bottomNav?.paddingBottom ?: 0
 
         ViewCompat.setOnApplyWindowInsetsListener(rootChild) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val displayCutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
+            val navigationBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            val bottomInset = maxOf(systemBars.bottom, displayCutout.bottom)
             view.setPadding(
                 initialLeft + maxOf(systemBars.left, displayCutout.left),
                 initialTop + maxOf(systemBars.top, displayCutout.top),
                 initialRight + maxOf(systemBars.right, displayCutout.right),
-                initialBottom + maxOf(systemBars.bottom, displayCutout.bottom)
+                initialBottom + if (bottomNav == null) bottomInset else 0
             )
+            bottomNav?.let { nav ->
+                if (bottomNavHeight > 0) {
+                    nav.layoutParams = nav.layoutParams.apply {
+                        height = bottomNavHeight + maxOf(navigationBars.bottom, displayCutout.bottom)
+                    }
+                }
+                nav.setPadding(
+                    bottomNavLeft,
+                    bottomNavTop,
+                    bottomNavRight,
+                    bottomNavBottom + maxOf(navigationBars.bottom, displayCutout.bottom)
+                )
+            }
             insets
         }
         ViewCompat.requestApplyInsets(rootChild)

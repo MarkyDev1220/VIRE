@@ -1,69 +1,91 @@
 package com.vire.android.android
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.Timestamp
 
 object FriendManager {
+    private const val TAG = "FriendManager"
 
     private val db by lazy { FirebaseFirestore.getInstance() }
 
     private fun currentUid(): String? =
         FirebaseAuth.getInstance().currentUser?.uid
 
-    /** Send a friend request from current user -> receiverUid */
+    /** Send a friend request from the current user to receiverUid. */
     fun sendRequest(receiverUid: String, onResult: (Boolean) -> Unit) {
-        val senderUid = currentUid() ?: return onResult(false)
-        if (senderUid == receiverUid) return onResult(false)
+        sendFriendRequest(receiverUid) { success, _ -> onResult(success) }
+    }
+
+    fun sendFriendRequest(receiverUid: String, onResult: (Boolean, String) -> Unit) {
+        val senderUid = currentUid()
+        if (senderUid == null) {
+            onResult(false, "Sign in to send friend requests.")
+            return
+        }
+        if (receiverUid.isBlank() || senderUid == receiverUid) {
+            onResult(false, "You cannot send a friend request to this user.")
+            return
+        }
 
         TrustSafetyManager.isBlocked(receiverUid) { blocked ->
             if (blocked) {
-                onResult(false)
+                onResult(false, "This user is blocked or their block status could not be checked.")
                 return@isBlocked
             }
-            // Check if already friends or if request already exists
+
             isFriend(receiverUid) { alreadyFriends ->
-                if (alreadyFriends) return@isFriend onResult(false)
-
-                db.collection("friendRequests")
-                .whereEqualTo("fromUid", senderUid)
-                .whereEqualTo("toUid", receiverUid)
-                .whereEqualTo("status", "pending")
-                .get()
-                .addOnSuccessListener { result ->
-                    if (!result.isEmpty) {
-                        // Request already pending
-                        onResult(false)
-                    } else {
-                        val data = hashMapOf(
-                            "fromUid" to senderUid,
-                            "toUid" to receiverUid,
-                            "status" to "pending",
-                            "createdAt" to Timestamp.now()
-                        )
-
-                        db.collection("friendRequests")
-                            .add(data)
-                            .addOnSuccessListener {
-                                dispatchFriendRequestNotification(senderUid, receiverUid)
-                                onResult(true)
-                            }
-                            .addOnFailureListener { onResult(true) }
-                    }
+                if (alreadyFriends) {
+                    onResult(false, "You are already friends with this user.")
+                    return@isFriend
                 }
-                    .addOnFailureListener {
-                        val data = hashMapOf(
-                            "fromUid" to senderUid,
-                            "toUid" to receiverUid,
-                            "status" to "pending",
-                            "createdAt" to Timestamp.now()
-                        )
-                        db.collection("friendRequests").add(data)
-                            .addOnSuccessListener {
-                                dispatchFriendRequestNotification(senderUid, receiverUid)
-                                onResult(true)
+
+                val requests = db.collection("friendRequests")
+                requests.whereEqualTo("fromUid", senderUid)
+                    .whereEqualTo("toUid", receiverUid)
+                    .whereEqualTo("status", "pending")
+                    .get()
+                    .addOnSuccessListener { outgoing ->
+                        if (!outgoing.isEmpty) {
+                            onResult(false, "Your friend request is already pending.")
+                            return@addOnSuccessListener
+                        }
+
+                        requests.whereEqualTo("fromUid", receiverUid)
+                            .whereEqualTo("toUid", senderUid)
+                            .whereEqualTo("status", "pending")
+                            .get()
+                            .addOnSuccessListener { incoming ->
+                                if (!incoming.isEmpty) {
+                                    onResult(false, "This user already sent you a request. Accept or decline it in Friends.")
+                                    return@addOnSuccessListener
+                                }
+
+                                val request = hashMapOf(
+                                    "fromUid" to senderUid,
+                                    "toUid" to receiverUid,
+                                    "status" to "pending",
+                                    "createdAt" to Timestamp.now()
+                                )
+                                requests.add(request)
+                                    .addOnSuccessListener {
+                                        dispatchFriendRequestNotification(senderUid, receiverUid)
+                                        onResult(true, "Friend request sent.")
+                                    }
+                                    .addOnFailureListener { error ->
+                                        Log.e(TAG, "Could not send friend request to $receiverUid", error)
+                                        onResult(false, "Could not send friend request: ${error.localizedMessage ?: "check your connection and try again"}")
+                                    }
                             }
-                            .addOnFailureListener { onResult(true) }
+                            .addOnFailureListener { error ->
+                                Log.e(TAG, "Could not check incoming friend requests for $senderUid", error)
+                                onResult(false, "Could not check for existing requests: ${error.localizedMessage ?: "try again"}")
+                            }
+                    }
+                    .addOnFailureListener { error ->
+                        Log.e(TAG, "Could not check outgoing friend requests for $senderUid", error)
+                        onResult(false, "Could not check for an existing request: ${error.localizedMessage ?: "try again"}")
                     }
             }
         }
@@ -123,12 +145,8 @@ object FriendManager {
                 return@findUserByQuery
             }
 
-            sendRequest(matchedUser.id) { success ->
-                if (success) {
-                    onResult(true, "Friend request sent to ${matchedUser.username}!")
-                } else {
-                    onResult(false, "Request already sent or user is already your friend.")
-                }
+            sendFriendRequest(matchedUser.id) { success, message ->
+                onResult(success, if (success) "Friend request sent to ${matchedUser.username}!" else message)
             }
         }
     }
@@ -267,114 +285,176 @@ object FriendManager {
         )
     }
 
-    /** Accept a friend request and create friendship */
+    /** Accept a pending request addressed to the signed-in user and create the friendship. */
     fun acceptRequest(requestId: String, onResult: (Boolean) -> Unit) {
-        val reqRef = db.collection("friendRequests").document(requestId)
-        db.runTransaction { tx ->
-            val snap = tx.get(reqRef)
-            val fromUid = snap.getString("fromUid") ?: return@runTransaction
-            val toUid = snap.getString("toUid") ?: return@runTransaction
+        val uid = currentUid()
+        if (uid == null || requestId.isBlank()) {
+            onResult(false)
+            return
+        }
 
-            tx.update(reqRef, "status", "accepted")
+        val requestRef = db.collection("friendRequests").document(requestId)
+        db.runTransaction { transaction ->
+            val request = transaction.get(requestRef)
+            val fromUid = request.getString("fromUid")
+            val toUid = request.getString("toUid")
+            check(request.exists() && request.getString("status") == "pending" && toUid == uid && !fromUid.isNullOrBlank()) {
+                "This friend request is no longer available."
+            }
+            val requesterUid: String = fromUid
 
-            val friendsRef = db.collection("friends").document()
-            tx.set(friendsRef, hashMapOf(
-                "userA" to fromUid,
-                "userB" to toUid,
-                "createdAt" to Timestamp.now()
-            ))
+            val firstUid = minOf(uid, requesterUid)
+            val secondUid = maxOf(uid, requesterUid)
+            val friendshipRef = db.collection("friends").document("$firstUid:$secondUid")
+            val friendship = transaction.get(friendshipRef)
+
+            transaction.update(requestRef, "status", "accepted")
+            if (!friendship.exists()) {
+                transaction.set(friendshipRef, hashMapOf(
+                    "userA" to requesterUid,
+                    "userB" to uid,
+                    "createdAt" to Timestamp.now()
+                ))
+            }
         }.addOnSuccessListener { onResult(true) }
-            .addOnFailureListener { onResult(false) }
+            .addOnFailureListener { error ->
+                Log.e(TAG, "Could not accept friend request $requestId", error)
+                onResult(false)
+            }
     }
 
-    /** Decline a friend request */
+    /** Decline a pending request addressed to the signed-in user. */
     fun declineRequest(requestId: String, onResult: (Boolean) -> Unit) {
-        db.collection("friendRequests").document(requestId)
-            .update("status", "declined")
-            .addOnSuccessListener { onResult(true) }
-            .addOnFailureListener { onResult(false) }
+        val uid = currentUid()
+        if (uid == null || requestId.isBlank()) {
+            onResult(false)
+            return
+        }
+
+        val requestRef = db.collection("friendRequests").document(requestId)
+        db.runTransaction { transaction ->
+            val request = transaction.get(requestRef)
+            check(
+                request.exists() && request.getString("status") == "pending" &&
+                    request.getString("toUid") == uid
+            ) { "This friend request is no longer available." }
+            transaction.update(requestRef, "status", "declined")
+        }.addOnSuccessListener { onResult(true) }
+            .addOnFailureListener { error ->
+                Log.e(TAG, "Could not decline friend request $requestId", error)
+                onResult(false)
+            }
     }
 
-    /** Remove friendship between two users */
+    private fun loadFriendshipDocuments(
+        uid: String,
+        onResult: (List<com.google.firebase.firestore.DocumentSnapshot>) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        val friends = db.collection("friends")
+        friends.whereEqualTo("userA", uid)
+            .get()
+            .addOnSuccessListener { outgoing ->
+                friends.whereEqualTo("userB", uid)
+                    .get()
+                    .addOnSuccessListener { incoming ->
+                        onResult((outgoing.documents + incoming.documents).distinctBy { it.id })
+                    }
+                    .addOnFailureListener(onFailure)
+            }
+            .addOnFailureListener(onFailure)
+    }
+
+    /** Remove friendship between two users. */
     fun removeFriend(otherUid: String, onResult: (Boolean) -> Unit) {
-        val uid = currentUid() ?: return onResult(false)
-        db.collection("friends")
-            .get()
-            .addOnSuccessListener { result ->
+        val uid = currentUid()
+        if (uid == null || otherUid.isBlank() || uid == otherUid) {
+            onResult(false)
+            return
+        }
+
+        loadFriendshipDocuments(uid, { documents ->
+            val matching = documents.filter { document ->
+                (document.getString("userA") == uid && document.getString("userB") == otherUid) ||
+                    (document.getString("userA") == otherUid && document.getString("userB") == uid)
+            }
+            if (matching.isEmpty()) {
+                onResult(false)
+            } else {
                 val batch = db.batch()
-                var found = false
-                for (doc in result) {
-                    val a = doc.getString("userA")
-                    val b = doc.getString("userB")
-                    if ((a == uid && b == otherUid) || (a == otherUid && b == uid)) {
-                        batch.delete(doc.reference)
-                        found = true
+                matching.forEach { batch.delete(it.reference) }
+                batch.commit()
+                    .addOnSuccessListener { onResult(true) }
+                    .addOnFailureListener { error ->
+                        Log.e(TAG, "Could not remove friendship with $otherUid", error)
+                        onResult(false)
                     }
-                }
-                if (found) {
-                    batch.commit()
-                        .addOnSuccessListener { onResult(true) }
-                        .addOnFailureListener { onResult(false) }
-                } else {
-                    onResult(false)
-                }
             }
-            .addOnFailureListener { onResult(false) }
+        }, { error ->
+            Log.e(TAG, "Could not load friendship with $otherUid", error)
+            onResult(false)
+        })
     }
 
-    /** Check if current user is friends with otherUid */
+    /** Check if current user is friends with otherUid. */
     fun isFriend(otherUid: String, onResult: (Boolean) -> Unit) {
-        val uid = currentUid() ?: return onResult(false)
-        db.collection("friends")
-            .get()
-            .addOnSuccessListener { result ->
-                var found = false
-                for (doc in result) {
-                    val a = doc.getString("userA")
-                    val b = doc.getString("userB")
-                    if ((a == uid && b == otherUid) || (a == otherUid && b == uid)) {
-                        found = true
-                        break
-                    }
-                }
-                onResult(found)
-            }
-            .addOnFailureListener { onResult(false) }
+        val uid = currentUid()
+        if (uid == null || otherUid.isBlank() || uid == otherUid) {
+            onResult(false)
+            return
+        }
+        loadFriendshipDocuments(uid, { documents ->
+            onResult(documents.any { document ->
+                (document.getString("userA") == uid && document.getString("userB") == otherUid) ||
+                    (document.getString("userA") == otherUid && document.getString("userB") == uid)
+            })
+        }, { error ->
+            Log.e(TAG, "Could not check friendship with $otherUid", error)
+            onResult(false)
+        })
     }
 
-    /** Get all friends of current user */
+    /** Get all friends of current user. */
     fun getFriends(onResult: (List<String>) -> Unit) {
         val uid = currentUid() ?: return onResult(emptyList())
-        db.collection("friends")
-            .get()
-            .addOnSuccessListener { result ->
-                val friends = mutableListOf<String>()
-                for (doc in result) {
-                    val a = doc.getString("userA")
-                    val b = doc.getString("userB")
-                    if (a == uid && !b.isNullOrEmpty()) friends.add(b)
-                    else if (b == uid && !a.isNullOrEmpty()) friends.add(a)
+        loadFriendshipDocuments(uid, { documents ->
+            onResult(documents.mapNotNull { document ->
+                val a = document.getString("userA")
+                val b = document.getString("userB")
+                when (uid) {
+                    a -> b?.takeIf { it.isNotBlank() }
+                    b -> a?.takeIf { it.isNotBlank() }
+                    else -> null
                 }
-                onResult(friends)
-            }
-            .addOnFailureListener { onResult(emptyList()) }
+            }.distinct())
+        }, { error ->
+            Log.e(TAG, "Could not load friends for $uid", error)
+            onResult(emptyList())
+        })
     }
 
-    /** Get pending friend requests for current user */
-    fun getPendingRequests(onResult: (List<Pair<String, String>>) -> Unit) {
-        val uid = currentUid() ?: return onResult(emptyList())
+    /** Get pending friend requests addressed to the signed-in user. */
+    fun getPendingRequests(onResult: (List<Pair<String, String>>, String?) -> Unit) {
+        val uid = currentUid()
+        if (uid == null) {
+            onResult(emptyList(), "Sign in to view friend requests.")
+            return
+        }
         db.collection("friendRequests")
             .whereEqualTo("toUid", uid)
             .whereEqualTo("status", "pending")
             .get()
             .addOnSuccessListener { result ->
-                val list = result.documents.mapNotNull { doc ->
-                    val from = doc.getString("fromUid") ?: return@mapNotNull null
-                    Pair(doc.id, from)
+                val requests = result.documents.mapNotNull { document ->
+                    val fromUid = document.getString("fromUid") ?: return@mapNotNull null
+                    document.id to fromUid
                 }
-                onResult(list)
+                onResult(requests, null)
             }
-            .addOnFailureListener { onResult(emptyList()) }
+            .addOnFailureListener { error ->
+                Log.e(TAG, "Could not load pending friend requests for $uid", error)
+                onResult(emptyList(), error.localizedMessage ?: "Could not load friend requests.")
+            }
     }
 
     enum class FriendshipState {

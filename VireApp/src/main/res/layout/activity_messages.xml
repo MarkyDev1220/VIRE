@@ -157,7 +157,7 @@
                 app:cornerRadius="22dp" />
         </LinearLayout>
 
-        <!-- Filter Pill Tabs: All | Unread · 2 | Groups -->
+        <!-- Filter tabs also provide access to archived and hidden conversations. -->
         <LinearLayout
             android:id="@+id/tabsRow"
             android:layout_width="match_parent"
@@ -179,37 +179,67 @@
                 android:gravity="center"
                 android:text="All"
                 android:textColor="@color/circuit_lime"
-                android:textSize="13sp"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tabUnread"
                 android:layout_width="0dp"
                 android:layout_height="36dp"
+                android:layout_marginStart="4dp"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
                 android:background="@drawable/pill_tab_inactive"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:text="Unread · 2"
+                android:text="Unread"
                 android:textColor="@color/circuit_text_secondary"
-                android:textSize="13sp"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tabGroups"
                 android:layout_width="0dp"
                 android:layout_height="36dp"
+                android:layout_marginStart="4dp"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
                 android:background="@drawable/pill_tab_inactive"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
                 android:text="Groups"
                 android:textColor="@color/circuit_text_secondary"
-                android:textSize="13sp"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tabArchived"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/pill_tab_inactive"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="Archived"
+                android:textColor="@color/circuit_text_secondary"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tabHidden"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/pill_tab_inactive"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="Hidden"
+                android:textColor="@color/circuit_text_secondary"
+                android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>
 

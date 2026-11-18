@@ -122,6 +122,8 @@ class SearchActivity : BaseActivity() {
                     val profileImageUrl = document.getString("profileImageUrl")
                         ?: document.getString("profileImage")
                         ?: document.getString("avatarUrl")
+                        ?: document.getString("photoUrl")
+                        ?: document.getString("profilePictureUrl")
                         ?: document.getString("profileImageUri")
                     loadedUsers.add(Pair(user, profileImageUrl))
                 }
@@ -232,12 +234,14 @@ class SearchActivity : BaseActivity() {
     private fun handleFriendAction(item: UserSearchItem) {
         when (item.friendshipState) {
             FriendManager.FriendshipState.NONE -> {
-                FriendManager.sendRequest(item.user.id) { success ->
+                FriendManager.sendFriendRequest(item.user.id) { success, message ->
+                    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
                     if (success) {
-                        Toast.makeText(this, "Friend request sent to ${item.user.username}", Toast.LENGTH_SHORT).show()
                         updateItemState(item.user.id, FriendManager.FriendshipState.PENDING_SENT, null)
                     } else {
-                        Toast.makeText(this, "Failed to send request", Toast.LENGTH_SHORT).show()
+                        FriendManager.getFriendshipState(item.user.id) { state, requestId ->
+                            updateItemState(item.user.id, state, requestId)
+                        }
                     }
                 }
             }

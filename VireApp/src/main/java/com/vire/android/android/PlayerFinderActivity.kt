@@ -72,12 +72,8 @@ class PlayerFinderActivity : BaseActivity() {
                         .setTitle("Add Friend")
                         .setMessage("Send friend request to ${selectedUser.username}?")
                         .setPositiveButton("Yes") { _, _ ->
-                            FriendManager.sendRequest(selectedUser.id) { success ->
-                                Toast.makeText(
-                                    this@PlayerFinderActivity,
-                                    if (success) "Friend request sent" else "Failed to send request (already pending?)",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                            FriendManager.sendFriendRequest(selectedUser.id) { _, message ->
+                                Toast.makeText(this@PlayerFinderActivity, message, Toast.LENGTH_LONG).show()
                             }
                         }
                         .setNegativeButton("No", null)

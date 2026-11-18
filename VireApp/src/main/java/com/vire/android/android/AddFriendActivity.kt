@@ -1,5 +1,6 @@
 package com.vire.android.android
 
+import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
@@ -7,7 +8,6 @@ import android.view.inputmethod.EditorInfo
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
-import com.google.firebase.auth.FirebaseAuth
 import com.vire.android.R
 
 class AddFriendActivity : AppCompatActivity() {
@@ -22,6 +22,8 @@ class AddFriendActivity : AppCompatActivity() {
     private lateinit var previewSendBtn: Button
 
     private var foundUser: User? = null
+    private var friendshipState = FriendManager.FriendshipState.NONE
+    private var pendingRequestId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,25 +54,62 @@ class AddFriendActivity : AppCompatActivity() {
 
         previewSendBtn.setOnClickListener {
             val target = foundUser ?: return@setOnClickListener
-            val currentUid = FirebaseAuth.getInstance().currentUser?.uid
-
-            if (target.id == currentUid) {
-                Toast.makeText(this, "You cannot add yourself.", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            previewSendBtn.isEnabled = false
-            FriendManager.sendRequest(target.id) { success ->
-                if (success) {
-                    Toast.makeText(this, "Friend request sent to ${target.username}!", Toast.LENGTH_LONG).show()
-                    previewSendBtn.text = "Request Pending"
-                    previewSendBtn.setBackgroundColor(Color.parseColor("#9E9E9E"))
-                } else {
-                    previewSendBtn.isEnabled = true
-                    Toast.makeText(this, "Request already sent or user is already your friend.", Toast.LENGTH_LONG).show()
+            when (friendshipState) {
+                FriendManager.FriendshipState.NONE -> {
+                    previewSendBtn.isEnabled = false
+                    FriendManager.sendFriendRequest(target.id) { success, message ->
+                        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                        if (success || message.contains("pending", ignoreCase = true) || message.contains("already sent", ignoreCase = true)) {
+                            refreshPreviewFriendship(target)
+                        } else {
+                            previewSendBtn.isEnabled = true
+                        }
+                    }
                 }
+                FriendManager.FriendshipState.PENDING_SENT ->
+                    Toast.makeText(this, "Your friend request is pending.", Toast.LENGTH_SHORT).show()
+                FriendManager.FriendshipState.PENDING_RECEIVED -> showIncomingRequestActions(target)
+                FriendManager.FriendshipState.FRIENDS ->
+                    Toast.makeText(this, "You are already friends.", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun refreshPreviewFriendship(user: User) {
+        FriendManager.getFriendshipState(user.id) { state, requestId ->
+            if (foundUser?.id != user.id) return@getFriendshipState
+            friendshipState = state
+            pendingRequestId = requestId
+            previewSendBtn.text = when (state) {
+                FriendManager.FriendshipState.NONE -> "Send Friend Request"
+                FriendManager.FriendshipState.PENDING_SENT -> "Request Pending"
+                FriendManager.FriendshipState.PENDING_RECEIVED -> "Accept or Decline Request"
+                FriendManager.FriendshipState.FRIENDS -> "Friends ✓"
+            }
+            previewSendBtn.isEnabled = state == FriendManager.FriendshipState.NONE ||
+                state == FriendManager.FriendshipState.PENDING_RECEIVED
+        }
+    }
+
+    private fun showIncomingRequestActions(user: User) {
+        val requestId = pendingRequestId ?: return refreshPreviewFriendship(user)
+        AlertDialog.Builder(this)
+            .setTitle("Friend request")
+            .setMessage("Accept the friend request from ${user.username}?")
+            .setPositiveButton("Accept") { _, _ ->
+                FriendManager.acceptRequest(requestId) { success ->
+                    Toast.makeText(this, if (success) "You are now friends." else "Could not accept request.", Toast.LENGTH_SHORT).show()
+                    refreshPreviewFriendship(user)
+                }
+            }
+            .setNegativeButton("Decline") { _, _ ->
+                FriendManager.declineRequest(requestId) { success ->
+                    Toast.makeText(this, if (success) "Friend request declined." else "Could not decline request.", Toast.LENGTH_SHORT).show()
+                    refreshPreviewFriendship(user)
+                }
+            }
+            .setNeutralButton("Cancel", null)
+            .show()
     }
 
     private fun performUserSearch() {
@@ -108,7 +147,9 @@ class AddFriendActivity : AppCompatActivity() {
                 previewCard.visibility = View.VISIBLE
 
                 // Check current friendship state
-                FriendManager.getFriendshipState(user.id) { state, _ ->
+                FriendManager.getFriendshipState(user.id) { state, requestId ->
+                    friendshipState = state
+                    pendingRequestId = requestId
                     when (state) {
                         FriendManager.FriendshipState.FRIENDS -> {
                             previewSendBtn.text = "Friends ✓"

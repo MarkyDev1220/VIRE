@@ -131,7 +131,7 @@ class SignupActivity : AppCompatActivity() {
                     val userMap = hashMapOf(
                         "uid" to uid,
                         "username" to username,
-                        "usernameLowercase" to username.lowercase(),
+                        "usernameLowercase" to username.lowercase(Locale.ROOT),
                         "email" to email,
                         "firstName" to firstName,
                         "lastName" to lastName,

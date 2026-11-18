@@ -1,5 +1,6 @@
 package com.vire.android.android
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -13,59 +14,93 @@ object DeckManager {
     private val localComments = mutableMapOf<String, MutableList<DeckComment>>()
 
     fun createDeck(deck: Deck, onResult: (Boolean, String?) -> Unit) {
+        if (deck.deckName.isBlank()) {
+            onResult(false, null)
+            return
+        }
+
         try {
             val ref = db.collection("userDecks").document()
-            val uid = auth.currentUser?.uid ?: "demo_user"
             val finalDeck = deck.copy(
                 id = ref.id,
-                userId = uid
+                userId = auth.currentUser?.uid ?: "demo_user"
             )
 
-            localDecks.add(0, finalDeck)
-
-            if (auth.currentUser != null) {
-                ref.set(finalDeck)
-                    .addOnSuccessListener { onResult(true, finalDeck.id) }
-                    .addOnFailureListener { onResult(true, finalDeck.id) }
-            } else {
+            if (auth.currentUser == null) {
+                localDecks.add(0, finalDeck)
                 onResult(true, finalDeck.id)
+                return
             }
-        } catch (e: Exception) {
+
+            ref.set(finalDeck)
+                .addOnSuccessListener {
+                    localDecks.add(0, finalDeck)
+                    onResult(true, finalDeck.id)
+                }
+                .addOnFailureListener { error ->
+                    Log.e("DeckManager", "Could not save deck ${finalDeck.deckName}", error)
+                    onResult(false, null)
+                }
+        } catch (error: Exception) {
+            Log.e("DeckManager", "Could not create deck", error)
             onResult(false, null)
         }
     }
 
     fun updateDeck(deck: Deck, onResult: (Boolean) -> Unit) {
-        try {
-            val idx = localDecks.indexOfFirst { it.id == deck.id }
-            val updated = deck.copy(cardCount = deck.cards.sumOf { it.quantity })
-            if (idx >= 0) localDecks[idx] = updated else localDecks.add(updated)
+        if (deck.id.isBlank()) {
+            onResult(false)
+            return
+        }
 
-            if (auth.currentUser != null && deck.id.isNotEmpty()) {
-                db.collection("userDecks").document(deck.id)
-                    .set(updated)
-                    .addOnSuccessListener { onResult(true) }
-                    .addOnFailureListener { onResult(true) }
-            } else {
-                onResult(true)
-            }
-        } catch (e: Exception) {
+        val updated = deck.copy(cardCount = deck.cards.sumOf { it.quantity })
+        if (auth.currentUser == null) {
+            cacheDeck(updated)
+            onResult(true)
+            return
+        }
+
+        try {
+            db.collection("userDecks").document(deck.id)
+                .set(updated)
+                .addOnSuccessListener {
+                    cacheDeck(updated)
+                    onResult(true)
+                }
+                .addOnFailureListener { error ->
+                    Log.e("DeckManager", "Could not update deck ${deck.id}", error)
+                    onResult(false)
+                }
+        } catch (error: Exception) {
+            Log.e("DeckManager", "Could not update deck ${deck.id}", error)
             onResult(false)
         }
     }
 
     fun deleteDeck(deckId: String, onResult: (Boolean) -> Unit) {
-        try {
+        if (deckId.isBlank()) {
+            onResult(false)
+            return
+        }
+        if (auth.currentUser == null) {
             localDecks.removeAll { it.id == deckId }
-            if (auth.currentUser != null && deckId.isNotEmpty()) {
-                db.collection("userDecks").document(deckId)
-                    .delete()
-                    .addOnSuccessListener { onResult(true) }
-                    .addOnFailureListener { onResult(true) }
-            } else {
-                onResult(true)
-            }
-        } catch (e: Exception) {
+            onResult(true)
+            return
+        }
+
+        try {
+            db.collection("userDecks").document(deckId)
+                .delete()
+                .addOnSuccessListener {
+                    localDecks.removeAll { it.id == deckId }
+                    onResult(true)
+                }
+                .addOnFailureListener { error ->
+                    Log.e("DeckManager", "Could not delete deck $deckId", error)
+                    onResult(false)
+                }
+        } catch (error: Exception) {
+            Log.e("DeckManager", "Could not delete deck $deckId", error)
             onResult(false)
         }
     }
@@ -178,6 +213,11 @@ object DeckManager {
         } catch (e: Exception) {
             onResult(localComments[deckId] ?: emptyList())
         }
+    }
+
+    private fun cacheDeck(deck: Deck) {
+        val index = localDecks.indexOfFirst { it.id == deck.id }
+        if (index >= 0) localDecks[index] = deck else localDecks.add(0, deck)
     }
 
     // Starter dataset for the 7 TCG systems

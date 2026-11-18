@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import java.util.Locale
 import com.vire.android.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -44,9 +45,9 @@ class MainActivity : AppCompatActivity() {
 
         binding.loginSubmitButton.setOnClickListener {
             val emailOrUsername = binding.emailOrUsernameEditText.text.toString().trim()
-            val password = binding.loginPasswordEditText.text.toString().trim()
+            val password = binding.loginPasswordEditText.text.toString()
 
-            if (emailOrUsername.isEmpty() || password.isEmpty()) {
+            if (emailOrUsername.isBlank() || password.isEmpty()) {
                 Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -58,34 +59,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 performFirebaseLogin(emailOrUsername, password)
             } else {
-                db.collection("users")
-                    .whereEqualTo("usernameLowercase", emailOrUsername.lowercase())
-                    .get()
-                    .addOnSuccessListener { result ->
-                        val matchedDoc = result.documents.firstOrNull()
-                        val email = matchedDoc?.getString("email")
-                        if (!email.isNullOrEmpty()) {
-                            performFirebaseLogin(email, password)
-                        } else {
-                            db.collection("users")
-                                .whereEqualTo("username", emailOrUsername)
-                                .get()
-                                .addOnSuccessListener { res2 ->
-                                    val email2 = res2.documents.firstOrNull()?.getString("email")
-                                    if (!email2.isNullOrEmpty()) {
-                                        performFirebaseLogin(email2, password)
-                                    } else {
-                                        Toast.makeText(this, "Username not found", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                                .addOnFailureListener {
-                                    Toast.makeText(this, "Username not found", Toast.LENGTH_SHORT).show()
-                                }
-                        }
-                    }
-                    .addOnFailureListener { e ->
-                        Toast.makeText(this, "Login failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                    }
+                loginWithUsername(emailOrUsername, password)
             }
         }
 
@@ -96,6 +70,51 @@ class MainActivity : AppCompatActivity() {
         binding.forgotPasswordText.setOnClickListener {
             startActivity(Intent(this, ForgotPasswordActivity::class.java))
         }
+    }
+
+    private fun loginWithUsername(username: String, password: String) {
+        val users = db.collection("users")
+        users.whereEqualTo("usernameLowercase", username.lowercase(Locale.ROOT))
+            .limit(2)
+            .get()
+            .addOnSuccessListener { matches ->
+                when {
+                    matches.documents.size > 1 -> showDuplicateUsernameMessage()
+                    matches.documents.isNotEmpty() -> signInWithUsernameMatch(matches.documents.first(), password)
+                    else -> users.whereEqualTo("username", username)
+                        .limit(2)
+                        .get()
+                        .addOnSuccessListener { legacyMatches ->
+                            when {
+                                legacyMatches.documents.size > 1 -> showDuplicateUsernameMessage()
+                                legacyMatches.documents.isNotEmpty() -> signInWithUsernameMatch(legacyMatches.documents.first(), password)
+                                else -> Toast.makeText(this, "Username not found. Try your email instead.", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                        .addOnFailureListener { error ->
+                            Toast.makeText(this, "Could not look up username: ${error.localizedMessage}", Toast.LENGTH_LONG).show()
+                        }
+                }
+            }
+            .addOnFailureListener { error ->
+                Toast.makeText(this, "Could not look up username: ${error.localizedMessage}", Toast.LENGTH_LONG).show()
+            }
+    }
+
+    private fun signInWithUsernameMatch(
+        userDocument: com.google.firebase.firestore.DocumentSnapshot,
+        password: String
+    ) {
+        val email = userDocument.getString("email")
+        if (email.isNullOrBlank()) {
+            Toast.makeText(this, "This username is missing its account email. Try signing in with email.", Toast.LENGTH_LONG).show()
+            return
+        }
+        performFirebaseLogin(email, password)
+    }
+
+    private fun showDuplicateUsernameMessage() {
+        Toast.makeText(this, "More than one account uses that username. Sign in with email instead.", Toast.LENGTH_LONG).show()
     }
 
     private fun setupTcgEntranceAnimation() {

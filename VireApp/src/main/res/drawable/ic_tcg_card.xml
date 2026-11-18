@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <path
+        android:fillColor="@color/circuit_card"
+        android:strokeColor="@color/circuit_lime"
+        android:strokeWidth="3"
+        android:pathData="M24,8h48a8,8 0,0 1,8 8v64a8,8 0,0 1,-8 8h-48a8,8 0,0 1,-8 -8v-64a8,8 0,0 1,8 -8z" />
+    <path
+        android:fillColor="@color/circuit_lime"
+        android:pathData="M48,24l6,12 13,2 -9.5,9 2.2,13L48,54l-11.7,6 2.2,-13 -9.5,-9 13,-2z" />
+    <path
+        android:fillColor="@color/circuit_lime"
+        android:pathData="M25,22h4v4h-4zM67,70h4v4h-4z" />
+</vector>
