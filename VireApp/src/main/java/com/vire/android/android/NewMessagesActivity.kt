@@ -41,7 +41,7 @@ class NewMessagesActivity : AppCompatActivity() {
             finish()
         }
 
-        FirebaseFirestore.getInstance().collection("users").get()
+        FirebaseFirestore.getInstance().collection(UserDirectory.COLLECTION).get()
             .addOnSuccessListener { snapshot ->
                 val currentUid = FirebaseAuth.getInstance().currentUser?.uid
                 allUsers.clear()

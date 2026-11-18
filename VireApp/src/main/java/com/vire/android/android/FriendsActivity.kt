@@ -90,16 +90,23 @@ class FriendsActivity : BaseActivity() {
                 return@getFriends
             }
 
-            db.collection("users")
-                .whereIn("__name__", friendUids)
+            db.collection(UserDirectory.COLLECTION)
+                .whereIn(com.google.firebase.firestore.FieldPath.documentId(), friendUids)
                 .get()
                 .addOnSuccessListener { result ->
                     displayedFriends.clear()
                     for (doc in result) {
                         val uid = doc.id
+                        val name = doc.getString("username")
+                            ?: doc.getString("fullName")
+                            ?: doc.getString("displayName")
+                            ?: doc.getString("name")
+                            ?: doc.getString("email")?.substringBefore("@")
+                            ?: "Gamer"
+
                         val user = User(
                             id = uid,
-                            username = doc.getString("username") ?: "Unknown",
+                            username = name,
                             email = doc.getString("email") ?: "",
                             gender = doc.getString("gender") ?: "",
                             dateOfBirth = doc.getString("dateOfBirth") ?: "",
@@ -112,6 +119,9 @@ class FriendsActivity : BaseActivity() {
                         displayedFriends.add(user)
                     }
                     updateFriendList(displayedFriends)
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(this, "Error loading friends: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
         }
     }
@@ -131,13 +141,18 @@ class FriendsActivity : BaseActivity() {
                 emptyReqText?.visibility = View.GONE
             }
 
-            val fromUids = requests.map { it.second }
-            db.collection("users")
-                .whereIn("__name__", fromUids)
+            val fromUids = requests.map { it.second }.distinct()
+            db.collection(UserDirectory.COLLECTION)
+                .whereIn(com.google.firebase.firestore.FieldPath.documentId(), fromUids)
                 .get()
                 .addOnSuccessListener { result ->
-                    val nameMap = result.documents.associateBy({ it.id }) {
-                        it.getString("username") ?: "Unknown"
+                    val nameMap = result.documents.associateBy({ it.id }) { doc ->
+                        doc.getString("username")
+                            ?: doc.getString("fullName")
+                            ?: doc.getString("displayName")
+                            ?: doc.getString("name")
+                            ?: doc.getString("email")?.substringBefore("@")
+                            ?: "Gamer"
                     }
                     val labels = mutableListOf<String>()
                     val requestItems = mutableListOf<Triple<String, String, String>>() // (reqId, fromUid, username)
@@ -211,7 +226,6 @@ class FriendsActivity : BaseActivity() {
         }
         val filtered = displayedFriends.filter { user ->
             user.username.lowercase().contains(q) ||
-                    user.email.lowercase().contains(q) ||
                     user.localArea.lowercase().contains(q) ||
                     user.favoriteGames.any { it.lowercase().contains(q) }
         }

@@ -238,7 +238,7 @@ class TournamentDetailsActivity : BaseActivity() {
         }
 
         // Fetch player usernames for bracket display
-        FirebaseFirestore.getInstance().collection("users").get()
+        FirebaseFirestore.getInstance().collection(UserDirectory.COLLECTION).get()
             .addOnSuccessListener { result ->
                 val nameMap = mutableMapOf<String, String>()
                 for (doc in result) {

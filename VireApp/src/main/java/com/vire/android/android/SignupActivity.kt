@@ -102,8 +102,8 @@ class SignupActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            if (username.length < 3) {
-                binding.usernameEditText.error = "Username must be at least 3 characters"
+            if (username.length !in 3..64) {
+                binding.usernameEditText.error = "Username must be between 3 and 64 characters"
                 return@setOnClickListener
             }
 
@@ -124,80 +124,134 @@ class SignupActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            auth.createUserWithEmailAndPassword(email, createPassword)
-                .addOnSuccessListener { authResult ->
-                    val uid = authResult.user?.uid ?: return@addOnSuccessListener
+            val signedInUser = auth.currentUser?.takeIf {
+                it.email.equals(email, ignoreCase = true)
+            }
 
-                    val userMap = hashMapOf(
-                        "uid" to uid,
-                        "username" to username,
-                        "usernameLowercase" to username.lowercase(),
-                        "email" to email,
-                        "firstName" to firstName,
-                        "lastName" to lastName,
-                        "fullName" to fullName,
-                        "gender" to gender,
-                        "dateOfBirth" to dobText,
-                        "favoriteGames" to selectedGames,
-                        "favoriteGenres" to emptyList<String>(),
-                        "skillLevel" to "",
-                        "localArea" to "",
-                        "gamerBio" to "",
-                        "is13Plus" to is13Plus,
-                        "profileImageUrl" to "",
-                        "coverImageUrl" to "",
-                        "aboutMe" to ""
-                    )
+            if (signedInUser != null) {
+                persistSignupProfile(
+                    signedInUser.uid, email, username, firstName, lastName,
+                    fullName, gender, dobText, is13Plus
+                )
+            } else {
+                auth.createUserWithEmailAndPassword(email, createPassword)
+                    .addOnSuccessListener { authResult ->
+                        val uid = authResult.user?.uid
+                        if (uid == null) {
+                            Toast.makeText(this, "Account was created, but its user ID is unavailable.", Toast.LENGTH_LONG).show()
+                            return@addOnSuccessListener
+                        }
+                        persistSignupProfile(
+                            uid, email, username, firstName, lastName,
+                            fullName, gender, dobText, is13Plus
+                        )
+                    }
+                    .addOnFailureListener { e ->
+                        val errorMsg = if (e is SecurityException ||
+                            e.message?.contains("broker", ignoreCase = true) == true ||
+                            e.message?.contains("Unknown calling package", ignoreCase = true) == true) {
+                            "Google Play Services could not complete sign-up: ${e.localizedMessage}"
+                        } else if (e.message?.contains("network", ignoreCase = true) == true ||
+                            e.message?.contains("unreachable host", ignoreCase = true) == true) {
+                            "Network error: Unable to reach Firebase. Check your connection and try again."
+                        } else {
+                            "Signup failed: ${e.localizedMessage}"
+                        }
+                        Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
+                    }
+            }
+        }
+    }
 
-                    val userObj = User(
-                        id = uid,
-                        username = username,
-                        email = email,
-                        firstName = firstName,
-                        lastName = lastName,
-                        fullName = fullName,
-                        gender = gender,
-                        dateOfBirth = dobText,
-                        favoriteGames = selectedGames,
-                        is13Plus = is13Plus
-                    )
+    private fun persistSignupProfile(
+        uid: String,
+        email: String,
+        username: String,
+        firstName: String,
+        lastName: String,
+        fullName: String,
+        gender: String,
+        dobText: String,
+        is13Plus: Boolean
+    ) {
+        val userMap = hashMapOf(
+            "uid" to uid,
+            "username" to username,
+            "usernameLowercase" to username.lowercase(),
+            "email" to email,
+            "firstName" to firstName,
+            "lastName" to lastName,
+            "fullName" to fullName,
+            "gender" to gender,
+            "dateOfBirth" to dobText,
+            "favoriteGames" to selectedGames.toList(),
+            "favoriteGenres" to emptyList<String>(),
+            "skillLevel" to "",
+            "localArea" to "",
+            "gamerBio" to "",
+            "is13Plus" to is13Plus,
+            "profileImageUrl" to "",
+            "coverImageUrl" to "",
+            "aboutMe" to ""
+        )
 
-                    saveUser(userObj, this)
+        val user = User(
+            id = uid,
+            username = username,
+            email = email,
+            firstName = firstName,
+            lastName = lastName,
+            fullName = fullName,
+            gender = gender,
+            dateOfBirth = dobText,
+            favoriteGames = selectedGames.toList(),
+            is13Plus = is13Plus
+        )
 
-                    db.collection("users").document(uid).set(userMap)
-                        .addOnSuccessListener {
-                            if (profileImageUri != null) {
-                                uploadProfileImage(uid, profileImageUri!!) { profileUrl ->
-                                    db.collection("users").document(uid)
-                                        .update("profileImageUrl", profileUrl)
-                                        .addOnSuccessListener {
-                                            continueToProfile(uid, username)
-                                        }
-                                        .addOnFailureListener {
-                                            continueToProfile(uid, username)
-                                        }
+        db.collection("users").document(uid).set(userMap)
+            .continueWithTask { privateWrite ->
+                if (!privateWrite.isSuccessful) {
+                    throw privateWrite.exception ?: IllegalStateException("Private profile write failed")
+                }
+                db.collection(UserDirectory.COLLECTION)
+                    .document(uid)
+                    .set(UserDirectory.fromUser(user))
+            }
+            .addOnSuccessListener {
+                saveUser(user, this)
+                UserManager.addUser(user)
+
+                val imageUri = profileImageUri
+                if (imageUri == null) {
+                    continueToProfile(uid, username)
+                } else {
+                    uploadProfileImage(uid, imageUri) { profileUrl ->
+                        db.collection("users").document(uid)
+                            .update("profileImageUrl", profileUrl)
+                            .continueWithTask { privateImageWrite ->
+                                if (!privateImageWrite.isSuccessful) {
+                                    throw privateImageWrite.exception
+                                        ?: IllegalStateException("Private image write failed")
                                 }
-                            } else {
+                                db.collection(UserDirectory.COLLECTION)
+                                    .document(uid)
+                                    .update("profileImageUrl", profileUrl)
+                            }
+                            .addOnCompleteListener {
                                 continueToProfile(uid, username)
                             }
-                        }
-                        .addOnFailureListener { e ->
-                            Toast.makeText(this, "Failed to save user data: ${e.message}", Toast.LENGTH_SHORT).show()
-                        }
-                }
-                .addOnFailureListener { e ->
-                    val errorMsg = if (e is SecurityException || e.message?.contains("SecurityException", ignoreCase = true) == true ||
-                        e.message?.contains("broker", ignoreCase = true) == true || e.message?.contains("Unknown calling package", ignoreCase = true) == true) {
-                        "Google Play Services error: ${e.localizedMessage}. Please ensure Google Play Services is updated on your device/emulator."
-                    } else if (e.message?.contains("network", ignoreCase = true) == true ||
-                        e.message?.contains("unreachable host", ignoreCase = true) == true) {
-                        "Network error: Unable to reach Firebase servers. Please check your internet or emulator network connection."
-                    } else {
-                        "Signup failed: ${e.message}"
                     }
-                    Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
                 }
-        }
+            }
+            .addOnFailureListener { e ->
+                val message = if (e.message?.contains("PERMISSION_DENIED", ignoreCase = true) == true ||
+                    e.message?.contains("Missing or insufficient permissions", ignoreCase = true) == true) {
+                    "Firestore denied saving your profile. Check that the current user's private and public profile rules are deployed."
+                } else {
+                    "Your account was created, but the profile could not be saved: ${e.localizedMessage}"
+                }
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+            }
     }
 
     private fun continueToProfile(uid: String, username: String) {

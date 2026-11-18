@@ -91,17 +91,24 @@ class PlayerFinderActivity : BaseActivity() {
 
     private fun loadPlayers() {
         val currentUid = auth.currentUser?.uid
-        db.collection("users").get()
+        db.collection(UserDirectory.COLLECTION).get()
             .addOnSuccessListener { result ->
                 displayedPlayers.clear()
                 for (doc in result) {
                     val uid = doc.id
                     if (uid == currentUid) continue
 
+                    val name = doc.getString("username")
+                        ?: doc.getString("fullName")
+                        ?: doc.getString("displayName")
+                        ?: doc.getString("name")
+                        ?: doc.getString("email")?.substringBefore("@")
+                        ?: "Gamer"
+
                     val user = User(
                         id = uid,
-                        username = doc.getString("username") ?: "Unknown",
-                        email = doc.getString("email") ?: "",
+                        username = name,
+                        email = doc.getString("email") ?: doc.getString("emailAddress") ?: "",
                         gender = doc.getString("gender") ?: "",
                         dateOfBirth = doc.getString("dateOfBirth") ?: "",
                         favoriteGames = (doc.get("favoriteGames") as? List<*>)?.filterIsInstance<String>()
@@ -114,6 +121,7 @@ class PlayerFinderActivity : BaseActivity() {
                     )
                     displayedPlayers.add(user)
                 }
+                UserManager.setUsers(displayedPlayers)
                 TrustSafetyManager.getBlockedUserIds { blocked ->
                     blockedUserIds = blocked
                     applyFilters()

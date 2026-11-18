@@ -75,11 +75,11 @@
                 android:textColor="@color/circuit_text_primary"
                 android:layout_marginBottom="16dp" />
 
-            <!-- Email / Username Field -->
+            <!-- Email Field -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Email or Username"
+                android:text="Email"
                 android:textStyle="bold"
                 android:textColor="@color/circuit_text_secondary"
                 android:layout_marginBottom="4dp" />
@@ -89,7 +89,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textEmailAddress"
-                android:hint="Enter email or username"
+                android:hint="Enter your email address"
                 android:textColor="@color/circuit_text_primary"
                 android:textColorHint="@color/circuit_text_muted"
                 android:background="@drawable/edit_text_bg"

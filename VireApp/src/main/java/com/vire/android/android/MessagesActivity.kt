@@ -98,7 +98,7 @@ class MessagesActivity : BaseActivity() {
             blockedUsernames = blockedUsers.map { it.username.trim().lowercase() }.filter { it.isNotBlank() }.toSet()
             try {
                 com.google.firebase.firestore.FirebaseFirestore.getInstance()
-                    .collection("users")
+                    .collection(UserDirectory.COLLECTION)
                     .get()
                     .addOnSuccessListener { querySnapshot ->
                         val userList = mutableListOf<String>()

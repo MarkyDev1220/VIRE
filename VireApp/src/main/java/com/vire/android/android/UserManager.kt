@@ -1,8 +1,47 @@
 package com.vire.android.android
 
+import com.google.firebase.firestore.FirebaseFirestore
+
 object UserManager {
 
     private val users = mutableListOf<User>()
+
+    fun syncFromFirestore(onComplete: (() -> Unit)? = null) {
+        FirebaseFirestore.getInstance()
+            .collection(UserDirectory.COLLECTION)
+            .get()
+            .addOnSuccessListener { result ->
+                val list = mutableListOf<User>()
+                for (doc in result) {
+                    val uid = doc.id
+                    val name = doc.getString("username")
+                        ?: doc.getString("fullName")
+                        ?: doc.getString("displayName")
+                        ?: doc.getString("name")
+                        ?: doc.getString("email")?.substringBefore("@")
+                        ?: "Gamer"
+
+                    val user = User(
+                        id = uid,
+                        username = name,
+                        email = doc.getString("email") ?: doc.getString("emailAddress") ?: "",
+                        gender = doc.getString("gender") ?: "",
+                        dateOfBirth = doc.getString("dateOfBirth") ?: "",
+                        favoriteGames = (doc.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                        favoriteGenres = (doc.get("favoriteGenres") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                        skillLevel = doc.getString("skillLevel") ?: "",
+                        localArea = doc.getString("localArea") ?: "",
+                        gamerBio = doc.getString("gamerBio") ?: ""
+                    )
+                    list.add(user)
+                }
+                setUsers(list)
+                onComplete?.invoke()
+            }
+            .addOnFailureListener {
+                onComplete?.invoke()
+            }
+    }
 
     // Legacy username-only methods
     fun getAllUsernames(): List<String> = users.map { it.username }

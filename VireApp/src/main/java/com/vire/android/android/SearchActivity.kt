@@ -81,10 +81,19 @@ class SearchActivity : BaseActivity() {
 
     private fun loadAllUsers() {
         val currentUid = auth.currentUser?.uid
+        if (currentUid == null) {
+            progressBar.visibility = View.GONE
+            allSearchItems.clear()
+            adapter.submitList(emptyList())
+            emptyText.text = "Sign in to search for users."
+            emptyText.visibility = View.VISIBLE
+            return
+        }
+
         progressBar.visibility = View.VISIBLE
         emptyText.visibility = View.GONE
 
-        db.collection("users").get()
+        db.collection(UserDirectory.COLLECTION).get()
             .addOnSuccessListener { result ->
                 allSearchItems.clear()
                 val loadedUsers = mutableListOf<Pair<User, String?>>()
@@ -132,52 +141,91 @@ class SearchActivity : BaseActivity() {
                     return@addOnSuccessListener
                 }
 
+                UserManager.setUsers(loadedUsers.map { it.first })
+
                 TrustSafetyManager.getBlockedUserIds { blocked ->
                     blockedUserIds = blocked
-                    allSearchItems.clear()
-                    for ((user, profileImageUrl) in loadedUsers) {
-                        if (user.id !in blockedUserIds) {
-                            allSearchItems.add(
-                                UserSearchItem(
-                                    user = user,
-                                    profileImageUrl = profileImageUrl,
-                                    friendshipState = FriendManager.FriendshipState.NONE
-                                )
-                            )
+                    FriendManager.getFriends { friendUids ->
+                        FriendManager.getPendingRequests { pendingReqs ->
+                            val pendingReqIdMap = pendingReqs.associate { it.second to it.first }
+
+                            db.collection("friendRequests")
+                                .whereEqualTo("fromUid", currentUid)
+                                .whereEqualTo("status", "pending")
+                                .get()
+                                .addOnSuccessListener { sentSnap ->
+                                    val sentReqIdMap = sentSnap.documents.mapNotNull { doc ->
+                                        val to = doc.getString("toUid") ?: return@mapNotNull null
+                                        to to doc.id
+                                    }.toMap()
+
+                                    populateSearchItems(loadedUsers, friendUids, pendingReqIdMap, sentReqIdMap, currentUid)
+                                }
+                                .addOnFailureListener {
+                                    populateSearchItems(loadedUsers, friendUids, pendingReqIdMap, emptyMap(), null)
+                                }
                         }
                     }
-                    progressBar.visibility = View.GONE
-                    filterUsers()
                 }
             }
             .addOnFailureListener { e ->
                 progressBar.visibility = View.GONE
-                val isFirestoreNotConfigured = e.message?.contains("PERMISSION_DENIED", ignoreCase = true) == true ||
-                        e.message?.contains("NOT_FOUND", ignoreCase = true) == true ||
+                val isPermissionDenied =
+                    e.message?.contains("PERMISSION_DENIED", ignoreCase = true) == true
+                val isDatabaseConfigurationError =
+                    e.message?.contains("NOT_FOUND", ignoreCase = true) == true ||
                         e.message?.contains("disabled", ignoreCase = true) == true ||
                         e.message?.contains("does not exist", ignoreCase = true) == true
 
-                val msg = if (isFirestoreNotConfigured) {
-                    "Cloud Firestore database is disabled or not created in Firebase Console for project 'vire-7b583'. Showing sample gamers."
-                } else {
-                    "Error loading users: ${e.message}"
+                Log.w("SearchActivity", "Firestore error loading users: ${e.message}", e)
+                val errorMessage = when {
+                    isPermissionDenied ->
+                        "Firestore denied access to public profiles. Check the signed-in account and public profile rules."
+                    isDatabaseConfigurationError ->
+                        "The Firestore database is unavailable. Check the Firebase project configuration."
+                    else -> "Error loading users: ${e.localizedMessage}"
                 }
-                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
-                Log.e("SearchActivity", "Firestore error: ${e.message}", e)
-                loadDemoUsers()
+                Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
+                allSearchItems.clear()
+                adapter.submitList(emptyList())
+                emptyText.text = "Users could not be loaded. Please try again."
+                emptyText.visibility = View.VISIBLE
             }
     }
 
-    private fun loadDemoUsers() {
+    private fun populateSearchItems(
+        loadedUsers: List<Pair<User, String?>>,
+        friendUids: List<String>,
+        pendingReqIdMap: Map<String, String>,
+        sentReqIdMap: Map<String, String>,
+        currentUid: String?
+    ) {
         allSearchItems.clear()
-        for (user in FriendManager.getDemoUsers()) {
-            allSearchItems.add(
-                UserSearchItem(
-                    user = user,
-                    friendshipState = FriendManager.FriendshipState.NONE
+        for ((user, profileImageUrl) in loadedUsers) {
+            if (user.id !in blockedUserIds) {
+                val state = when {
+                    currentUid != null && user.id == currentUid -> FriendManager.FriendshipState.NONE
+                    friendUids.contains(user.id) -> FriendManager.FriendshipState.FRIENDS
+                    sentReqIdMap.containsKey(user.id) -> FriendManager.FriendshipState.PENDING_SENT
+                    pendingReqIdMap.containsKey(user.id) -> FriendManager.FriendshipState.PENDING_RECEIVED
+                    else -> FriendManager.FriendshipState.NONE
+                }
+                val reqId = when (state) {
+                    FriendManager.FriendshipState.PENDING_SENT -> sentReqIdMap[user.id]
+                    FriendManager.FriendshipState.PENDING_RECEIVED -> pendingReqIdMap[user.id]
+                    else -> null
+                }
+                allSearchItems.add(
+                    UserSearchItem(
+                        user = user,
+                        profileImageUrl = profileImageUrl,
+                        friendshipState = state,
+                        requestId = reqId
+                    )
                 )
-            )
+            }
         }
+        progressBar.visibility = View.GONE
         filterUsers()
     }
 
@@ -191,7 +239,6 @@ class SearchActivity : BaseActivity() {
             if (query.isEmpty()) return@filter true
 
             val matchesUsername = user.username.lowercase().contains(query)
-            val matchesEmail = user.email.lowercase().contains(query)
             val matchesArea = user.localArea.lowercase().contains(query)
             val matchesSkill = user.skillLevel.lowercase().contains(query)
             val matchesGame = user.favoriteGames.any { it.lowercase().contains(query) }
@@ -199,11 +246,11 @@ class SearchActivity : BaseActivity() {
             val matchesBio = user.gamerBio.lowercase().contains(query)
 
             when (category) {
-                "Username" -> matchesUsername || matchesEmail
+                "Username" -> matchesUsername
                 "Favorite Game" -> matchesGame
                 "Local Area" -> matchesArea
                 "Skill Level" -> matchesSkill
-                else -> matchesUsername || matchesEmail || matchesArea || matchesSkill || matchesGame || matchesGenre || matchesBio
+                else -> matchesUsername || matchesArea || matchesSkill || matchesGame || matchesGenre || matchesBio
             }
         }
 

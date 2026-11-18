@@ -33,4 +33,7 @@ data class User(
 
     // ⭐ FRIEND SYSTEM (future)
     val friends: MutableList<String> = mutableListOf()
-)
+) {
+    val uid: String
+        get() = id
+}

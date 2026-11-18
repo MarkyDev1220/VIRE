@@ -70,7 +70,7 @@ object FriendManager {
     }
 
     private fun dispatchFriendRequestNotification(senderUid: String, receiverUid: String) {
-        db.collection("users").document(senderUid).get()
+        db.collection(UserDirectory.COLLECTION).document(senderUid).get()
             .addOnSuccessListener { doc ->
                 val senderName = doc.getString("username")
                     ?: doc.getString("fullName")
@@ -98,11 +98,11 @@ object FriendManager {
             }
     }
 
-    /** Send a friend request by searching username or email */
-    fun sendRequestByUsername(usernameOrEmail: String, onResult: (Boolean, String) -> Unit) {
-        val queryStr = usernameOrEmail.trim()
+    /** Send a friend request by searching the public username directory. */
+    fun sendRequestByUsername(username: String, onResult: (Boolean, String) -> Unit) {
+        val queryStr = username.trim()
         if (queryStr.isEmpty()) {
-            onResult(false, "Please enter a username or email.")
+            onResult(false, "Please enter a username.")
             return
         }
 
@@ -133,7 +133,7 @@ object FriendManager {
         }
     }
 
-    /** Fast targeted search for a user by username or email */
+    /** Search only fields present in the public profile directory. */
     fun findUserByQuery(query: String, onResult: (User?) -> Unit) {
         val qStr = query.trim()
         if (qStr.isEmpty()) {
@@ -143,108 +143,22 @@ object FriendManager {
 
         val qLower = qStr.lowercase()
 
-        // 1. Try exact match on username / usernameLowercase
-        db.collection("users")
-            .whereEqualTo("usernameLowercase", qLower)
-            .get()
-            .addOnSuccessListener { snap1 ->
-                if (!snap1.isEmpty) {
-                    val doc = snap1.documents.first()
-                    onResult(parseUserDoc(doc))
-                    return@addOnSuccessListener
+        db.collection(UserDirectory.COLLECTION).get()
+            .addOnSuccessListener { snapshot ->
+                val matchedDoc = snapshot.documents.find { doc ->
+                    val u = doc.getString("username") ?: ""
+                    val uLower = doc.getString("usernameLowercase") ?: u.lowercase()
+                    uLower == qLower || u.equals(qStr, ignoreCase = true) || uLower.contains(qLower)
                 }
-
-                // 2. Try match on email
-                db.collection("users")
-                    .whereEqualTo("email", qLower)
-                    .get()
-                    .addOnSuccessListener { snap2 ->
-                        if (!snap2.isEmpty) {
-                            val doc = snap2.documents.first()
-                            onResult(parseUserDoc(doc))
-                            return@addOnSuccessListener
-                        }
-
-                        // 3. Try prefix range query on usernameLowercase
-                        db.collection("users")
-                            .whereGreaterThanOrEqualTo("usernameLowercase", qLower)
-                            .whereLessThanOrEqualTo("usernameLowercase", qLower + "\uf8ff")
-                            .limit(1)
-                            .get()
-                            .addOnSuccessListener { snap3 ->
-                                if (!snap3.isEmpty) {
-                                    val doc = snap3.documents.first()
-                                    onResult(parseUserDoc(doc))
-                                    return@addOnSuccessListener
-                                }
-
-                                // 4. Fallback memory search across full collection
-                                db.collection("users").get()
-                                    .addOnSuccessListener { allDocs ->
-                                        val matched = allDocs.documents.find { doc ->
-                                            val u = doc.getString("username") ?: ""
-                                            val e = doc.getString("email") ?: ""
-                                            val name = doc.getString("fullName") ?: doc.getString("displayName") ?: ""
-                                            u.equals(qStr, ignoreCase = true) ||
-                                                    e.equals(qStr, ignoreCase = true) ||
-                                                    name.equals(qStr, ignoreCase = true) ||
-                                                    u.lowercase().contains(qLower)
-                                        }
-                                        if (matched != null) {
-                                            onResult(parseUserDoc(matched))
-                                        } else {
-                                            onResult(findDemoUser(qStr))
-                                        }
-                                    }
-                                    .addOnFailureListener { onResult(findDemoUser(qStr)) }
-                            }
-                            .addOnFailureListener { onResult(findDemoUser(qStr)) }
-                    }
-                    .addOnFailureListener { onResult(findDemoUser(qStr)) }
+                if (matchedDoc != null) {
+                    onResult(parseUserDoc(matchedDoc))
+                } else {
+                    onResult(null)
+                }
             }
-            .addOnFailureListener { onResult(findDemoUser(qStr)) }
-    }
-
-    fun getDemoUsers(): List<User> {
-        return listOf(
-            User(
-                id = "demo_alex",
-                username = "Alex_Gamer",
-                email = "alex@example.com",
-                favoriteGames = listOf("Magic: The Gathering", "Lorcana"),
-                skillLevel = "Intermediate",
-                localArea = "Downtown",
-                gamerBio = "Avid MTG Commander player!"
-            ),
-            User(
-                id = "demo_sam",
-                username = "Sam_TCG",
-                email = "sam@example.com",
-                favoriteGames = listOf("Pokemon TCG", "Yu-Gi-Oh!"),
-                skillLevel = "Advanced",
-                localArea = "Uptown",
-                gamerBio = "Competitive Pokemon TCG player."
-            ),
-            User(
-                id = "demo_jordan",
-                username = "Jordan_Deckmaster",
-                email = "jordan@example.com",
-                favoriteGames = listOf("Magic: The Gathering", "Yu-Gi-Oh!"),
-                skillLevel = "Expert",
-                localArea = "Westside",
-                gamerBio = "Looking for local casual matches."
-            )
-        )
-    }
-
-    private fun findDemoUser(queryStr: String): User? {
-        val qStr = queryStr.trim()
-        val qLower = qStr.lowercase()
-        return getDemoUsers().find { user ->
-            user.username.equals(qStr, ignoreCase = true) ||
-                    user.email.equals(qStr, ignoreCase = true) ||
-                    user.username.lowercase().contains(qLower)
-        }
+            .addOnFailureListener {
+                onResult(null)
+            }
     }
 
     private fun parseUserDoc(doc: com.google.firebase.firestore.DocumentSnapshot): User {
@@ -252,11 +166,14 @@ object FriendManager {
         val name = doc.getString("username")
             ?: doc.getString("fullName")
             ?: doc.getString("displayName")
+            ?: doc.getString("name")
+            ?: doc.getString("email")?.substringBefore("@")
+            ?: doc.getString("emailAddress")?.substringBefore("@")
             ?: "Gamer"
         return User(
             id = uid,
             username = name,
-            email = doc.getString("email") ?: "",
+            email = doc.getString("email") ?: doc.getString("emailAddress") ?: "",
             gender = doc.getString("gender") ?: "",
             dateOfBirth = doc.getString("dateOfBirth") ?: "",
             favoriteGames = (doc.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
@@ -281,6 +198,7 @@ object FriendManager {
             tx.set(friendsRef, hashMapOf(
                 "userA" to fromUid,
                 "userB" to toUid,
+                "users" to listOf(fromUid, toUid),
                 "createdAt" to Timestamp.now()
             ))
         }.addOnSuccessListener { onResult(true) }
@@ -304,9 +222,14 @@ object FriendManager {
                 val batch = db.batch()
                 var found = false
                 for (doc in result) {
-                    val a = doc.getString("userA")
-                    val b = doc.getString("userB")
-                    if ((a == uid && b == otherUid) || (a == otherUid && b == uid)) {
+                    val a = doc.getString("userA") ?: doc.getString("user1") ?: doc.getString("fromUid")
+                    val b = doc.getString("userB") ?: doc.getString("user2") ?: doc.getString("toUid")
+                    val usersList = (doc.get("users") as? List<*>)?.filterIsInstance<String>()
+
+                    val isMatch = (a == uid && b == otherUid) || (a == otherUid && b == uid) ||
+                            (usersList != null && usersList.contains(uid) && usersList.contains(otherUid))
+
+                    if (isMatch) {
                         batch.delete(doc.reference)
                         found = true
                     }
@@ -325,14 +248,18 @@ object FriendManager {
     /** Check if current user is friends with otherUid */
     fun isFriend(otherUid: String, onResult: (Boolean) -> Unit) {
         val uid = currentUid() ?: return onResult(false)
+        if (uid == otherUid) return onResult(false)
         db.collection("friends")
             .get()
             .addOnSuccessListener { result ->
                 var found = false
                 for (doc in result) {
-                    val a = doc.getString("userA")
-                    val b = doc.getString("userB")
-                    if ((a == uid && b == otherUid) || (a == otherUid && b == uid)) {
+                    val a = doc.getString("userA") ?: doc.getString("user1") ?: doc.getString("fromUid")
+                    val b = doc.getString("userB") ?: doc.getString("user2") ?: doc.getString("toUid")
+                    val usersList = (doc.get("users") as? List<*>)?.filterIsInstance<String>()
+
+                    if ((a == uid && b == otherUid) || (a == otherUid && b == uid) ||
+                        (usersList != null && usersList.contains(uid) && usersList.contains(otherUid))) {
                         found = true
                         break
                     }
@@ -348,14 +275,19 @@ object FriendManager {
         db.collection("friends")
             .get()
             .addOnSuccessListener { result ->
-                val friends = mutableListOf<String>()
+                val friends = mutableSetOf<String>()
                 for (doc in result) {
-                    val a = doc.getString("userA")
-                    val b = doc.getString("userB")
+                    val a = doc.getString("userA") ?: doc.getString("user1") ?: doc.getString("fromUid")
+                    val b = doc.getString("userB") ?: doc.getString("user2") ?: doc.getString("toUid")
+                    val usersList = (doc.get("users") as? List<*>)?.filterIsInstance<String>()
+
                     if (a == uid && !b.isNullOrEmpty()) friends.add(b)
                     else if (b == uid && !a.isNullOrEmpty()) friends.add(a)
+                    else if (usersList != null && usersList.contains(uid)) {
+                        usersList.filter { it != uid }.forEach { friends.add(it) }
+                    }
                 }
-                onResult(friends)
+                onResult(friends.toList())
             }
             .addOnFailureListener { onResult(emptyList()) }
     }

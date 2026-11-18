@@ -290,7 +290,9 @@ class ProfileActivity : BaseActivity() {
             return
         }
 
-        db.collection("users").document(uid).get()
+        val isOwnProfile = uid == FirebaseAuth.getInstance().currentUser?.uid
+        val profileCollection = if (isOwnProfile) "users" else UserDirectory.COLLECTION
+        db.collection(profileCollection).document(uid).get()
             .addOnSuccessListener { doc ->
                 if (doc.exists()) {
                     val username = doc.getString("username") ?: "Unknown"
@@ -548,10 +550,15 @@ class ProfileActivity : BaseActivity() {
                     val newFirstName = firstNameInput.text.toString().trim()
                     val newLastName = lastNameInput.text.toString().trim()
                     val newFullName = "$newFirstName $newLastName".trim()
+                    val updatedUsername = usernameInput.text.toString().trim()
+                    if (updatedUsername.length !in 3..64) {
+                        usernameInput.error = "Username must be between 3 and 64 characters"
+                        return@setPositiveButton
+                    }
 
                     val updatedUser = User(
                         id = currentUid ?: "",
-                        username = usernameInput.text.toString().trim(),
+                        username = updatedUsername,
                         email = emailInput.text.toString().trim(),
                         firstName = newFirstName,
                         lastName = newLastName,
@@ -622,6 +629,17 @@ class ProfileActivity : BaseActivity() {
 
         db.collection("users").document(uid)
             .set(data as Map<String, Any>, com.google.firebase.firestore.SetOptions.merge())
+            .continueWithTask { privateWrite ->
+                if (!privateWrite.isSuccessful) {
+                    throw privateWrite.exception ?: IllegalStateException("Private profile update failed")
+                }
+                db.collection(UserDirectory.COLLECTION)
+                    .document(uid)
+                    .set(
+                        UserDirectory.fromUser(user),
+                        com.google.firebase.firestore.SetOptions.merge()
+                    )
+            }
             .addOnSuccessListener { onResult(true) }
             .addOnFailureListener { onResult(false) }
     }
@@ -676,10 +694,20 @@ class ProfileActivity : BaseActivity() {
                 .addOnSuccessListener {
                     storageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
                         try {
-                            FirebaseFirestore.getInstance()
-                                .collection("users")
+                            val firestore = FirebaseFirestore.getInstance()
+                            val imageUrl = downloadUrl.toString()
+                            firestore.collection("users")
                                 .document(uid)
-                                .set(mapOf(fieldName to downloadUrl.toString()), com.google.firebase.firestore.SetOptions.merge())
+                                .set(
+                                    mapOf(fieldName to imageUrl),
+                                    com.google.firebase.firestore.SetOptions.merge()
+                                )
+                            firestore.collection(UserDirectory.COLLECTION)
+                                .document(uid)
+                                .set(
+                                    mapOf(fieldName to imageUrl),
+                                    com.google.firebase.firestore.SetOptions.merge()
+                                )
                         } catch (_: IllegalStateException) {}
                     }
                 }
