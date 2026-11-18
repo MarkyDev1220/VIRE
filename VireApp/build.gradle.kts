@@ -28,9 +28,9 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("release/VIRE.jks")
-            storePassword = "Link@1220"
+            storePassword = "Link1220"
             keyAlias = "viremobile"
-            keyPassword = "Link@1220"
+            keyPassword = "Link1220"
         }
     }
 
