@@ -47,18 +47,53 @@ open class BaseActivity : AppCompatActivity() {
         applyStatusBarInsets()
     }
 
+    private fun getNavigationBarHeightFallback(): Int {
+        if (resources.configuration.orientation != android.content.res.Configuration.ORIENTATION_PORTRAIT) return 0
+        val resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android")
+        return if (resourceId != 0) resources.getDimensionPixelSize(resourceId) else {
+            (24 * resources.displayMetrics.density).toInt()
+        }
+    }
+
     private fun applyStatusBarInsets() {
         val rootChild = findViewById<ViewGroup>(android.R.id.content)?.getChildAt(0) ?: return
+        val bottomNav = rootChild.findViewById<View>(R.id.bottomNav)
+        val chatInputBar = rootChild.findViewById<View>(R.id.chatInputBar)
+        val inboxFootnote = rootChild.findViewById<View>(R.id.inboxFootnote)
+        val initialLeft = rootChild.paddingLeft
+        val initialTop = rootChild.paddingTop
+        val initialRight = rootChild.paddingRight
+        val initialBottom = rootChild.paddingBottom
+        val initialNavMargin = (bottomNav?.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin ?: 0
+        val initialChatInputMargin = (chatInputBar?.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin ?: 0
+        val initialFootnoteMargin = (inboxFootnote?.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin ?: 0
+
         ViewCompat.setOnApplyWindowInsetsListener(rootChild) { view, insets ->
-            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val navigationBarBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+                .takeIf { it > 0 }
+                ?: getNavigationBarHeightFallback()
             view.setPadding(
-                view.paddingLeft,
-                statusBarHeight,
-                view.paddingRight,
-                view.paddingBottom
+                initialLeft + systemBars.left,
+                initialTop + systemBars.top,
+                initialRight + systemBars.right,
+                initialBottom + if (bottomNav == null) navigationBarBottom else 0
             )
+
+            fun applyBottomMargin(target: View?, baseMargin: Int) {
+                val params = target?.layoutParams as? ViewGroup.MarginLayoutParams ?: return
+                val targetMargin = baseMargin + navigationBarBottom
+                if (params.bottomMargin != targetMargin) {
+                    params.bottomMargin = targetMargin
+                    target.layoutParams = params
+                }
+            }
+            applyBottomMargin(bottomNav, initialNavMargin)
+            applyBottomMargin(chatInputBar, initialChatInputMargin)
+            applyBottomMargin(inboxFootnote, initialFootnoteMargin)
             insets
         }
+        ViewCompat.requestApplyInsets(rootChild)
     }
 
     override fun onResume() {

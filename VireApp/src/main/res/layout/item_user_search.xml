@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/userSearchCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="6dp"
     android:layout_marginVertical="4dp"
+    app:cardBackgroundColor="@color/circuit_card"
     app:cardCornerRadius="10dp"
     app:cardElevation="2dp"
     android:foreground="?android:attr/selectableItemBackground">
@@ -13,6 +15,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="12dp">
+
+        <ImageView
+            android:id="@+id/userSearchCover"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_alignParentTop="true"
+            android:contentDescription="@string/profile_cover_photo"
+            android:alpha="0.72"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
 
         <!-- User Avatar -->
         <ImageView
@@ -33,21 +45,31 @@
             android:layout_toStartOf="@+id/userSearchActionButton"
             android:layout_marginStart="12dp"
             android:text="Username"
-            android:textColor="#212121"
+            android:textColor="@color/circuit_text_primary"
             android:textSize="16sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/userSearchHandle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/userSearchName"
+            android:layout_toEndOf="@id/userSearchAvatar"
+            android:layout_marginStart="12dp"
+            android:textColor="@color/circuit_text_muted"
+            android:textSize="11sp" />
 
         <!-- Local Area -->
         <TextView
             android:id="@+id/userSearchArea"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/userSearchName"
+            android:layout_below="@id/userSearchHandle"
             android:layout_toEndOf="@id/userSearchAvatar"
             android:layout_marginStart="12dp"
             android:layout_marginTop="2dp"
             android:text="Local Area"
-            android:textColor="#666666"
+            android:textColor="@color/circuit_text_secondary"
             android:textSize="12sp" />
 
         <!-- Skill Level Badge -->
@@ -60,13 +82,13 @@
             android:layout_marginStart="12dp"
             android:layout_marginTop="4dp"
             android:background="@drawable/circle_background"
-            android:backgroundTint="#E0E0E0"
+            android:backgroundTint="@color/circuit_card"
             android:paddingStart="6dp"
             android:paddingTop="1dp"
             android:paddingEnd="6dp"
             android:paddingBottom="1dp"
             android:text="Casual"
-            android:textColor="#424242"
+            android:textColor="@color/circuit_text_primary"
             android:textSize="10sp"
             android:textStyle="bold" />
 
@@ -80,7 +102,7 @@
             android:ellipsize="end"
             android:maxLines="2"
             android:text="Gamer bio or favorite games..."
-            android:textColor="#757575"
+            android:textColor="@color/circuit_text_muted"
             android:textSize="12sp" />
 
         <!-- Friend Action Button -->

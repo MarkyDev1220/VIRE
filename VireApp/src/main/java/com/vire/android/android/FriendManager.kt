@@ -137,120 +137,120 @@ object FriendManager {
 
         val qLower = qStr.lowercase()
 
-        // 1. Try exact match on username / usernameLowercase
+        // 1. Exact match on usernameLowercase
         db.collection("users")
             .whereEqualTo("usernameLowercase", qLower)
             .get()
             .addOnSuccessListener { snap1 ->
                 if (!snap1.isEmpty) {
-                    val doc = snap1.documents.first()
-                    onResult(parseUserDoc(doc))
+                    onResult(parseUserDoc(snap1.documents.first()))
                     return@addOnSuccessListener
                 }
 
-                // 2. Try match on email
+                // 2. Exact match on username
                 db.collection("users")
-                    .whereEqualTo("email", qLower)
+                    .whereEqualTo("username", qStr)
                     .get()
                     .addOnSuccessListener { snap2 ->
                         if (!snap2.isEmpty) {
-                            val doc = snap2.documents.first()
-                            onResult(parseUserDoc(doc))
+                            onResult(parseUserDoc(snap2.documents.first()))
                             return@addOnSuccessListener
                         }
 
-                        // 3. Try prefix range query on usernameLowercase
+                        // 3. Exact match on email
                         db.collection("users")
-                            .whereGreaterThanOrEqualTo("usernameLowercase", qLower)
-                            .whereLessThanOrEqualTo("usernameLowercase", qLower + "\uf8ff")
-                            .limit(1)
+                            .whereEqualTo("email", qLower)
                             .get()
                             .addOnSuccessListener { snap3 ->
                                 if (!snap3.isEmpty) {
-                                    val doc = snap3.documents.first()
-                                    onResult(parseUserDoc(doc))
+                                    onResult(parseUserDoc(snap3.documents.first()))
                                     return@addOnSuccessListener
                                 }
 
-                                // 4. Fallback memory search across full collection
-                                db.collection("users").get()
-                                    .addOnSuccessListener { allDocs ->
-                                        val matched = allDocs.documents.find { doc ->
-                                            val u = doc.getString("username") ?: ""
-                                            val e = doc.getString("email") ?: ""
-                                            val name = doc.getString("fullName") ?: doc.getString("displayName") ?: ""
-                                            u.equals(qStr, ignoreCase = true) ||
-                                                    e.equals(qStr, ignoreCase = true) ||
-                                                    name.equals(qStr, ignoreCase = true) ||
-                                                    u.lowercase().contains(qLower)
+                                // 4. Prefix match on usernameLowercase
+                                db.collection("users")
+                                    .whereGreaterThanOrEqualTo("usernameLowercase", qLower)
+                                    .whereLessThanOrEqualTo("usernameLowercase", qLower + "\uf8ff")
+                                    .get()
+                                    .addOnSuccessListener { snap4 ->
+                                        if (!snap4.isEmpty) {
+                                            onResult(parseUserDoc(snap4.documents.first()))
+                                            return@addOnSuccessListener
                                         }
-                                        if (matched != null) {
-                                            onResult(parseUserDoc(matched))
-                                        } else {
-                                            onResult(findDemoUser(qStr))
-                                        }
+
+                                        // 5. Broad collection scan in memory
+                                        db.collection("users").get()
+                                            .addOnSuccessListener { snap5 ->
+                                                val matchedDoc = snap5.documents.find { doc ->
+                                                    val u = doc.getString("username") ?: ""
+                                                    val uLower = doc.getString("usernameLowercase") ?: u.lowercase()
+                                                    val e = doc.getString("email") ?: doc.getString("emailAddress") ?: ""
+                                                    val fullName = doc.getString("fullName") ?: doc.getString("displayName") ?: doc.getString("name") ?: ""
+
+                                                    u.equals(qStr, ignoreCase = true) ||
+                                                            uLower == qLower ||
+                                                            uLower.contains(qLower) ||
+                                                            e.equals(qStr, ignoreCase = true) ||
+                                                            e.lowercase().contains(qLower) ||
+                                                            fullName.equals(qStr, ignoreCase = true) ||
+                                                            fullName.lowercase().contains(qLower)
+                                                }
+
+                                                if (matchedDoc != null) {
+                                                    val user = parseUserDoc(matchedDoc)
+                                                    if (!matchedDoc.contains("usernameLowercase") && user.username.isNotBlank()) {
+                                                        db.collection("users").document(user.id)
+                                                            .update("usernameLowercase", user.username.lowercase())
+                                                    }
+                                                    onResult(user)
+                                                } else {
+                                                    onResult(null)
+                                                }
+                                            }
+                                            .addOnFailureListener { e ->
+                                                android.util.Log.e("FriendManager", "Error in broad collection scan: ${e.message}", e)
+                                                onResult(null)
+                                            }
                                     }
-                                    .addOnFailureListener { onResult(findDemoUser(qStr)) }
+                                    .addOnFailureListener { e ->
+                                        android.util.Log.e("FriendManager", "Error in prefix query: ${e.message}", e)
+                                        onResult(null)
+                                    }
                             }
-                            .addOnFailureListener { onResult(findDemoUser(qStr)) }
+                            .addOnFailureListener { e ->
+                                android.util.Log.e("FriendManager", "Error in email query: ${e.message}", e)
+                                onResult(null)
+                            }
                     }
-                    .addOnFailureListener { onResult(findDemoUser(qStr)) }
+                    .addOnFailureListener { e ->
+                        android.util.Log.e("FriendManager", "Error in username query: ${e.message}", e)
+                        onResult(null)
+                    }
             }
-            .addOnFailureListener { onResult(findDemoUser(qStr)) }
-    }
-
-    fun getDemoUsers(): List<User> {
-        return listOf(
-            User(
-                id = "demo_alex",
-                username = "Alex_Gamer",
-                email = "alex@example.com",
-                favoriteGames = listOf("Magic: The Gathering", "Lorcana"),
-                skillLevel = "Intermediate",
-                localArea = "Downtown",
-                gamerBio = "Avid MTG Commander player!"
-            ),
-            User(
-                id = "demo_sam",
-                username = "Sam_TCG",
-                email = "sam@example.com",
-                favoriteGames = listOf("Pokemon TCG", "Yu-Gi-Oh!"),
-                skillLevel = "Advanced",
-                localArea = "Uptown",
-                gamerBio = "Competitive Pokemon TCG player."
-            ),
-            User(
-                id = "demo_jordan",
-                username = "Jordan_Deckmaster",
-                email = "jordan@example.com",
-                favoriteGames = listOf("Magic: The Gathering", "Yu-Gi-Oh!"),
-                skillLevel = "Expert",
-                localArea = "Westside",
-                gamerBio = "Looking for local casual matches."
-            )
-        )
-    }
-
-    private fun findDemoUser(queryStr: String): User? {
-        val qStr = queryStr.trim()
-        val qLower = qStr.lowercase()
-        return getDemoUsers().find { user ->
-            user.username.equals(qStr, ignoreCase = true) ||
-                    user.email.equals(qStr, ignoreCase = true) ||
-                    user.username.lowercase().contains(qLower)
-        }
+            .addOnFailureListener { e ->
+                android.util.Log.e("FriendManager", "Error in usernameLowercase query: ${e.message}", e)
+                onResult(null)
+            }
     }
 
     private fun parseUserDoc(doc: com.google.firebase.firestore.DocumentSnapshot): User {
         val uid = doc.id
-        val name = doc.getString("username")
+        val email = doc.getString("email")
+            ?: doc.getString("emailAddress")
+            ?: ""
+        val rawName = doc.getString("username")
             ?: doc.getString("fullName")
             ?: doc.getString("displayName")
-            ?: "Gamer"
+            ?: doc.getString("name")
+        val name = when {
+            !rawName.isNullOrBlank() -> rawName
+            email.isNotBlank() -> email.substringBefore("@")
+            else -> "User (${uid.take(6)})"
+        }
         return User(
             id = uid,
             username = name,
-            email = doc.getString("email") ?: "",
+            email = email,
             gender = doc.getString("gender") ?: "",
             dateOfBirth = doc.getString("dateOfBirth") ?: "",
             favoriteGames = (doc.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),

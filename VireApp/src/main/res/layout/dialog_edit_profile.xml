@@ -68,6 +68,23 @@
                 android:background="@drawable/edit_text_bg"/>
         </LinearLayout>
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Gender"
+            android:textColor="@color/circuit_text_secondary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/editGender"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/edit_text_bg"
+            android:paddingHorizontal="12dp" />
+
         <!-- Email -->
         <EditText
             android:id="@+id/editEmail"
@@ -283,22 +300,7 @@
             android:background="@drawable/edit_text_bg"
             android:layout_marginTop="6dp"/>
 
-        <!-- Gender -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Gender"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="@color/circuit_text_secondary"
-            android:layout_marginTop="14dp"/>
 
-        <Spinner
-            android:id="@+id/editGender"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/edit_text_bg"
-            android:layout_marginTop="4dp"/>
 
         <!-- Theme Button -->
         <Button

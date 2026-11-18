@@ -13,6 +13,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -34,6 +35,7 @@ class MessagesActivity : BaseActivity() {
     private lateinit var tabAll: TextView
     private lateinit var tabUnread: TextView
     private lateinit var tabGroups: TextView
+    private lateinit var tabArchived: TextView
     private lateinit var cardFriendsRequests: CardView
     private lateinit var btnMarkAllRead: TextView
     private lateinit var tvSearchUsersHeader: TextView
@@ -60,6 +62,8 @@ class MessagesActivity : BaseActivity() {
     private var currentFilter = InboxConversationAdapter.FilterType.ALL
     private var currentSearchQuery = ""
     private var activeChatUser: String? = null
+    private var activeChatUid: String? = null
+    private var activeConversationId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -96,6 +100,7 @@ class MessagesActivity : BaseActivity() {
                 .get()
                 .addOnSuccessListener { querySnapshot ->
                     val userList = mutableListOf<String>()
+                    val userIds = mutableMapOf<String, String>()
                     for (doc in querySnapshot) {
                         val uid = doc.id
                         if (uid == currentUid) continue
@@ -105,9 +110,11 @@ class MessagesActivity : BaseActivity() {
                             ?: ""
                         if (username.isNotBlank()) {
                             userList.add(username)
-                            MessageManager.registerUser(username)
+                            userIds[username] = uid
+                            MessageManager.registerUser(username, uid)
                         }
                     }
+                    MessageManager.setRegisteredUsers(userIds)
                     val sortedUsers = userList.distinct().sorted()
                     inlineSearchAdapter.updateUsers(sortedUsers)
                     onLoaded?.invoke(sortedUsers)
@@ -132,6 +139,7 @@ class MessagesActivity : BaseActivity() {
         tabAll = findViewById(R.id.tabAll)
         tabUnread = findViewById(R.id.tabUnread)
         tabGroups = findViewById(R.id.tabGroups)
+        tabArchived = findViewById(R.id.tabArchived)
         cardFriendsRequests = findViewById(R.id.cardFriendsRequests)
         btnMarkAllRead = findViewById(R.id.btnMarkAllRead)
         tvSearchUsersHeader = findViewById(R.id.tvSearchUsersHeader)
@@ -153,10 +161,14 @@ class MessagesActivity : BaseActivity() {
     private fun setupAdapters() {
         // Inbox Conversations
         inboxAdapter = InboxConversationAdapter(
-            MessageManager.getConversationsList()
-        ) { conversation ->
-            openChat(conversation.name)
-        }
+            emptyList(),
+            onConversationClick = { conversation ->
+                openChat(conversation.otherUid, conversation.name)
+            },
+            onConversationMenuClick = { conversation, anchor ->
+                showConversationOptions(conversation, anchor)
+            }
+        )
         recyclerConversations.layoutManager = LinearLayoutManager(this)
         recyclerConversations.adapter = inboxAdapter
 
@@ -217,6 +229,9 @@ class MessagesActivity : BaseActivity() {
         tabGroups.setOnClickListener {
             selectTab(InboxConversationAdapter.FilterType.GROUPS)
         }
+        tabArchived.setOnClickListener {
+            selectTab(InboxConversationAdapter.FilterType.ARCHIVED)
+        }
     }
 
     private fun selectTab(filterType: InboxConversationAdapter.FilterType) {
@@ -242,6 +257,12 @@ class MessagesActivity : BaseActivity() {
         tabGroups.setTextColor(
             getColor(if (filterType == InboxConversationAdapter.FilterType.GROUPS) R.color.circuit_lime else R.color.circuit_text_secondary)
         )
+        tabArchived.setBackgroundResource(
+            if (filterType == InboxConversationAdapter.FilterType.ARCHIVED) R.drawable.pill_tab_active else R.drawable.pill_tab_inactive
+        )
+        tabArchived.setTextColor(
+            getColor(if (filterType == InboxConversationAdapter.FilterType.ARCHIVED) R.color.circuit_lime else R.color.circuit_text_secondary)
+        )
 
         inboxAdapter.applyFilter(currentFilter, currentSearchQuery)
     }
@@ -260,7 +281,6 @@ class MessagesActivity : BaseActivity() {
         }
 
         btnMarkAllRead.setOnClickListener {
-            MessageManager.markAllAsRead()
             refreshInboxData()
         }
 
@@ -318,20 +338,20 @@ class MessagesActivity : BaseActivity() {
 
         btnChatOptions.setOnClickListener { anchor ->
             val popup = PopupMenu(this, anchor)
-            popup.menu.add("Clear History")
+            popup.menu.add("Archive conversation")
+            popup.menu.add("Hide conversation")
+            popup.menu.add("Delete conversation")
             popup.menu.add("View Profile")
             popup.setOnMenuItemClickListener { item ->
                 when (item.title) {
                     "View Profile" -> {
-                        startActivity(Intent(this, ProfileActivity::class.java))
-                    }
-                    "Clear History" -> {
-                        activeChatUser?.let { user ->
-                            MessageManager.getMessagesForUser(user).clear()
-                            chatAdapter?.notifyDataSetChanged()
-                            refreshInboxData()
+                        activeChatUid?.let { uid ->
+                            startActivity(Intent(this, ProfileActivity::class.java).putExtra("uid", uid))
                         }
                     }
+                    "Archive conversation" -> updateConversationState(archived = true, hidden = false)
+                    "Hide conversation" -> updateConversationState(archived = false, hidden = true)
+                    "Delete conversation" -> confirmDeleteConversation(activeConversationId)
                 }
                 true
             }
@@ -344,45 +364,164 @@ class MessagesActivity : BaseActivity() {
     }
 
     private fun sendCurrentMessage() {
-        val user = activeChatUser ?: return
+        val otherUid = activeChatUid ?: return
+        val otherName = activeChatUser ?: return
+        val currentUid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+        if (currentUid.isNullOrBlank()) {
+            Toast.makeText(this, "Sign in to send messages.", Toast.LENGTH_SHORT).show()
+            return
+        }
         val text = messageInput.text.toString().trim()
         if (text.isEmpty()) return
+        val currentName = getSharedPreferences("user_prefs", MODE_PRIVATE)
+            .getString("username", null)
+            ?: com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.displayName
+            ?: "Gamer"
 
-        val newMessage = Message("Me", text)
-        MessageManager.sendMessageForUser(user, newMessage)
-
-        val messages = MessageManager.getMessagesForUser(user)
-        chatAdapter?.notifyItemInserted(messages.size - 1)
-        recyclerChatMessages.scrollToPosition(messages.size - 1)
-
-        messageInput.text.clear()
-        refreshInboxData()
+        MessageManager.sendMessage(currentUid, currentName, otherUid, otherName, text) { success, error ->
+            if (success) {
+                messageInput.text.clear()
+                refreshInboxData()
+            } else {
+                val detail = error?.takeIf { it.isNotBlank() } ?: "Check your connection and Firestore permissions."
+                Toast.makeText(this, "Message could not be sent: $detail", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun openChat(user: String) {
-        activeChatUser = user
-        MessageManager.markAsRead(user)
+        val uid = MessageManager.getUserId(user)
+        if (uid == null) {
+            Toast.makeText(this, "Could not find this user's account.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        openChat(uid, user)
+    }
 
-        chatHeaderTitle.text = user
-        chatHeaderSubtitle.text = "Active now"
+    private fun openChat(otherUid: String, otherName: String) {
+        val currentUid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+        if (currentUid.isNullOrBlank()) return
+        activeChatUser = otherName
+        activeChatUid = otherUid
+        activeConversationId = MessageManager.conversationId(currentUid, otherUid)
+        val conversationId = activeConversationId ?: return
+        MessageManager.setConversationState(
+            currentUid,
+            conversationId,
+            archived = false,
+            hidden = false,
+            deleted = false
+        ) {}
 
-        val messages = MessageManager.getMessagesForUser(user)
-        chatAdapter = ChatAdapter(messages)
+        chatHeaderTitle.text = otherName
+        chatHeaderSubtitle.text = "Messages stay here until you delete them."
+
+        chatAdapter = ChatAdapter(mutableListOf()) { message ->
+            confirmDeleteMessage(conversationId, currentUid, message)
+        }
         recyclerChatMessages.layoutManager = LinearLayoutManager(this).apply {
             stackFromEnd = true
         }
         recyclerChatMessages.adapter = chatAdapter
-
-        if (messages.isNotEmpty()) {
-            recyclerChatMessages.scrollToPosition(messages.size - 1)
-        }
-
         inboxContainer.visibility = View.GONE
         chatContainer.visibility = View.VISIBLE
+
+        listenToMessages(conversationId, currentUid)
+        refreshInboxData()
+    }
+
+    private fun confirmDeleteMessage(conversationId: String, currentUid: String, message: Message) {
+        AlertDialog.Builder(this)
+            .setTitle("Delete this message?")
+            .setMessage("This hides the message from your view. Other participants keep their copy.")
+            .setPositiveButton("Delete for me") { _, _ ->
+                MessageManager.hideMessageForUser(currentUid, conversationId, message.id) { success ->
+                    if (success) listenToMessages(conversationId, currentUid)
+                    else Toast.makeText(this, "Could not delete message.", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun listenToMessages(conversationId: String, currentUid: String) {
+        MessageManager.listenToConversation(conversationId, currentUid) { messages ->
+            if (activeConversationId == conversationId) {
+                chatAdapter?.updateMessages(messages)
+                if (messages.isNotEmpty()) recyclerChatMessages.scrollToPosition(messages.lastIndex)
+            }
+        }
+    }
+
+    private fun updateConversationState(archived: Boolean, hidden: Boolean, deleted: Boolean = false) {
+        val currentUid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val conversationId = activeConversationId ?: return
+        MessageManager.setConversationState(currentUid, conversationId, archived, hidden, deleted) { success ->
+            if (success) closeChat()
+            else Toast.makeText(this, "Could not update this conversation.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showConversationOptions(conversation: ConversationItem, anchor: View) {
+        val popup = PopupMenu(this, anchor)
+        popup.menu.add(if (conversation.archived) "Move to inbox" else "Archive conversation")
+        popup.menu.add("Hide conversation")
+        popup.menu.add("Delete conversation")
+        popup.setOnMenuItemClickListener { item ->
+            when (item.title) {
+                "Archive conversation" -> updateInboxConversationState(conversation, archived = true, hidden = false)
+                "Move to inbox" -> updateInboxConversationState(conversation, archived = false, hidden = false)
+                "Hide conversation" -> updateInboxConversationState(conversation, archived = false, hidden = true)
+                "Delete conversation" -> confirmDeleteConversation(conversation.id)
+            }
+            true
+        }
+        popup.show()
+    }
+
+    private fun updateInboxConversationState(
+        conversation: ConversationItem,
+        archived: Boolean,
+        hidden: Boolean,
+        deleted: Boolean = false
+    ) {
+        val currentUid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return
+        MessageManager.setConversationState(
+            currentUid,
+            conversation.id,
+            archived,
+            hidden,
+            deleted
+        ) { success ->
+            if (success) refreshInboxData()
+            else Toast.makeText(this, "Could not update this conversation.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun confirmDeleteConversation(conversationId: String?) {
+        val id = conversationId ?: return
+        AlertDialog.Builder(this)
+            .setTitle("Delete conversation?")
+            .setMessage("This removes the conversation from your Messages. Other participants keep their copy.")
+            .setPositiveButton("Delete") { _, _ ->
+                val currentUid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return@setPositiveButton
+                MessageManager.setConversationState(currentUid, id, archived = false, hidden = false, deleted = true) { success ->
+                    if (success) {
+                        if (activeConversationId == id) closeChat() else refreshInboxData()
+                    } else {
+                        Toast.makeText(this, "Could not delete this conversation.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun closeChat() {
+        MessageManager.stopListening()
         activeChatUser = null
+        activeChatUid = null
+        activeConversationId = null
         chatContainer.visibility = View.GONE
         inboxContainer.visibility = View.VISIBLE
         refreshInboxData()
@@ -402,24 +541,24 @@ class MessagesActivity : BaseActivity() {
     }
 
     private fun refreshInboxData() {
-        val conversations = MessageManager.getConversationsList()
-        inboxAdapter.updateData(conversations)
-        inboxAdapter.applyFilter(currentFilter, currentSearchQuery)
-
-        val totalUnread = MessageManager.getTotalUnreadCount()
-        tabUnread.text = if (totalUnread > 0) "Unread · $totalUnread" else "Unread"
+        val currentUid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return
+        MessageManager.loadConversations(currentUid) { conversations ->
+            if (isFinishing || isDestroyed) return@loadConversations
+            inboxAdapter.updateData(conversations)
+            inboxAdapter.applyFilter(currentFilter, currentSearchQuery)
+            val totalUnread = conversations.sumOf { it.unreadCount }
+            tabUnread.text = if (totalUnread > 0) "Unread · $totalUnread" else "Unread"
+        }
     }
 
     override fun onResume() {
         super.onResume()
         fetchRealAppUsersFromFirestore()
         refreshInboxData()
-        activeChatUser?.let { user ->
-            val messages = MessageManager.getMessagesForUser(user)
-            chatAdapter?.notifyDataSetChanged()
-            if (messages.isNotEmpty()) {
-                recyclerChatMessages.scrollToPosition(messages.size - 1)
-            }
-        }
+    }
+
+    override fun onDestroy() {
+        MessageManager.stopListening()
+        super.onDestroy()
     }
 }

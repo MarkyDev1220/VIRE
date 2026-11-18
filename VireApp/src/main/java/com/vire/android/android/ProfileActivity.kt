@@ -7,6 +7,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
@@ -61,19 +62,24 @@ class ProfileActivity : BaseActivity() {
     private var selectedCoverUri: Uri? = null
     private var changingCoverPhoto = false
     private var currentUid: String? = null
+    private val migratedLocalImageFields = mutableSetOf<String>()
+    private var customThemeTarget: com.squareup.picasso.Target? = null
 
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         val uid = currentUid ?: return@registerForActivityResult
         uri?.let {
+            val localUser = loadUser(this)
             if (changingCoverPhoto) {
                 selectedCoverUri = uri
                 profileSafeLoad(uri, coverPhoto)
+                if (localUser?.id == uid) saveUser(localUser.copy(coverImageUri = uri), this)
                 uploadImageToStorage(uid, uri, "coverImageUrl")
             } else {
                 selectedProfileUri = uri
                 profileSafeLoad(uri, profileImage)
+                if (localUser?.id == uid) saveUser(localUser.copy(profileImageUri = uri), this)
                 uploadImageToStorage(uid, uri, "profileImageUrl")
             }
         }
@@ -89,6 +95,8 @@ class ProfileActivity : BaseActivity() {
                 val drawable: Drawable? =
                     Drawable.createFromStream(contentResolver.openInputStream(uri), uri.toString())
                 root.background = drawable
+                val uid = currentUid
+                if (uid != null) uploadCustomProfileBackground(uid, uri)
                 Toast.makeText(this, "Custom theme applied!", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 Toast.makeText(this, "Failed to load background", Toast.LENGTH_SHORT).show()
@@ -271,6 +279,51 @@ class ProfileActivity : BaseActivity() {
             "Purple" -> root.setBackgroundColor(Color.parseColor("#180E29"))
             else -> root.setBackgroundColor(Color.parseColor("#111625"))
         }
+        val lightTheme = themeName.equals("Light", ignoreCase = true)
+        val primaryText = if (lightTheme) Color.parseColor("#20242B") else Color.parseColor("#F3F4F6")
+        val secondaryText = if (lightTheme) Color.parseColor("#4B5563") else Color.parseColor("#9CA3AF")
+        listOf(fullNameText, genderText, aboutMeText, gamesText).forEach { it.setTextColor(primaryText) }
+        listOf(usernameText, emailText, genresText, skillLevelText, localAreaText, gamerBioText).forEach {
+            it.setTextColor(secondaryText)
+        }
+    }
+
+    private fun loadCustomProfileBackground(url: String) {
+        val root = findViewById<ScrollView>(R.id.scrollViewRoot) ?: return
+        val target = object : com.squareup.picasso.Target {
+            override fun onBitmapLoaded(bitmap: Bitmap, from: Picasso.LoadedFrom) {
+                root.background = BitmapDrawable(resources, bitmap)
+            }
+
+            override fun onBitmapFailed(e: Exception?, errorDrawable: Drawable?) {
+                applyThemeColor("Dark")
+            }
+
+            override fun onPrepareLoad(placeHolderDrawable: Drawable?) = Unit
+        }
+        customThemeTarget = target
+        Picasso.get().load(url).into(target)
+    }
+
+    private fun uploadCustomProfileBackground(uid: String, uri: Uri) {
+        val storageRef = FirebaseStorage.getInstance().reference
+            .child("profileImages/$uid/customProfileBackground.jpg")
+        storageRef.putFile(uri)
+            .addOnSuccessListener {
+                storageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                    FirebaseFirestore.getInstance().collection("users").document(uid)
+                        .set(
+                            mapOf(
+                                "profileTheme" to "Custom Image",
+                                "customProfileBackgroundUrl" to downloadUrl.toString()
+                            ),
+                            com.google.firebase.firestore.SetOptions.merge()
+                        )
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Custom theme could not be saved.", Toast.LENGTH_SHORT).show()
+            }
     }
 
     private fun loadUserProfile(uid: String) {
@@ -298,7 +351,13 @@ class ProfileActivity : BaseActivity() {
                     fullNameText.text = fullName
 
                     val profileTheme = doc.getString("profileTheme") ?: "Dark"
-                    applyThemeColor(profileTheme)
+                    if (profileTheme.equals("Custom Image", ignoreCase = true)) {
+                        val customBackgroundUrl = doc.getString("customProfileBackgroundUrl").orEmpty()
+                        if (customBackgroundUrl.isNotBlank()) loadCustomProfileBackground(customBackgroundUrl)
+                        else applyThemeColor("Dark")
+                    } else {
+                        applyThemeColor(profileTheme)
+                    }
 
                     val gender = doc.getString("gender") ?: ""
                     genderText.text = if (gender.isNotBlank() && gender != "Not set") "Gender: $gender" else "Gender: Not specified"
@@ -325,12 +384,16 @@ class ProfileActivity : BaseActivity() {
 
                     val profileUrl = doc.getString("profileImageUrl")
                         ?: doc.getString("profileImage")
+                        ?: doc.getString("profilePictureUrl")
+                        ?: doc.getString("profilePicUrl")
                         ?: doc.getString("avatarUrl")
                         ?: doc.getString("profileImageUri")
                         ?: ""
 
                     val coverUrl = doc.getString("coverImageUrl")
                         ?: doc.getString("coverImage")
+                        ?: doc.getString("coverPhotoUrl")
+                        ?: doc.getString("bannerImageUrl")
                         ?: doc.getString("coverUrl")
                         ?: doc.getString("coverImageUri")
                         ?: ""
@@ -339,13 +402,24 @@ class ProfileActivity : BaseActivity() {
                             fullName.contains("Mychaela", ignoreCase = true) ||
                             username.contains("Thomas", ignoreCase = true)
 
-                    val defaultAvatar = if (isMychaela) R.drawable.mychaela_avatar else R.drawable.ic_profile_placeholder
-                    val defaultCover = if (isMychaela) R.drawable.mychaela_cover else R.drawable.default_cover
+                    val defaultAvatar = R.drawable.ic_profile_placeholder
+                    val defaultCover = R.drawable.default_cover
 
-                    if (profileUrl.isNotBlank() && !profileUrl.startsWith("content://")) {
+                    val localUser = if (uid == FirebaseAuth.getInstance().currentUser?.uid) loadUser(this) else null
+                    val localProfileUri = localUser?.profileImageUri
+                    val localCoverUri = localUser?.coverImageUri
+
+                    if (isRemoteImageValue(profileUrl)) {
                         remoteSafeLoad(profileUrl, profileImage)
                     } else {
-                        profileImage.setImageResource(defaultAvatar)
+                        if (localProfileUri != null) {
+                            profileSafeLoad(localProfileUri, profileImage)
+                            if (migratedLocalImageFields.add("profileImageUrl")) {
+                                uploadImageToStorage(uid, localProfileUri, "profileImageUrl")
+                            }
+                        } else {
+                            profileImage.setImageResource(defaultAvatar)
+                        }
                         try {
                             FirebaseStorage.getInstance().reference
                                 .child("profileImages/$uid/profileImageUrl.jpg")
@@ -356,10 +430,17 @@ class ProfileActivity : BaseActivity() {
                         } catch (_: Exception) {}
                     }
 
-                    if (coverUrl.isNotBlank() && !coverUrl.startsWith("content://")) {
+                    if (isRemoteImageValue(coverUrl)) {
                         remoteSafeLoad(coverUrl, coverPhoto)
                     } else {
-                        coverPhoto.setImageResource(defaultCover)
+                        if (localCoverUri != null) {
+                            profileSafeLoad(localCoverUri, coverPhoto)
+                            if (migratedLocalImageFields.add("coverImageUrl")) {
+                                uploadImageToStorage(uid, localCoverUri, "coverImageUrl")
+                            }
+                        } else {
+                            coverPhoto.setImageResource(defaultCover)
+                        }
                         try {
                             FirebaseStorage.getInstance().reference
                                 .child("profileImages/$uid/coverImageUrl.jpg")
@@ -397,8 +478,8 @@ class ProfileActivity : BaseActivity() {
                     } else {
                         fullNameText.text = "Mychaela Thomas"
                         usernameText.text = "Username: Mychaela Thomas"
-                        profileImage.setImageResource(R.drawable.mychaela_avatar)
-                        coverPhoto.setImageResource(R.drawable.mychaela_cover)
+                        profileImage.setImageResource(R.drawable.ic_profile_placeholder)
+                        coverPhoto.setImageResource(R.drawable.default_cover)
                     }
                 }
 
@@ -417,8 +498,8 @@ class ProfileActivity : BaseActivity() {
                 } else {
                     fullNameText.text = "Mychaela Thomas"
                     usernameText.text = "Username: Mychaela Thomas"
-                    profileImage.setImageResource(R.drawable.mychaela_avatar)
-                    coverPhoto.setImageResource(R.drawable.mychaela_cover)
+                    profileImage.setImageResource(R.drawable.ic_profile_placeholder)
+                    coverPhoto.setImageResource(R.drawable.default_cover)
                 }
                 loadHostedGameNights(uid)
             }
@@ -437,8 +518,10 @@ class ProfileActivity : BaseActivity() {
         skillLevelText.text = "Skill Level: ${u.skillLevel.ifBlank { "Not specified" }}"
         localAreaText.text = "Local Gaming Area: ${u.localArea.ifBlank { "Not specified" }}"
         gamerBioText.text = "Gamer Bio: ${u.gamerBio.ifBlank { "No gamer bio added yet" }}"
-        profileImage.setImageResource(R.drawable.ic_profile_placeholder)
-        coverPhoto.setImageResource(R.drawable.default_cover)
+        u.profileImageUri?.let { profileSafeLoad(it, profileImage) }
+            ?: profileImage.setImageResource(R.drawable.ic_profile_placeholder)
+        u.coverImageUri?.let { profileSafeLoad(it, coverPhoto) }
+            ?: coverPhoto.setImageResource(R.drawable.default_cover)
     }
 
     private fun loadHostedGameNights(uid: String) {
@@ -470,6 +553,10 @@ class ProfileActivity : BaseActivity() {
             val gamerBioInput = dialogView.findViewById<EditText>(R.id.editGamerBio)
             val dobInput = dialogView.findViewById<EditText>(R.id.editDOB)
             val genderSpinner = dialogView.findViewById<Spinner>(R.id.editGender)
+            val genders = arrayOf("Not specified", "Female", "Male", "Non-binary", "Other", "Prefer not to say")
+            genderSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, genders).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
             val themeBtn = dialogView.findViewById<Button>(R.id.editThemeButtonDialog)
 
             val user = loadUser(this)
@@ -487,9 +574,8 @@ class ProfileActivity : BaseActivity() {
                 gamerBioInput.setText(it.gamerBio)
                 dobInput.setText(it.dateOfBirth)
 
-                val genders = arrayOf("Not specified", "Male", "Female", "Non-binary", "Other")
                 val genderIdx = genders.indexOfFirst { g -> g.equals(it.gender, ignoreCase = true) }
-                if (genderIdx >= 0) genderSpinner.setSelection(genderIdx)
+                genderSpinner.setSelection(genderIdx.coerceAtLeast(0))
             }
 
             dobInput.inputType = InputType.TYPE_NULL
@@ -585,67 +671,92 @@ class ProfileActivity : BaseActivity() {
 
     private fun convertUriToBase64(uri: Uri, isCover: Boolean): String? {
         return try {
-            val inputStream = contentResolver.openInputStream(uri) ?: return null
-            val originalBitmap = BitmapFactory.decodeStream(inputStream) ?: return null
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
 
-            val maxDim = if (isCover) 800 else 400
-            val width = originalBitmap.width
-            val height = originalBitmap.height
-            val scale = (maxDim.toFloat() / Math.max(width, height)).coerceAtMost(1.0f)
-
-            val scaledBitmap = if (scale < 1.0f) {
-                Bitmap.createScaledBitmap(originalBitmap, (width * scale).toInt(), (height * scale).toInt(), true)
-            } else {
-                originalBitmap
+            val maxDim = if (isCover) 480 else 240
+            var sampleSize = 1
+            while (Math.max(bounds.outWidth, bounds.outHeight) / sampleSize > maxDim * 2) {
+                sampleSize *= 2
             }
+            val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+            val bitmap = contentResolver.openInputStream(uri)?.use {
+                BitmapFactory.decodeStream(it, null, options)
+            } ?: return null
 
-            val outputStream = ByteArrayOutputStream()
-            scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 75, outputStream)
-            val byteArray = outputStream.toByteArray()
-            "data:image/jpeg;base64," + Base64.encodeToString(byteArray, Base64.NO_WRAP)
+            val scale = (maxDim.toFloat() / Math.max(bitmap.width, bitmap.height)).coerceAtMost(1.0f)
+            val scaledBitmap = if (scale < 1.0f) {
+                Bitmap.createScaledBitmap(bitmap, (bitmap.width * scale).toInt(), (bitmap.height * scale).toInt(), true)
+            } else bitmap
+
+            var quality = 72
+            var bytes: ByteArray
+            do {
+                val outputStream = ByteArrayOutputStream()
+                scaledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
+                bytes = outputStream.toByteArray()
+                quality -= 8
+            } while (bytes.size > 180_000 && quality >= 32)
+
+            if (bytes.size > 180_000) return null
+            "data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
         } catch (e: Exception) {
-            Log.e("ProfileActivity", "Error converting image to Base64: ${e.message}")
+            Log.e("ProfileActivity", "Error converting image to Base64: ${e.message}", e)
             null
         }
     }
 
     private fun uploadImageToStorage(uid: String, uri: Uri, fieldName: String) {
-        try {
-            val isCover = (fieldName == "coverImageUrl")
-            val base64Data = convertUriToBase64(uri, isCover)
-
-            if (!base64Data.isNullOrEmpty()) {
-                // Save Base64 string directly to Firestore so image syncs immediately across all devices
-                FirebaseFirestore.getInstance()
-                    .collection("users")
-                    .document(uid)
-                    .set(mapOf(fieldName to base64Data), com.google.firebase.firestore.SetOptions.merge())
-            }
-
-            val storage = try {
-                FirebaseStorage.getInstance()
-            } catch (e: IllegalStateException) {
-                return
-            }
-            val storageRef = storage.reference.child("profileImages/$uid/$fieldName.jpg")
-
-            storageRef.putFile(uri)
-                .addOnSuccessListener {
-                    storageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
-                        try {
-                            FirebaseFirestore.getInstance()
-                                .collection("users")
-                                .document(uid)
-                                .set(mapOf(fieldName to downloadUrl.toString()), com.google.firebase.firestore.SetOptions.merge())
-                        } catch (_: IllegalStateException) {}
+        Thread({
+            val base64Data = convertUriToBase64(uri, fieldName == "coverImageUrl")
+            runOnUiThread {
+                try {
+                    val userDocument = FirebaseFirestore.getInstance().collection("users").document(uid)
+                    if (!base64Data.isNullOrBlank()) {
+                        userDocument
+                            .set(mapOf(fieldName to base64Data), com.google.firebase.firestore.SetOptions.merge())
+                            .addOnFailureListener { error ->
+                                Log.e("ProfileActivity", "Could not save image backup: ${error.message}", error)
+                                Toast.makeText(this, "Could not save profile image: ${error.localizedMessage}", Toast.LENGTH_LONG).show()
+                            }
                     }
+
+                    val storageRef = FirebaseStorage.getInstance().reference
+                        .child("profileImages/$uid/$fieldName.jpg")
+                    storageRef.putFile(uri)
+                        .addOnSuccessListener {
+                            storageRef.downloadUrl
+                                .addOnSuccessListener { downloadUrl ->
+                                    userDocument
+                                        .set(
+                                            mapOf(fieldName to downloadUrl.toString()),
+                                            com.google.firebase.firestore.SetOptions.merge()
+                                        )
+                                        .addOnFailureListener { error ->
+                                            Log.e("ProfileActivity", "Could not save image URL: ${error.message}", error)
+                                            Toast.makeText(this, "Image uploaded, but its profile link could not be saved.", Toast.LENGTH_LONG).show()
+                                        }
+                                }
+                                .addOnFailureListener { error ->
+                                    Log.e("ProfileActivity", "Could not get image URL: ${error.message}", error)
+                                    Toast.makeText(this, "Image uploaded, but could not get its profile link.", Toast.LENGTH_LONG).show()
+                                }
+                        }
+                        .addOnFailureListener { error ->
+                            Log.e("ProfileActivity", "Storage upload failed: ${error.message}", error)
+                            if (base64Data.isNullOrBlank()) {
+                                Toast.makeText(this, "Image could not be uploaded. Check your connection and Firebase Storage rules.", Toast.LENGTH_LONG).show()
+                            } else {
+                                Toast.makeText(this, "Image saved to your profile. Cloud image upload failed.", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                } catch (error: Exception) {
+                    Log.e("ProfileActivity", "Image upload setup failed: ${error.message}", error)
+                    Toast.makeText(this, "Image upload failed: ${error.localizedMessage}", Toast.LENGTH_LONG).show()
                 }
-                .addOnFailureListener {
-                    Log.e("ProfileActivity", "Storage upload failed: ${it.message}")
-                }
-        } catch (e: Exception) {
-            Toast.makeText(this, "Error uploading image: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
+            }
+        }, "profile-image-compress").start()
     }
 
     private fun showThemePickerDialog() {
@@ -663,7 +774,13 @@ class ProfileActivity : BaseActivity() {
                         FirebaseFirestore.getInstance()
                             .collection("users")
                             .document(uid)
-                            .set(mapOf("profileTheme" to selectedTheme), com.google.firebase.firestore.SetOptions.merge())
+                            .set(
+                                mapOf(
+                                    "profileTheme" to selectedTheme,
+                                    "customProfileBackgroundUrl" to ""
+                                ),
+                                com.google.firebase.firestore.SetOptions.merge()
+                            )
                         Toast.makeText(this, "Theme saved!", Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
@@ -691,6 +808,12 @@ class ProfileActivity : BaseActivity() {
         }
     }
 
+    private fun isRemoteImageValue(value: String): Boolean =
+        value.startsWith("https://", ignoreCase = true) ||
+            value.startsWith("http://", ignoreCase = true) ||
+            value.startsWith("data:image", ignoreCase = true) ||
+            value.startsWith("gs://", ignoreCase = true)
+
     private fun remoteSafeLoad(url: String, target: ImageView) {
         val placeholder = if (target.id == R.id.coverPhoto) R.drawable.default_cover else R.drawable.ic_profile_placeholder
         if (url.isBlank()) {
@@ -707,6 +830,26 @@ class ProfileActivity : BaseActivity() {
                     target.setImageBitmap(bitmap)
                     return
                 }
+            }
+
+            if (url.startsWith("gs://")) {
+                FirebaseStorage.getInstance()
+                    .getReferenceFromUrl(url)
+                    .downloadUrl
+                    .addOnSuccessListener { downloadUrl ->
+                        Picasso.get()
+                            .load(downloadUrl)
+                            .placeholder(placeholder)
+                            .error(placeholder)
+                            .fit()
+                            .centerCrop()
+                            .into(target)
+                    }
+                    .addOnFailureListener { error ->
+                        Log.e("ProfileActivity", "Could not load profile image from Storage: ${error.message}", error)
+                        target.setImageResource(placeholder)
+                    }
+                return
             }
 
             if (url.startsWith("http")) {

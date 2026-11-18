@@ -8,7 +8,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.vire.android.R
 
 class ChatAdapter(
-    private val messages: MutableList<Message>
+    private val messages: MutableList<Message>,
+    private val onMessageLongClick: (Message) -> Unit = {}
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -38,6 +39,16 @@ class ChatAdapter(
             is MeMessageViewHolder -> holder.bind(message)
             is OtherMessageViewHolder -> holder.bind(message)
         }
+        holder.itemView.setOnLongClickListener {
+            onMessageLongClick(message)
+            true
+        }
+    }
+
+    fun updateMessages(newMessages: List<Message>) {
+        messages.clear()
+        messages.addAll(newMessages)
+        notifyDataSetChanged()
     }
 
     override fun getItemCount() = messages.size

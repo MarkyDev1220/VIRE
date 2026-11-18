@@ -194,6 +194,7 @@ class DeckListActivity : BaseActivity() {
         val spGame = view.findViewById<Spinner>(R.id.spinnerDeckGame)
         val etFormat = view.findViewById<EditText>(R.id.editDeckFormat)
         val etDesc = view.findViewById<EditText>(R.id.editDeckDescription)
+        val etCardList = view.findViewById<EditText>(R.id.editDeckCardList)
         val etDiscord = view.findViewById<EditText>(R.id.editDeckDiscordUrl)
         val cbPublic = view.findViewById<CheckBox>(R.id.checkDeckPublic)
         val ivPreview = view.findViewById<ImageView>(R.id.deckImagePreview)
@@ -209,6 +210,9 @@ class DeckListActivity : BaseActivity() {
             etName.setText(existingDeck.deckName)
             etFormat.setText(existingDeck.format)
             etDesc.setText(existingDeck.description)
+            etCardList.setText(existingDeck.cards.joinToString("\n") { card ->
+                if (card.quantity > 1) "${card.cardName} x${card.quantity}" else card.cardName
+            })
             etDiscord.setText(existingDeck.discordUrl)
             cbPublic.isChecked = existingDeck.isPublic
 
@@ -247,6 +251,16 @@ class DeckListActivity : BaseActivity() {
                 val gameSystem = spGame.selectedItem?.toString() ?: "Magic: The Gathering"
                 val format = etFormat.text.toString().trim().ifBlank { "Standard" }
                 val description = etDesc.text.toString().trim()
+                val cardListText = etCardList.text.toString().trim()
+                val deckCards = if (cardListText.isBlank()) {
+                    existingDeck?.cards.orEmpty()
+                } else {
+                    parseDeckCardList(cardListText, gameSystem)
+                }
+                if (!isEdit && description.isBlank() && deckCards.isEmpty()) {
+                    Toast.makeText(this, "Add a deck description or at least one card.", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
                 val discordUrl = etDiscord.text.toString().trim()
                 val isPublic = cbPublic.isChecked
                 val coverImageUrl = pendingImageUri?.toString() ?: existingDeck?.coverImageUrl ?: ""
@@ -259,8 +273,8 @@ class DeckListActivity : BaseActivity() {
                     gameSystem = gameSystem,
                     format = format,
                     description = description,
-                    cards = existingDeck?.cards ?: emptyList(),
-                    cardCount = existingDeck?.cards?.sumOf { it.quantity } ?: 0,
+                    cards = deckCards,
+                    cardCount = deckCards.sumOf { it.quantity },
                     coverImageUrl = coverImageUrl,
                     discordUrl = discordUrl,
                     isPublic = isPublic
@@ -287,6 +301,19 @@ class DeckListActivity : BaseActivity() {
         val dialog = builder.create()
         currentDialog = dialog
         dialog.show()
+    }
+
+    private fun parseDeckCardList(text: String, gameSystem: String): List<DeckCard> {
+        val cardLine = Regex("""^(.*?)\s*(?:[x×]\s*(\d+))?$""", RegexOption.IGNORE_CASE)
+        return text.lineSequence().mapNotNull { rawLine ->
+            val line = rawLine.trim()
+            if (line.isBlank()) return@mapNotNull null
+            val match = cardLine.matchEntire(line) ?: return@mapNotNull null
+            val name = match.groupValues[1].trim()
+            if (name.isBlank()) return@mapNotNull null
+            val quantity = match.groupValues[2].toIntOrNull()?.coerceAtLeast(1) ?: 1
+            DeckCard(cardName = name, gameSystem = gameSystem, quantity = quantity)
+        }.toList()
     }
 
     private fun confirmDeleteDeck(deck: Deck) {

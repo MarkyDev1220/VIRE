@@ -86,95 +86,126 @@ class SearchActivity : BaseActivity() {
         db.collection("users").get()
             .addOnSuccessListener { result ->
                 allSearchItems.clear()
-                val loadedUsers = mutableListOf<Pair<User, String?>>()
+                val loadedUsers = mutableListOf<UserSearchItem>()
 
                 for (document in result) {
                     val uid = document.id
+                    if (uid == currentUid) continue
 
                     val email = document.getString("email")
                         ?: document.getString("emailAddress")
                         ?: ""
 
-                    val rawName = document.getString("username")
-                        ?: document.getString("fullName")
+                    val rawUsername = document.getString("username")
                         ?: document.getString("displayName")
                         ?: document.getString("name")
-
-                    val displayName = when {
-                        !rawName.isNullOrBlank() -> rawName
+                    val firstName = document.getString("firstName") ?: ""
+                    val lastName = document.getString("lastName") ?: ""
+                    val fullName = document.getString("fullName")
+                        ?.takeIf { it.isNotBlank() }
+                        ?: "$firstName $lastName".trim()
+                    val username = when {
+                        !rawUsername.isNullOrBlank() -> rawUsername
                         email.isNotBlank() -> email.substringBefore("@")
+                        fullName.isNotBlank() -> fullName
                         else -> "User (${uid.take(6)})"
-                    } + if (uid == currentUid) " (You)" else ""
+                    }
+
+                    if (!document.contains("usernameLowercase") && rawUsername?.isNotBlank() == true) {
+                        db.collection("users").document(uid)
+                            .update("usernameLowercase", rawUsername.lowercase())
+                    }
 
                     val user = User(
                         id = uid,
-                        username = displayName,
+                        username = username,
                         email = email,
+                        firstName = firstName,
+                        lastName = lastName,
+                        fullName = fullName,
                         gender = document.getString("gender") ?: "",
                         dateOfBirth = document.getString("dateOfBirth") ?: "",
                         favoriteGames = (document.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
                         favoriteGenres = (document.get("favoriteGenres") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
                         skillLevel = document.getString("skillLevel") ?: "",
                         localArea = document.getString("localArea") ?: "",
-                        gamerBio = document.getString("gamerBio") ?: ""
+                        gamerBio = document.getString("gamerBio") ?: "",
+                        aboutMe = document.getString("aboutMe") ?: ""
                     )
                     val profileImageUrl = document.getString("profileImageUrl")
                         ?: document.getString("profileImage")
                         ?: document.getString("avatarUrl")
                         ?: document.getString("profileImageUri")
-                    loadedUsers.add(Pair(user, profileImageUrl))
-                }
-
-                if (loadedUsers.isEmpty()) {
-                    progressBar.visibility = View.GONE
-                    filterUsers()
-                    return@addOnSuccessListener
-                }
-
-                allSearchItems.clear()
-
-                for ((user, profileImageUrl) in loadedUsers) {
-                    allSearchItems.add(
+                    val coverImageUrl = document.getString("coverImageUrl")
+                        ?: document.getString("coverImage")
+                        ?: document.getString("coverUrl")
+                        ?: document.getString("coverImageUri")
+                    loadedUsers.add(
                         UserSearchItem(
                             user = user,
                             profileImageUrl = profileImageUrl,
-                            friendshipState = FriendManager.FriendshipState.NONE
+                            coverImageUrl = coverImageUrl,
+                            profileTheme = document.getString("profileTheme")
                         )
                     )
                 }
 
+                allSearchItems.clear()
+                allSearchItems.addAll(loadedUsers)
+
                 progressBar.visibility = View.GONE
                 filterUsers()
+
+                if (currentUid != null) {
+                    for (item in loadedUsers) {
+                        val user = item.user
+                        FriendManager.getFriendshipState(user.id) { state, reqId ->
+                                val index = allSearchItems.indexOfFirst { it.user.id == user.id }
+                                if (index != -1) {
+                                    allSearchItems[index] = allSearchItems[index].copy(
+                                        friendshipState = state,
+                                        requestId = reqId
+                                    )
+                                    filterUsers()
+                                }
+                            }
+                    }
+                }
+
+                loadedUsers.forEach { item ->
+                    val storage = try {
+                        com.google.firebase.storage.FirebaseStorage.getInstance().reference
+                    } catch (_: IllegalStateException) {
+                        null
+                    } ?: return@forEach
+
+                    if (!isRemoteImageValue(item.profileImageUrl)) {
+                        storage.child("profileImages/${item.user.id}/profileImageUrl.jpg")
+                            .downloadUrl
+                            .addOnSuccessListener { uri ->
+                                updateSearchItem(item.user.id) { current ->
+                                    current.copy(profileImageUrl = uri.toString())
+                                }
+                            }
+                    }
+                    if (!isRemoteImageValue(item.coverImageUrl)) {
+                        storage.child("profileImages/${item.user.id}/coverImageUrl.jpg")
+                            .downloadUrl
+                            .addOnSuccessListener { uri ->
+                                updateSearchItem(item.user.id) { current ->
+                                    current.copy(coverImageUrl = uri.toString())
+                                }
+                            }
+                    }
+                }
             }
             .addOnFailureListener { e ->
                 progressBar.visibility = View.GONE
-                val isFirestoreNotConfigured = e.message?.contains("PERMISSION_DENIED", ignoreCase = true) == true ||
-                        e.message?.contains("NOT_FOUND", ignoreCase = true) == true ||
-                        e.message?.contains("disabled", ignoreCase = true) == true ||
-                        e.message?.contains("does not exist", ignoreCase = true) == true
-
-                val msg = if (isFirestoreNotConfigured) {
-                    "Cloud Firestore database is disabled or not created in Firebase Console for project 'vire-7b583'. Showing sample gamers."
-                } else {
-                    "Error loading users: ${e.message}"
-                }
-                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Error loading users: ${e.message}", Toast.LENGTH_LONG).show()
                 Log.e("SearchActivity", "Firestore error: ${e.message}", e)
-                loadDemoUsers()
+                allSearchItems.clear()
+                filterUsers()
             }
-    }
-
-    private fun loadDemoUsers() {
-        allSearchItems.clear()
-        for (user in FriendManager.getDemoUsers()) {
-            allSearchItems.add(
-                UserSearchItem(
-                    user = user,
-                    friendshipState = FriendManager.FriendshipState.NONE
-                )
-            )
-        }
-        filterUsers()
     }
 
     private fun filterUsers() {
@@ -185,13 +216,15 @@ class SearchActivity : BaseActivity() {
             val user = item.user
             if (query.isEmpty()) return@filter true
 
-            val matchesUsername = user.username.lowercase().contains(query)
+            val matchesUsername = user.username.lowercase().contains(query) ||
+                    user.fullName.lowercase().contains(query)
             val matchesEmail = user.email.lowercase().contains(query)
             val matchesArea = user.localArea.lowercase().contains(query)
             val matchesSkill = user.skillLevel.lowercase().contains(query)
             val matchesGame = user.favoriteGames.any { it.lowercase().contains(query) }
             val matchesGenre = user.favoriteGenres.any { it.lowercase().contains(query) }
-            val matchesBio = user.gamerBio.lowercase().contains(query)
+            val matchesBio = user.gamerBio.lowercase().contains(query) ||
+                    user.aboutMe.lowercase().contains(query)
 
             when (category) {
                 "Username" -> matchesUsername || matchesEmail
@@ -221,6 +254,22 @@ class SearchActivity : BaseActivity() {
         } else {
             adapter.submitList(filtered.toList())
             emptyText.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+        }
+    }
+
+    private fun isRemoteImageValue(value: String?): Boolean =
+        value?.let {
+            it.startsWith("https://", ignoreCase = true) ||
+                it.startsWith("http://", ignoreCase = true) ||
+                it.startsWith("data:image", ignoreCase = true) ||
+                it.startsWith("gs://", ignoreCase = true)
+        } == true
+
+    private fun updateSearchItem(userId: String, transform: (UserSearchItem) -> UserSearchItem) {
+        val index = allSearchItems.indexOfFirst { it.user.id == userId }
+        if (index >= 0) {
+            allSearchItems[index] = transform(allSearchItems[index])
+            filterUsers()
         }
     }
 

@@ -97,10 +97,23 @@ class PlayerFinderActivity : BaseActivity() {
                     val uid = doc.id
                     if (uid == currentUid) continue
 
+                    val email = doc.getString("email")
+                        ?: doc.getString("emailAddress")
+                        ?: ""
+                    val rawName = doc.getString("username")
+                        ?: doc.getString("fullName")
+                        ?: doc.getString("displayName")
+                        ?: doc.getString("name")
+                    val displayName = when {
+                        !rawName.isNullOrBlank() -> rawName
+                        email.isNotBlank() -> email.substringBefore("@")
+                        else -> "User (${uid.take(6)})"
+                    }
+
                     val user = User(
                         id = uid,
-                        username = doc.getString("username") ?: "Unknown",
-                        email = doc.getString("email") ?: "",
+                        username = displayName,
+                        email = email,
                         gender = doc.getString("gender") ?: "",
                         dateOfBirth = doc.getString("dateOfBirth") ?: "",
                         favoriteGames = (doc.get("favoriteGames") as? List<*>)?.filterIsInstance<String>()

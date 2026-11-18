@@ -97,10 +97,17 @@ class FriendsActivity : BaseActivity() {
                     displayedFriends.clear()
                     for (doc in result) {
                         val uid = doc.id
+                        val email = doc.getString("email") ?: doc.getString("emailAddress") ?: ""
+                        val rawName = doc.getString("username") ?: doc.getString("fullName") ?: doc.getString("displayName") ?: doc.getString("name")
+                        val displayName = when {
+                            !rawName.isNullOrBlank() -> rawName
+                            email.isNotBlank() -> email.substringBefore("@")
+                            else -> "User (${uid.take(6)})"
+                        }
                         val user = User(
                             id = uid,
-                            username = doc.getString("username") ?: "Unknown",
-                            email = doc.getString("email") ?: "",
+                            username = displayName,
+                            email = email,
                             gender = doc.getString("gender") ?: "",
                             dateOfBirth = doc.getString("dateOfBirth") ?: "",
                             favoriteGames = (doc.get("favoriteGames") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
@@ -112,6 +119,9 @@ class FriendsActivity : BaseActivity() {
                         displayedFriends.add(user)
                     }
                     updateFriendList(displayedFriends)
+                }
+                .addOnFailureListener { e ->
+                    android.util.Log.e("FriendsActivity", "Error loading friends: ${e.message}", e)
                 }
         }
     }
@@ -136,8 +146,14 @@ class FriendsActivity : BaseActivity() {
                 .whereIn("__name__", fromUids)
                 .get()
                 .addOnSuccessListener { result ->
-                    val nameMap = result.documents.associateBy({ it.id }) {
-                        it.getString("username") ?: "Unknown"
+                    val nameMap = result.documents.associateBy({ it.id }) { doc ->
+                        val email = doc.getString("email") ?: ""
+                        val raw = doc.getString("username") ?: doc.getString("fullName") ?: doc.getString("displayName") ?: doc.getString("name")
+                        when {
+                            !raw.isNullOrBlank() -> raw
+                            email.isNotBlank() -> email.substringBefore("@")
+                            else -> "Gamer"
+                        }
                     }
                     val labels = mutableListOf<String>()
                     val requestItems = mutableListOf<Triple<String, String, String>>() // (reqId, fromUid, username)

@@ -58,29 +58,24 @@ class MainActivity : AppCompatActivity() {
                 }
                 performFirebaseLogin(emailOrUsername, password)
             } else {
-                db.collection("users")
-                    .whereEqualTo("usernameLowercase", emailOrUsername.lowercase())
-                    .get()
+                val inputLower = emailOrUsername.lowercase()
+                db.collection("users").get()
                     .addOnSuccessListener { result ->
-                        val matchedDoc = result.documents.firstOrNull()
+                        val matchedDoc = result.documents.find { doc ->
+                            val u = doc.getString("username") ?: ""
+                            val uLower = doc.getString("usernameLowercase") ?: u.lowercase()
+                            u.equals(emailOrUsername, ignoreCase = true) || uLower == inputLower
+                        }
                         val email = matchedDoc?.getString("email")
                         if (!email.isNullOrEmpty()) {
+                            // Self-heal: ensure usernameLowercase is saved
+                            if (!matchedDoc.contains("usernameLowercase") && matchedDoc.id.isNotEmpty()) {
+                                db.collection("users").document(matchedDoc.id)
+                                    .update("usernameLowercase", matchedDoc.getString("username")?.lowercase() ?: inputLower)
+                            }
                             performFirebaseLogin(email, password)
                         } else {
-                            db.collection("users")
-                                .whereEqualTo("username", emailOrUsername)
-                                .get()
-                                .addOnSuccessListener { res2 ->
-                                    val email2 = res2.documents.firstOrNull()?.getString("email")
-                                    if (!email2.isNullOrEmpty()) {
-                                        performFirebaseLogin(email2, password)
-                                    } else {
-                                        Toast.makeText(this, "Username not found", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                                .addOnFailureListener {
-                                    Toast.makeText(this, "Username not found", Toast.LENGTH_SHORT).show()
-                                }
+                            Toast.makeText(this, "Username not found", Toast.LENGTH_SHORT).show()
                         }
                     }
                     .addOnFailureListener { e ->
